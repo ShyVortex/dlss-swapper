@@ -1,0 +1,196 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
+        x:Class="DLSS_Swapper.Avalonia.Views.GameDetailsWindow"
+        x:DataType="vm:GameCardItem"
+        Title="Game Details &amp; Swapper" Width="820" Height="640"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#242424">
+
+    <Border Padding="25" Background="#242424">
+        <Grid RowDefinitions="*,Auto">
+            <!-- Top / Content Area -->
+            <Grid Grid.Row="0" ColumnDefinitions="260,*">
+                <!-- Left Panel: Cover Artwork & Add Custom Cover Button -->
+                <StackPanel Grid.Column="0" Spacing="15" Margin="0,0,25,0">
+                    <Border Height="360" CornerRadius="8" ClipToBounds="True" Background="{Binding CoverColor, FallbackValue='#2A2A2A'}">
+                        <Panel x:CompileBindings="False">
+                            <TextBlock Text="{Binding Name}" 
+                                       HorizontalAlignment="Center" 
+                                       VerticalAlignment="Center" 
+                                       FontSize="22" 
+                                       FontWeight="Bold" 
+                                       Foreground="White"
+                                       TextAlignment="Center"
+                                       TextWrapping="Wrap"
+                                       Margin="15"/>
+                            <Image Source="{Binding CoverBitmap}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                        </Panel>
+                    </Border>
+                    <Button Content="Add Custom Cover" 
+                            HorizontalAlignment="Stretch" 
+                            HorizontalContentAlignment="Center" 
+                            VerticalContentAlignment="Center"
+                            Background="#383838" 
+                            Foreground="White" 
+                            Padding="12,10" 
+                            CornerRadius="6"/>
+                </StackPanel>
+
+                <!-- Right Panel: Fields and 2-Column Dropdown Grid (1:1 Match with Screenshot #2) -->
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
+                    <StackPanel Spacing="16" x:CompileBindings="False">
+                        <!-- Name Field -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Name" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                            <TextBox Text="{Binding Name}" Background="#333333" Foreground="White" BorderThickness="1" BorderBrush="#444444" Padding="10,8" CornerRadius="6"/>
+                        </StackPanel>
+
+                        <!-- Install Path Field -->
+                        <StackPanel Spacing="6">
+                            <TextBlock Text="Install path" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBox Grid.Column="0" Text="{Binding InstallPath}" Background="#333333" Foreground="White" BorderThickness="1" BorderBrush="#444444" Padding="10,8" CornerRadius="6,0,0,6"/>
+                                <Button Grid.Column="1" Content="↗" Background="#383838" Foreground="White" Width="42" Height="36" CornerRadius="0,6,6,0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                            </Grid>
+                        </StackPanel>
+
+                        <!-- Dropdown Grid (2 Columns) -->
+                        <Grid ColumnDefinitions="*,*" RowDefinitions="Auto,Auto,Auto,Auto,Auto" Margin="0,5,0,0">
+                            <!-- Row 1: DLSS | DLSS Preset -->
+                            <StackPanel Grid.Row="0" Grid.Column="0" Spacing="6" Margin="0,0,8,12">
+                                <TextBlock Text="DLSS" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>v310.6</ComboBoxItem>
+                                    <ComboBoxItem>v3.7.10</ComboBoxItem>
+                                    <ComboBoxItem>v3.5.10</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="0" Grid.Column="1" Spacing="6" Margin="8,0,0,12">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="DLSS Preset" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="ⓘ" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>NVIDIA recommended</ComboBoxItem>
+                                    <ComboBoxItem>Preset A</ComboBoxItem>
+                                    <ComboBoxItem>Preset B</ComboBoxItem>
+                                    <ComboBoxItem>Default</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Row 2: DLSS Ray Reconstruction | DLSS RR Preset -->
+                            <StackPanel Grid.Row="1" Grid.Column="0" Spacing="6" Margin="0,0,8,12">
+                                <TextBlock Text="DLSS Ray Reconstruction" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>v310.6</ComboBoxItem>
+                                    <ComboBoxItem>v3.5.10</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="1" Grid.Column="1" Spacing="6" Margin="8,0,0,12">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="DLSS RR Preset" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="ⓘ" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>Preset E</ComboBoxItem>
+                                    <ComboBoxItem>Default</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Row 3: DLSS Frame Generation | DLSS FG Preset -->
+                            <StackPanel Grid.Row="2" Grid.Column="0" Spacing="6" Margin="0,0,8,12">
+                                <TextBlock Text="DLSS Frame Generation" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>v310.6</ComboBoxItem>
+                                    <ComboBoxItem>v3.7.10</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="2" Grid.Column="1" Spacing="6" Margin="8,0,0,12">
+                                <StackPanel Orientation="Horizontal" Spacing="4">
+                                    <TextBlock Text="DLSS FG Preset" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                    <TextBlock Text="ⓘ" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>Default</ComboBoxItem>
+                                    <ComboBoxItem>Preset A</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Row 4: FSR 3.1 | XeSS -->
+                            <StackPanel Grid.Row="3" Grid.Column="0" Spacing="6" Margin="0,0,8,12">
+                                <TextBlock Text="FSR 3.1 DirectX 12" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="#888888" CornerRadius="6">
+                                    <ComboBoxItem>Not found</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="3" Grid.Column="1" Spacing="6" Margin="8,0,0,12">
+                                <TextBlock Text="XeSS" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>v2.0.2.53</ComboBoxItem>
+                                    <ComboBoxItem>v1.3.0</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <!-- Row 5: XeSS (DX11) | XeLL -->
+                            <StackPanel Grid.Row="4" Grid.Column="0" Spacing="6" Margin="0,0,8,0">
+                                <TextBlock Text="XeSS (DX11)" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="#888888" CornerRadius="6">
+                                    <ComboBoxItem>Not found</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                            <StackPanel Grid.Row="4" Grid.Column="1" Spacing="6" Margin="8,0,0,0">
+                                <TextBlock Text="XeLL" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
+                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
+                                    <ComboBoxItem>v1.2.0.9</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </ScrollViewer>
+            </Grid>
+
+            <!-- Bottom Action Footer Bar (1:1 Match with Screenshot #2) -->
+            <Border Grid.Row="1" Margin="0,20,0,0" Padding="0,15,0,0" BorderBrush="#333333" BorderThickness="0,1,0,0">
+                <Grid ColumnDefinitions="*,Auto">
+                    <!-- Action Icon Buttons (Exact 1:1 Match with User Screenshot) -->
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
+                        <!-- 1. Play / Launch Button -->
+                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="M8 5.14v13.72L19 12 8 5.14z" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+
+                        <!-- 2. Folder / Open Folder Button -->
+                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+
+                        <!-- 3. History Button -->
+                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7.07 7.07 0 0 1-6-3.38l-1.42 1.42A8.92 8.92 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+
+                        <!-- 4. Favorite / Star Button -->
+                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+
+                        <!-- 5. Refresh Button -->
+                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+
+                        <!-- 6. Hide / Eye Button -->
+                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                            <PathIcon Data="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z" Width="16" Height="16" Foreground="White"/>
+                        </Button>
+                    </StackPanel>
+
+                    <!-- Close Button (Perfectly Centered) -->
+                    <Button Grid.Column="1" Content="Close" Click="OnCloseClick" Width="90" Height="38" Background="#383838" Foreground="White" CornerRadius="6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                </Grid>
+            </Border>
+        </Grid>
+    </Border>
+</Window>

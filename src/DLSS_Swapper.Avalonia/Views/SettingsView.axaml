@@ -1,0 +1,32 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DLSS_Swapper.Avalonia.Views.SettingsView"
+             Background="#1E1E1E">
+    <ScrollViewer Padding="15">
+        <StackPanel Spacing="20" MaxWidth="700" HorizontalAlignment="Left">
+            <TextBlock Text="Settings" FontSize="22" FontWeight="Bold" Foreground="White"/>
+
+            <!-- App Theme -->
+            <Border Background="#2B2B2B" Padding="15" CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Application Theme" FontWeight="SemiBold" Foreground="White"/>
+                    <ComboBox SelectedIndex="0" Width="200" HorizontalAlignment="Left" SelectionChanged="OnThemeSelectionChanged">
+                        <ComboBoxItem>Dark</ComboBoxItem>
+                        <ComboBoxItem>Light</ComboBoxItem>
+                        <ComboBoxItem>System Default</ComboBoxItem>
+                    </ComboBox>
+                </StackPanel>
+            </Border>
+
+            <!-- Game Libraries Scan Settings -->
+            <Border Background="#2B2B2B" Padding="15" CornerRadius="6">
+                <StackPanel Spacing="10">
+                    <TextBlock Text="Game Launchers" FontWeight="SemiBold" Foreground="White"/>
+                    <CheckBox Content="Scan Steam Games" IsChecked="True" Foreground="White"/>
+                    <CheckBox Content="Scan Heroic / GOG / Epic Games" IsChecked="True" Foreground="White"/>
+                    <CheckBox Content="Scan Manually Added Folders" IsChecked="True" Foreground="White"/>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

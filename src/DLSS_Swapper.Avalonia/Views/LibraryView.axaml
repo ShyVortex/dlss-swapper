@@ -1,0 +1,35 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             x:Class="DLSS_Swapper.Avalonia.Views.LibraryView"
+             Background="#1E1E1E">
+    <Grid RowDefinitions="Auto,*">
+        <!-- Library Top Bar -->
+        <Border Grid.Row="0" Background="#2B2B2B" Padding="12" Margin="0,0,0,10" CornerRadius="4">
+            <TextBlock Text="DLSS / FSR / XeSS Library Manager" FontSize="16" FontWeight="Bold" Foreground="White"/>
+        </Border>
+
+        <!-- Library Items Table / List -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Spacing="10">
+                <TextBlock Text="Downloaded DLSS Versions" FontSize="14" FontWeight="SemiBold" Foreground="#CCCCCC" Margin="5"/>
+                <ListBox Background="#252525" CornerRadius="6" MinHeight="200">
+                    <!-- Sample DLSS items -->
+                    <ListBoxItem>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBlock Grid.Column="0" Text="nvngx_dlss v3.7.10.0" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Size: 24.5 MB" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                            <Button Grid.Column="2" Content="Export" Padding="8,4"/>
+                        </Grid>
+                    </ListBoxItem>
+                    <ListBoxItem>
+                        <Grid ColumnDefinitions="*,Auto,Auto">
+                            <TextBlock Grid.Column="0" Text="nvngx_dlss v3.5.10.0" Foreground="White" VerticalAlignment="Center"/>
+                            <TextBlock Grid.Column="1" Text="Size: 22.1 MB" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,15,0"/>
+                            <Button Grid.Column="2" Content="Export" Padding="8,4"/>
+                        </Grid>
+                    </ListBoxItem>
+                </ListBox>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>

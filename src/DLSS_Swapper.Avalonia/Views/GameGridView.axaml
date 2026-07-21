@@ -1,0 +1,52 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
+             x:Class="DLSS_Swapper.Avalonia.Views.GameGridView"
+             x:DataType="vm:GameGridViewModel"
+             Background="#202020">
+    <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <StackPanel Spacing="15">
+            <!-- Section Header (1:1 Match with Screenshot #1) -->
+            <TextBlock Text="Steam" FontSize="22" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+
+            <!-- Poster Grid -->
+            <ItemsControl ItemsSource="{Binding SteamGames}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <WrapPanel Orientation="Horizontal"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:CompileBindings="False">
+                        <!-- Poster Card (Aspect Ratio ~2:3) -->
+                        <Border Width="175" Height="260" Margin="0,0,16,20" CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed">
+                            <Grid RowDefinitions="*,Auto">
+                                <!-- Game Cover Poster -->
+                                <Panel Grid.Row="0" Background="{Binding CoverColor}">
+                                    <TextBlock Text="{Binding Name}" 
+                                               HorizontalAlignment="Center" 
+                                               VerticalAlignment="Center" 
+                                               TextAlignment="Center"
+                                               Foreground="White" 
+                                               FontWeight="Bold" 
+                                               FontSize="15" 
+                                               TextWrapping="Wrap" 
+                                               Margin="12"/>
+                                    <Image Source="{Binding CoverBitmap}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                </Panel>
+
+                                <!-- Bottom Badge Overlay (1:1 Match with Screenshot #1) -->
+                                <Border Grid.Row="1" Background="#151515" Padding="10,6">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <TextBlock Grid.Column="0" Text="DLSS" FontWeight="Bold" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+                                        <TextBlock Grid.Column="1" Text="{Binding DLSSVersion}" FontSize="11" Foreground="#CCCCCC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </StackPanel>
+    </ScrollViewer>
+</UserControl>

@@ -1,4 +1,4 @@
-﻿<Project Sdk="Microsoft.NET.Sdk">
+<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <AssemblyName>DLSS Swapper</AssemblyName>
@@ -413,6 +413,10 @@
     <PackageReference Include="WinUI.TableView" Version="1.4.1" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
     <Manifest Include="$(ApplicationManifest)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="DLSS_Swapper.Core\DLSS_Swapper.Core.csproj" />
   </ItemGroup>
 
   <!--
