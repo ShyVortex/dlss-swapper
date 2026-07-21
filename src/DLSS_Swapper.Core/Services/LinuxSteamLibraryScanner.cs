@@ -28,29 +28,15 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "snap", "steam", "common", ".steam", "steam")
     };
 
-    private static readonly HashSet<string> ExcludedAppIds = new()
-    {
-        "228980",  // Steamworks Common Redistributables
-        "1054050", // Proton 4.11
-        "1420160", // Proton 5.13
-        "1580130", // Proton 6.3
-        "2180100", // Proton 7.0
-        "2230260", // Proton 8.0
-        "2805730", // Proton 9.0
-        "3130760", // Proton Experimental
-        "1391110", // Steam Linux Runtime - Soldier
-        "1628350", // Steam Linux Runtime - Sniper
-        "228980",  // SteamVR
-        "250820",  // SteamVR
-        "1198400", // Steam Controller Configs
-        "1850570"  // Steam Linux Runtime - Medic
-    };
-
+    // Keyword exclusion list for tools, compatibility runtimes, and non-game software
     private static readonly string[] ExcludedKeywords = new[]
     {
         "proton", "steam linux runtime", "steamvr", "obs studio", "steamworks",
         "soundtrack", "sdk", "server", "tool", "shader pre-caching", "directx",
-        "dotnet", "vulkan", "redistributables", "common redist"
+        "dotnet", "vulkan", "redistributables", "common redist", "runtime",
+        "compatibility", "controller config", "easy anti-cheat", "battleye",
+        "blender", "godot", "dsx", "wallpaper engine", "rpg game maker",
+        "lossless scaling"
     };
 
     public bool IsLauncherInstalled()
@@ -72,78 +58,152 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
 
     public Task<List<string>> DiscoverGamePathsAsync(bool forceNeedsProcessing)
     {
-        var foundPaths = new List<string>();
-        var steamPath = GetSteamInstallPath();
-
-        if (string.IsNullOrEmpty(steamPath))
-        {
-            return Task.FromResult(foundPaths);
-        }
-
-        var steamAppsDir = Path.Combine(steamPath, "steamapps");
-        if (Directory.Exists(steamAppsDir))
-        {
-            foundPaths.Add(steamAppsDir);
-        }
-
+        var foundPaths = GetSteamLibraryDirectories();
         return Task.FromResult(foundPaths);
+    }
+
+    /// <summary>
+    /// Returns all configured Steam steamapps directories across internal and external storage mounts.
+    /// Deduplicates symlinked paths (e.g. ~/.steam/steam -> ~/.local/share/Steam).
+    /// </summary>
+    public List<string> GetSteamLibraryDirectories()
+    {
+        var libraries = new List<string>();
+        var steamPath = GetSteamInstallPath();
+        if (string.IsNullOrEmpty(steamPath)) return libraries;
+
+        var mainSteamApps = Path.Combine(steamPath, "steamapps");
+        AddNormalizedDirectory(libraries, mainSteamApps);
+
+        var possibleVdfPaths = new[]
+        {
+            Path.Combine(mainSteamApps, "libraryfolders.vdf"),
+            Path.Combine(steamPath, "config", "libraryfolders.vdf")
+        };
+
+        foreach (var vdfPath in possibleVdfPaths)
+        {
+            if (File.Exists(vdfPath))
+            {
+                try
+                {
+                    var content = File.ReadAllText(vdfPath);
+                    var matches = Regex.Matches(content, @"""path""\s+""([^""]+)""", RegexOptions.IgnoreCase);
+                    foreach (Match match in matches)
+                    {
+                        if (match.Success)
+                        {
+                            var rawPath = match.Groups[1].Value.Replace(@"\\", @"/");
+                            var steamAppsSubDir = Path.Combine(rawPath, "steamapps");
+                            AddNormalizedDirectory(libraries, steamAppsSubDir);
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore unparseable VDF files
+                }
+            }
+        }
+
+        return libraries;
+    }
+
+    private void AddNormalizedDirectory(List<string> list, string dirPath)
+    {
+        if (!Directory.Exists(dirPath)) return;
+
+        try
+        {
+            var canonicalPath = Path.GetFullPath(dirPath);
+            if (!list.Any(existing => string.Equals(Path.GetFullPath(existing), canonicalPath, StringComparison.OrdinalIgnoreCase)))
+            {
+                list.Add(canonicalPath);
+            }
+        }
+        catch
+        {
+            if (!list.Contains(dirPath, StringComparer.OrdinalIgnoreCase))
+            {
+                list.Add(dirPath);
+            }
+        }
     }
 
     public List<DiscoveredGameInfo> ScanInstalledGames()
     {
         var games = new List<DiscoveredGameInfo>();
+        var scannedAppIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var scannedInstallPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         var steamPath = GetSteamInstallPath();
         if (string.IsNullOrEmpty(steamPath)) return games;
 
-        var steamAppsDir = Path.Combine(steamPath, "steamapps");
-        if (!Directory.Exists(steamAppsDir)) return games;
+        var libraryDirectories = GetSteamLibraryDirectories();
 
-        foreach (var manifestFile in Directory.GetFiles(steamAppsDir, "appmanifest_*.acf"))
+        foreach (var steamAppsDir in libraryDirectories)
         {
-            try
+            if (!Directory.Exists(steamAppsDir)) continue;
+
+            foreach (var manifestFile in Directory.GetFiles(steamAppsDir, "appmanifest_*.acf"))
             {
-                var filename = Path.GetFileNameWithoutExtension(manifestFile);
-                var appId = filename.Replace("appmanifest_", "");
-
-                if (ExcludedAppIds.Contains(appId))
+                try
                 {
-                    continue; // Skip excluded AppID tools
-                }
+                    var filename = Path.GetFileNameWithoutExtension(manifestFile);
+                    var appId = filename.Replace("appmanifest_", "");
 
-                var content = File.ReadAllText(manifestFile);
-                var nameMatch = Regex.Match(content, @"""name""\s+""([^""]+)""", RegexOptions.IgnoreCase);
-                var dirMatch = Regex.Match(content, @"""installdir""\s+""([^""]+)""", RegexOptions.IgnoreCase);
-
-                if (nameMatch.Success && dirMatch.Success)
-                {
-                    var gameName = nameMatch.Groups[1].Value;
-                    var installDir = dirMatch.Groups[1].Value;
-
-                    // Exclude software, compatibility layers, and tools
-                    var lowerName = gameName.ToLowerInvariant();
-                    var lowerDir = installDir.ToLowerInvariant();
-                    if (ExcludedKeywords.Any(k => lowerName.Contains(k) || lowerDir.Contains(k)))
+                    if (scannedAppIds.Contains(appId))
                     {
-                        continue;
+                        continue; // Skip duplicate AppID
                     }
 
-                    var fullPath = Path.Combine(steamAppsDir, "common", installDir);
-                    var coverImage = ResolveCoverImage(steamPath, appId);
+                    var content = File.ReadAllText(manifestFile);
+                    var nameMatch = Regex.Match(content, @"""name""\s+""([^""]+)""", RegexOptions.IgnoreCase);
+                    var dirMatch = Regex.Match(content, @"""installdir""\s+""([^""]+)""", RegexOptions.IgnoreCase);
 
-                    games.Add(new DiscoveredGameInfo
+                    if (nameMatch.Success && dirMatch.Success)
                     {
-                        AppId = appId,
-                        Name = gameName,
-                        InstallPath = fullPath,
-                        Launcher = "Steam",
-                        DLSSVersion = ScanDLSSVersion(fullPath),
-                        CoverImagePath = coverImage
-                    });
+                        var gameName = nameMatch.Groups[1].Value;
+                        var installDir = dirMatch.Groups[1].Value;
+
+                        var lowerName = gameName.ToLowerInvariant();
+                        var lowerDir = installDir.ToLowerInvariant();
+
+                        // Dynamic exclusion: filter out software, compatibility layers, and runtimes by keyword
+                        if (ExcludedKeywords.Any(k => lowerName.Contains(k) || lowerDir.Contains(k)))
+                        {
+                            continue;
+                        }
+
+                        var fullPath = Path.Combine(steamAppsDir, "common", installDir);
+                        if (!Directory.Exists(fullPath)) continue;
+
+                        var normalizedFullPath = Path.GetFullPath(fullPath);
+                        if (scannedInstallPaths.Contains(normalizedFullPath))
+                        {
+                            continue; // Skip duplicate physical install path
+                        }
+
+                        scannedAppIds.Add(appId);
+                        scannedInstallPaths.Add(normalizedFullPath);
+
+                        var coverImage = ResolveCoverImage(steamPath, appId);
+
+                        games.Add(new DiscoveredGameInfo
+                        {
+                            AppId = appId,
+                            Name = gameName,
+                            InstallPath = normalizedFullPath,
+                            Launcher = "Steam",
+                            DLSSVersion = ScanDLSSVersion(normalizedFullPath),
+                            CoverImagePath = coverImage
+                        });
+                    }
                 }
-            }
-            catch
-            {
-                // Skip problematic manifests
+                catch
+                {
+                    // Skip unreadable manifest files
+                }
             }
         }
 
@@ -152,7 +212,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
 
     private string ResolveCoverImage(string steamPath, string appId)
     {
-        // 1. Check local Steam librarycache
+        // Check local Steam librarycache
         var localCover = Path.Combine(steamPath, "appcache", "librarycache", $"{appId}_library_600x900.jpg");
         if (File.Exists(localCover))
         {
@@ -165,7 +225,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
             return localHeader;
         }
 
-        // 2. Steam CDN online image fallback
+        // Fallback: Steam CDN online image
         return $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId}/library_600x900.jpg";
     }
 

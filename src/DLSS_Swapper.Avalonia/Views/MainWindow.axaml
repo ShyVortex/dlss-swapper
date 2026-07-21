@@ -30,7 +30,7 @@
                     <!-- Library Nav Button -->
                     <Grid Height="40">
                         <Button Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-                            <PathIcon Data="M4,6H2v14c0,1.1 0.9,2 2,2h14v-2H4V6zm16-4H8c-1.1,0-2,0.9-2,2v12c0,1.1 0.9,2 2,2h12c1.1,0 2-0.9 2-2V4c0-1.1-0.9-2-2-2zm0,14H8V4h12v12z" Foreground="#888888" Width="20" Height="20"/>
+                            <PathIcon Data="M4 4h3.5v16H4V4zm5.5 0h3.5v16h-3.5V4zm5.5 0h3.5v16h-3.5V4z" Foreground="#888888" Width="20" Height="20"/>
                         </Button>
                     </Grid>
                 </StackPanel>
