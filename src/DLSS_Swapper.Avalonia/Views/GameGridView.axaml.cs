@@ -9,7 +9,6 @@ public partial class GameGridView : UserControl
     public GameGridView()
     {
         InitializeComponent();
-        DataContext = new GameGridViewModel();
     }
 
     private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e)

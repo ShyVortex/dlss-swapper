@@ -3,7 +3,7 @@
         xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
         x:Class="DLSS_Swapper.Avalonia.Views.GameDetailsWindow"
         x:DataType="vm:GameCardItem"
-        Title="Game Details &amp; Swapper" Width="820" Height="640"
+        Title="Game Details" Width="820" Height="640"
         WindowStartupLocation="CenterOwner"
         CanResize="False"
         Background="#242424">
@@ -38,7 +38,7 @@
                             CornerRadius="6"/>
                 </StackPanel>
 
-                <!-- Right Panel: Fields and 2-Column Dropdown Grid (1:1 Match with Screenshot #2) -->
+                <!-- Right Panel: Game Metadata Fields and Library Version Options -->
                 <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
                     <StackPanel Spacing="16" x:CompileBindings="False">
                         <!-- Name Field -->
@@ -151,10 +151,10 @@
                 </ScrollViewer>
             </Grid>
 
-            <!-- Bottom Action Footer Bar (1:1 Match with Screenshot #2) -->
+            <!-- Bottom Action Footer Bar -->
             <Border Grid.Row="1" Margin="0,20,0,0" Padding="0,15,0,0" BorderBrush="#333333" BorderThickness="0,1,0,0">
                 <Grid ColumnDefinitions="*,Auto">
-                    <!-- Action Icon Buttons (Exact 1:1 Match with User Screenshot) -->
+                    <!-- Quick Action Toolbar Buttons -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
                         <!-- 1. Play / Launch Button -->
                         <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">

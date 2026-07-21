@@ -4,49 +4,103 @@
              x:Class="DLSS_Swapper.Avalonia.Views.GameGridView"
              x:DataType="vm:GameGridViewModel"
              Background="#202020">
-    <ScrollViewer VerticalScrollBarVisibility="Auto">
-        <StackPanel Spacing="15">
-            <!-- Section Header (1:1 Match with Screenshot #1) -->
-            <TextBlock Text="Steam" FontSize="22" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,10"/>
+    <Grid>
+        <ScrollViewer VerticalScrollBarVisibility="Auto">
+            <StackPanel Spacing="15">
+                <!-- Section Header & Separation Line -->
+                <StackPanel IsVisible="{Binding HasGames}" Spacing="10" Margin="0,0,0,10">
+                    <TextBlock Text="Steam" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
+                    <Rectangle Height="1" Fill="#2E2E2E" HorizontalAlignment="Stretch"/>
+                </StackPanel>
 
-            <!-- Poster Grid -->
-            <ItemsControl ItemsSource="{Binding SteamGames}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:CompileBindings="False">
-                        <!-- Poster Card (Aspect Ratio ~2:3) -->
-                        <Border Width="175" Height="260" Margin="0,0,16,20" CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed">
-                            <Grid RowDefinitions="*,Auto">
-                                <!-- Game Cover Poster -->
-                                <Panel Grid.Row="0" Background="{Binding CoverColor}">
-                                    <TextBlock Text="{Binding Name}" 
-                                               HorizontalAlignment="Center" 
-                                               VerticalAlignment="Center" 
-                                               TextAlignment="Center"
-                                               Foreground="White" 
-                                               FontWeight="Bold" 
-                                               FontSize="15" 
-                                               TextWrapping="Wrap" 
-                                               Margin="12"/>
-                                    <Image Source="{Binding CoverBitmap}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
-                                </Panel>
+                <!-- 1. Poster Grid View (When IsGridView == True) -->
+                <ItemsControl ItemsSource="{Binding SteamGames}" IsVisible="{Binding IsGridView}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:CompileBindings="False">
+                            <!-- Poster Card (Aspect Ratio ~2:3) -->
+                            <Border Width="175" Height="260" Margin="0,0,16,20" CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed" Cursor="Hand">
+                                <Grid RowDefinitions="*,Auto">
+                                    <!-- Game Cover Poster -->
+                                    <Panel Grid.Row="0" Background="{Binding CoverColor}">
+                                        <TextBlock Text="{Binding Name}" 
+                                                   HorizontalAlignment="Center" 
+                                                   VerticalAlignment="Center" 
+                                                   TextAlignment="Center"
+                                                   Foreground="White" 
+                                                   FontWeight="Bold" 
+                                                   FontSize="15" 
+                                                   TextWrapping="Wrap" 
+                                                   Margin="12"/>
+                                        <Image Source="{Binding CoverBitmap}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                    </Panel>
 
-                                <!-- Bottom Badge Overlay (1:1 Match with Screenshot #1) -->
-                                <Border Grid.Row="1" Background="#151515" Padding="10,6">
-                                    <Grid ColumnDefinitions="Auto,*">
-                                        <TextBlock Grid.Column="0" Text="DLSS" FontWeight="Bold" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
-                                        <TextBlock Grid.Column="1" Text="{Binding DLSSVersion}" FontSize="11" Foreground="#CCCCCC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </StackPanel>
-    </ScrollViewer>
+                                    <!-- Bottom Badge Overlay -->
+                                    <Border Grid.Row="1" Background="#151515" Padding="10,6">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <TextBlock Grid.Column="0" Text="DLSS" FontWeight="Bold" FontSize="12" Foreground="White" VerticalAlignment="Center"/>
+                                            <TextBlock Grid.Column="1" Text="{Binding DLSSVersion}" FontSize="11" Foreground="#CCCCCC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                                        </Grid>
+                                    </Border>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- 2. List View - When IsGridView == False) -->
+                <ItemsControl ItemsSource="{Binding SteamGames}" IsVisible="{Binding !IsGridView}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <StackPanel Spacing="14"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:CompileBindings="False">
+                            <Border Background="Transparent" Padding="0,4" PointerPressed="OnCardPointerPressed" Cursor="Hand">
+                                <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
+                                    <!-- Thumbnail Artwork (44x60px) -->
+                                    <Border Grid.Column="0" Width="44" Height="60" CornerRadius="4" ClipToBounds="True" Background="{Binding CoverColor}">
+                                        <Panel>
+                                            <TextBlock Text="{Binding Name}" FontSize="10" Foreground="White" TextAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" Margin="4"/>
+                                            <Image Source="{Binding CoverBitmap}" Stretch="UniformToFill" HorizontalAlignment="Stretch" VerticalAlignment="Stretch"/>
+                                        </Panel>
+                                    </Border>
+
+                                    <!-- Game Title -->
+                                    <TextBlock Grid.Column="1" Text="{Binding Name}" FontSize="15" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" Margin="16,0,0,0"/>
+
+                                    <!-- DLSS Version Pill / Tag -->
+                                    <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                        <TextBlock Text="DLSS:" FontSize="13" Foreground="#999999" VerticalAlignment="Center"/>
+                                        <TextBlock Text="{Binding DLSSVersion}" FontSize="13" Foreground="White" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+
+                <!-- Centered Empty State (When HasGames == False and IsNotLoading) -->
+                <StackPanel IsVisible="{Binding !HasGames}" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" Margin="0,80,0,0">
+                    <PathIcon Data="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M17,14H7V12H17V14Z" Width="48" Height="48" Foreground="#666666" HorizontalAlignment="Center"/>
+                    <TextBlock Text="No games found" FontSize="20" FontWeight="Bold" Foreground="White" HorizontalAlignment="Center"/>
+                    <TextBlock Text="Please download games from your preferred launcher (Steam, Heroic, etc.)&#10;or click '+ Add Game' to add games manually." 
+                               FontSize="14" Foreground="#888888" TextAlignment="Center" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- Visible Refresh Loading Overlay -->
+        <Border IsVisible="{Binding IsLoading}" Background="#DD151515" CornerRadius="8" Padding="30,24" HorizontalAlignment="Center" VerticalAlignment="Center" ZIndex="10">
+            <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                <ProgressBar IsIndeterminate="True" Width="180" Height="4" Foreground="#E85A24"/>
+                <TextBlock Text="Scanning libraries &amp; refreshing games..." Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+    </Grid>
 </UserControl>
