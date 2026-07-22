@@ -1,35 +1,139 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
              x:Class="DLSS_Swapper.Avalonia.Views.LibraryView"
-             Background="#1E1E1E">
-    <Grid RowDefinitions="Auto,*">
-        <!-- Library Top Bar -->
-        <Border Grid.Row="0" Background="#2B2B2B" Padding="12" Margin="0,0,0,10" CornerRadius="4">
-            <TextBlock Text="DLSS / FSR / XeSS Library Manager" FontSize="16" FontWeight="Bold" Foreground="White"/>
-        </Border>
+             x:DataType="vm:LibraryViewModel"
+             Background="#202020">
 
-        <!-- Library Items Table / List -->
-        <ScrollViewer Grid.Row="1">
-            <StackPanel Spacing="10">
-                <TextBlock Text="Downloaded DLSS Versions" FontSize="14" FontWeight="SemiBold" Foreground="#CCCCCC" Margin="5"/>
-                <ListBox Background="#252525" CornerRadius="6" MinHeight="200">
-                    <!-- Sample DLSS items -->
-                    <ListBoxItem>
-                        <Grid ColumnDefinitions="*,Auto,Auto">
-                            <TextBlock Grid.Column="0" Text="nvngx_dlss v3.7.10.0" Foreground="White" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="Size: 24.5 MB" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,15,0"/>
-                            <Button Grid.Column="2" Content="Export" Padding="8,4"/>
-                        </Grid>
-                    </ListBoxItem>
-                    <ListBoxItem>
-                        <Grid ColumnDefinitions="*,Auto,Auto">
-                            <TextBlock Grid.Column="0" Text="nvngx_dlss v3.5.10.0" Foreground="White" VerticalAlignment="Center"/>
-                            <TextBlock Grid.Column="1" Text="Size: 22.1 MB" Foreground="#888888" VerticalAlignment="Center" Margin="0,0,15,0"/>
-                            <Button Grid.Column="2" Content="Export" Padding="8,4"/>
-                        </Grid>
-                    </ListBoxItem>
-                </ListBox>
+    <Grid RowDefinitions="Auto,Auto,*" Margin="25,20">
+        <!-- 1. Header Title & Top Action Bar -->
+        <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
+            <!-- Page Title -->
+            <TextBlock Grid.Column="0" Text="Library" FontSize="28" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+
+            <!-- Top Right Action Toolbar -->
+            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
+                <!-- Import Button -->
+                <Button Command="{Binding ImportCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
+                        <PathIcon Data="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Import" FontSize="11" Foreground="#CCCCCC"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Export All Button -->
+                <Button Command="{Binding ExportAllCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
+                        <PathIcon Data="M9 10v6h6v-6h4l-7-7-7 7h4zm-4 8h14v2H5v-2z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Export All" FontSize="11" Foreground="#CCCCCC"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Download Latest Button -->
+                <Button Command="{Binding DownloadLatestCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
+                        <PathIcon Data="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Download Latest" FontSize="11" Foreground="#CCCCCC"/>
+                    </StackPanel>
+                </Button>
+
+                <!-- Refresh Button -->
+                <Button Command="{Binding RefreshManifestCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
+                    <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
+                        <PathIcon Data="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
+                        <TextBlock Text="Refresh" FontSize="11" Foreground="#CCCCCC"/>
+                    </StackPanel>
+                </Button>
             </StackPanel>
+        </Grid>
+
+        <!-- 2. Upscaler Category Tabs Bar (Scrollable Horizontal Bar) -->
+        <ScrollViewer Grid.Row="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" Margin="0,0,0,24" Padding="0,0,0,8">
+            <ScrollViewer.Styles>
+                <Style Selector="ScrollBar:horizontal">
+                    <Setter Property="Height" Value="4"/>
+                    <Setter Property="Margin" Value="0,6,0,0"/>
+                </Style>
+            </ScrollViewer.Styles>
+            <ItemsControl ItemsSource="{Binding Categories}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" Spacing="24"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:CompileBindings="False">
+                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).SelectCategoryCommand}" 
+                                CommandParameter="{Binding}" 
+                                Background="Transparent" BorderThickness="0" Padding="0,0,0,8" Cursor="Hand">
+                            <StackPanel Spacing="6">
+                                <TextBlock Text="{Binding Name}" 
+                                           FontSize="14" 
+                                           FontWeight="{Binding IsSelected, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
+                                           Foreground="{Binding IsSelected, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+                                <!-- Active Tab Orange Indicator -->
+                                <Border Height="2" Background="#E8A068" IsVisible="{Binding IsSelected}" HorizontalAlignment="Stretch"/>
+                            </StackPanel>
+                        </Button>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+        </ScrollViewer>
+
+        <!-- 3. Version Cards Grid (4 Columns Grid Layout) -->
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <ItemsControl ItemsSource="{Binding VisibleRecords}">
+                <ItemsControl.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <UniformGrid Columns="4"/>
+                    </ItemsPanelTemplate>
+                </ItemsControl.ItemsPanel>
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate x:CompileBindings="False">
+                        <Border Background="#2B2B2B" Margin="0,0,16,16" Padding="16,14" CornerRadius="6" Height="76" ClipToBounds="True">
+                            <Panel VerticalAlignment="Center">
+                                <!-- Standard State: Text and Action Buttons (Hidden during download) -->
+                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsDownloading}" VerticalAlignment="Center">
+                                    <!-- Version Title -->
+                                    <TextBlock Grid.Column="0" Text="{Binding VersionText}" FontSize="15" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+
+                                    <!-- Card Action Controls -->
+                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                        <!-- Download Button (When NOT Downloaded) -->
+                                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DownloadRecordCommand}" 
+                                                CommandParameter="{Binding}"
+                                                IsVisible="{Binding !IsDownloaded}" 
+                                                Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Download DLL version">
+                                            <PathIcon Data="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" Width="16" Height="16" Foreground="White"/>
+                                        </Button>
+
+                                        <!-- Export / Open Folder Button (When Downloaded) -->
+                                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenDownloadedFolderCommand}"
+                                                CommandParameter="{Binding}"
+                                                IsVisible="{Binding IsDownloaded}" 
+                                                Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Open downloaded files folder">
+                                            <PathIcon Data="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" Width="16" Height="16" Foreground="White"/>
+                                        </Button>
+
+                                        <!-- Trash / Delete Button (When Downloaded) -->
+                                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DeleteRecordCommand}" 
+                                                CommandParameter="{Binding}"
+                                                IsVisible="{Binding IsDownloaded}" 
+                                                Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Delete downloaded DLL">
+                                            <PathIcon Data="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" Width="16" Height="16" Foreground="#FF6B6B"/>
+                                        </Button>
+                                    </StackPanel>
+                                </Grid>
+
+                                <!-- Download Progress State: Only Full-Width Progress Bar Visible -->
+                                <Grid IsVisible="{Binding IsDownloading}" VerticalAlignment="Center">
+                                    <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="10" Foreground="#E8A068" Background="#363636" CornerRadius="5" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                </Grid>
+                            </Panel>
+                        </Border>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
         </ScrollViewer>
     </Grid>
 </UserControl>

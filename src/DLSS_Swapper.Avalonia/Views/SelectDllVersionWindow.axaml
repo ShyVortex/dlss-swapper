@@ -1,0 +1,88 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
+        x:Class="DLSS_Swapper.Avalonia.Views.SelectDllVersionWindow"
+        x:DataType="vm:SelectDllVersionViewModel"
+        Title="{Binding Title}" Width="480" Height="580"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#202020">
+
+    <Window.Styles>
+        <Style Selector="ListBoxItem">
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="CornerRadius" Value="6"/>
+            <Setter Property="Margin" Value="0,2"/>
+            <Setter Property="Background" Value="#2A2A2A"/>
+        </Style>
+        <Style Selector="ListBoxItem:pointerover /template/ ContentPresenter">
+            <Setter Property="Background" Value="#353535"/>
+        </Style>
+        <Style Selector="ListBoxItem:selected /template/ ContentPresenter">
+            <Setter Property="Background" Value="#404040"/>
+        </Style>
+    </Window.Styles>
+
+    <Grid RowDefinitions="Auto,Auto,*,Auto" Margin="20">
+        <!-- Window Title Header -->
+        <TextBlock Grid.Row="0" Text="{Binding Title}" FontSize="18" FontWeight="Bold" Foreground="White" Margin="0,0,0,16"/>
+
+        <!-- Original & Current Version Cards -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,12,*" Margin="0,0,0,16">
+            <!-- Original Card -->
+            <Border Grid.Column="0" Background="#2A2A2A" BorderBrush="#3A3A3A" BorderThickness="1" CornerRadius="6" Padding="12">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Original" Foreground="#888888" FontSize="12" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding OriginalVersionText}" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="↻" Command="{Binding ResetToOriginalCommand}" Width="28" Height="28" Background="#383838" Foreground="White" CornerRadius="4" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Reset to original version"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+
+            <!-- Current Card -->
+            <Border Grid.Column="2" Background="#2A2A2A" BorderBrush="#3A3A3A" BorderThickness="1" CornerRadius="6" Padding="12">
+                <StackPanel Spacing="6">
+                    <TextBlock Text="Current" Foreground="#888888" FontSize="12" FontWeight="SemiBold"/>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock Grid.Column="0" Text="{Binding CurrentVersionText}" Foreground="White" FontSize="14" FontWeight="Bold" VerticalAlignment="Center"/>
+                        <Button Grid.Column="1" Content="↗" Command="{Binding OpenFolderCommand}" Width="28" Height="28" Background="#383838" Foreground="White" CornerRadius="4" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Open current folder"/>
+                    </Grid>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Version Selector List -->
+        <Border Grid.Row="2" Background="#1A1A1A" BorderBrush="#303030" BorderThickness="1" CornerRadius="6" Padding="4">
+            <ListBox ItemsSource="{Binding Versions}" SelectedItem="{Binding SelectedVersionItem}" Background="Transparent">
+                <ListBox.ItemTemplate>
+                    <DataTemplate x:DataType="vm:DllVersionItemViewModel">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                                <RadioButton IsChecked="{Binding $parent[ListBoxItem].IsSelected, Mode=TwoWay}" GroupName="VersionGroup" VerticalAlignment="Center"/>
+                                <TextBlock Text="{Binding VersionName}" Foreground="White" FontSize="14" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                            </StackPanel>
+
+                            <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="6" VerticalAlignment="Center">
+                                <!-- Download Progress Bar (When Downloading) -->
+                                <ProgressBar IsVisible="{Binding IsDownloading}" Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Width="36" Height="4" Foreground="#E8A068" VerticalAlignment="Center"/>
+
+                                <!-- Download Button (if not downloaded) -->
+                                <Button Content="↓" Command="{Binding DownloadCommand}" IsVisible="{Binding !IsDownloaded}" IsEnabled="{Binding !IsDownloading}" Width="30" Height="30" Background="#383838" Foreground="White" CornerRadius="4" Padding="0" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" ToolTip.Tip="Download version"/>
+
+                                <!-- Downloaded Indicator (if downloaded) -->
+                                <TextBlock Text="✓" IsVisible="{Binding IsDownloaded}" Foreground="#4CAF50" FontSize="16" FontWeight="Bold" VerticalAlignment="Center" Margin="6,0"/>
+                            </StackPanel>
+                        </Grid>
+                    </DataTemplate>
+                </ListBox.ItemTemplate>
+            </ListBox>
+        </Border>
+
+        <!-- Footer Action Buttons -->
+        <Grid Grid.Row="3" ColumnDefinitions="*,Auto,10,Auto" Margin="0,16,0,0">
+            <Button Grid.Column="1" Content="Swap" Command="{Binding SwapCommand}" IsEnabled="{Binding CanSwap}" Width="90" Height="36" Background="#E8A068" Foreground="#1A1A1A" FontWeight="Bold" CornerRadius="6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+            <Button Grid.Column="3" Content="Cancel" Click="OnCancelClick" Width="90" Height="36" Background="#383838" Foreground="White" CornerRadius="6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+        </Grid>
+    </Grid>
+</Window>

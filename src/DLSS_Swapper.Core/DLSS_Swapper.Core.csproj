@@ -26,4 +26,8 @@
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EmbeddedResource Include="../Assets/static_manifest.json" Link="Assets/static_manifest.json" />
+  </ItemGroup>
+
 </Project>

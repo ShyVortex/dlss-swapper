@@ -16,11 +16,32 @@ public partial class GameCardItem : ObservableObject
 {
     public string AppId { get; set; } = string.Empty;
     public string Name { get; set; } = string.Empty;
-    public string DLSSVersion { get; set; } = string.Empty;
     public string LibraryName { get; set; } = string.Empty;
     public string InstallPath { get; set; } = string.Empty;
     public string CoverImagePath { get; set; } = string.Empty;
     public string CoverColor { get; set; } = "#2C2C2C";
+
+    [ObservableProperty] private string _dLSSVersion = "Not found";
+    [ObservableProperty] private string _dLSSGVersion = "Not found";
+    [ObservableProperty] private string _dLSSDVersion = "Not found";
+    [ObservableProperty] private string _fsr31Dx12Version = "Not found";
+    [ObservableProperty] private string _fsr31VkVersion = "Not found";
+    [ObservableProperty] private string _xessVersion = "Not found";
+    [ObservableProperty] private string _xessDx11Version = "Not found";
+    [ObservableProperty] private string _xessFgVersion = "Not found";
+    [ObservableProperty] private string _xellVersion = "Not found";
+
+    public bool HasDLSS => DLSSVersion != "Not found" && DLSSVersion != "N/A" && !string.IsNullOrEmpty(DLSSVersion);
+    public bool HasDLSSG => DLSSGVersion != "Not found" && DLSSGVersion != "N/A" && !string.IsNullOrEmpty(DLSSGVersion);
+    public bool HasDLSSD => DLSSDVersion != "Not found" && DLSSDVersion != "N/A" && !string.IsNullOrEmpty(DLSSDVersion);
+    public bool HasFsr31Dx12 => Fsr31Dx12Version != "Not found" && Fsr31Dx12Version != "N/A" && !string.IsNullOrEmpty(Fsr31Dx12Version);
+    public bool HasFsr31Vk => Fsr31VkVersion != "Not found" && Fsr31VkVersion != "N/A" && !string.IsNullOrEmpty(Fsr31VkVersion);
+    public bool HasXeSS => XessVersion != "Not found" && XessVersion != "N/A" && !string.IsNullOrEmpty(XessVersion);
+    public bool HasXeSSDx11 => XessDx11Version != "Not found" && XessDx11Version != "N/A" && !string.IsNullOrEmpty(XessDx11Version);
+    public bool HasXeSSFg => XessFgVersion != "Not found" && XessFgVersion != "N/A" && !string.IsNullOrEmpty(XessFgVersion);
+    public bool HasXeLL => XellVersion != "Not found" && XellVersion != "N/A" && !string.IsNullOrEmpty(XellVersion);
+
+    public bool HasAnySwappableItem => HasDLSS || HasDLSSG || HasDLSSD || HasFsr31Dx12 || HasFsr31Vk || HasXeSS || HasXeSSDx11 || HasXeSSFg || HasXeLL;
 
     [ObservableProperty]
     private Bitmap? _coverBitmap;
@@ -128,6 +149,14 @@ public partial class GameGridViewModel : ObservableObject
                     AppId = g.AppId,
                     Name = g.Name,
                     DLSSVersion = g.DLSSVersion,
+                    DLSSGVersion = g.DLSSGVersion,
+                    DLSSDVersion = g.DLSSDVersion,
+                    Fsr31Dx12Version = g.Fsr31Dx12Version,
+                    Fsr31VkVersion = g.Fsr31VkVersion,
+                    XessVersion = g.XessVersion,
+                    XessDx11Version = g.XessDx11Version,
+                    XessFgVersion = g.XessFgVersion,
+                    XellVersion = g.XellVersion,
                     LibraryName = g.Launcher,
                     InstallPath = g.InstallPath,
                     CoverImagePath = g.CoverImagePath,
@@ -141,13 +170,36 @@ public partial class GameGridViewModel : ObservableObject
         FilterGames();
     }
 
+    [ObservableProperty]
+    private bool _hideNoSwappableItems = false;
+
+    [ObservableProperty]
+    private bool _showHiddenGames = false;
+
+    [ObservableProperty]
+    private bool _groupByLibrary = true;
+
+    public void ApplyFilters()
+    {
+        FilterGames();
+    }
+
     private void FilterGames()
     {
         SteamGames.Clear();
         var query = SearchText?.Trim() ?? string.Empty;
-        var matches = string.IsNullOrEmpty(query)
-            ? _allDiscoveredGames
-            : _allDiscoveredGames.Where(g => g.Name.Contains(query, StringComparison.OrdinalIgnoreCase)).ToList();
+
+        var matches = _allDiscoveredGames.AsEnumerable();
+
+        if (!string.IsNullOrEmpty(query))
+        {
+            matches = matches.Where(g => g.Name.Contains(query, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (HideNoSwappableItems)
+        {
+            matches = matches.Where(g => g.HasAnySwappableItem);
+        }
 
         foreach (var g in matches)
         {

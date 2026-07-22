@@ -15,7 +15,15 @@ public class DiscoveredGameInfo
     public string Name { get; set; } = string.Empty;
     public string InstallPath { get; set; } = string.Empty;
     public string Launcher { get; set; } = "Steam";
-    public string DLSSVersion { get; set; } = "N/A";
+    public string DLSSVersion { get; set; } = "Not found";
+    public string DLSSGVersion { get; set; } = "Not found";
+    public string DLSSDVersion { get; set; } = "Not found";
+    public string Fsr31Dx12Version { get; set; } = "Not found";
+    public string Fsr31VkVersion { get; set; } = "Not found";
+    public string XessVersion { get; set; } = "Not found";
+    public string XessDx11Version { get; set; } = "Not found";
+    public string XessFgVersion { get; set; } = "Not found";
+    public string XellVersion { get; set; } = "Not found";
     public string CoverImagePath { get; set; } = string.Empty;
 }
 
@@ -194,7 +202,15 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                             Name = gameName,
                             InstallPath = normalizedFullPath,
                             Launcher = "Steam",
-                            DLSSVersion = ScanDLSSVersion(normalizedFullPath),
+                            DLSSVersion = ScanDllVersion(normalizedFullPath, "nvngx_dlss.dll"),
+                            DLSSGVersion = ScanDllVersion(normalizedFullPath, "nvngx_dlssg.dll"),
+                            DLSSDVersion = ScanDllVersion(normalizedFullPath, "nvngx_dlssd.dll"),
+                            Fsr31Dx12Version = ScanDllVersion(normalizedFullPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll"),
+                            Fsr31VkVersion = ScanDllVersion(normalizedFullPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll"),
+                            XessVersion = ScanDllVersion(normalizedFullPath, "libxess.dll"),
+                            XessDx11Version = ScanDllVersion(normalizedFullPath, "libxess_dx11.dll"),
+                            XessFgVersion = ScanDllVersion(normalizedFullPath, "libxess_fg.dll"),
+                            XellVersion = ScanDllVersion(normalizedFullPath, "libxell.dll"),
                             CoverImagePath = coverImage
                         });
                     }
@@ -228,67 +244,83 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         return $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId}/library_600x900.jpg";
     }
 
-    private string ScanDLSSVersion(string gameDirectory)
+    public string ExtractDllVersionFromFile(string filePath)
     {
-        if (!Directory.Exists(gameDirectory)) return "N/A";
+        if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath)) return string.Empty;
 
         try
         {
-            var dlssFiles = Directory.GetFiles(gameDirectory, "nvngx_dlss.dll", SearchOption.AllDirectories);
-            if (dlssFiles.Length > 0)
+            using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
-                var filePath = dlssFiles[0];
-                using (var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
+                byte[] pattern = System.Text.Encoding.Unicode.GetBytes("FileVersion\0");
+                long patternOffset = FindBytes(stream, pattern);
+                if (patternOffset != -1)
                 {
-                    byte[] pattern = System.Text.Encoding.Unicode.GetBytes("FileVersion\0");
-                    long patternOffset = FindBytes(stream, pattern);
-                    if (patternOffset != -1)
+                    long startOffset = patternOffset - 6;
+                    if (startOffset >= 0)
                     {
-                        long startOffset = patternOffset - 6;
-                        if (startOffset >= 0)
+                        stream.Position = startOffset + 2;
+                        int wValueLength = stream.ReadByte() | (stream.ReadByte() << 8);
+
+                        if (wValueLength > 0 && wValueLength < 64)
                         {
-                            stream.Position = startOffset + 2;
-                            int wValueLength = stream.ReadByte() | (stream.ReadByte() << 8);
-
-                            if (wValueLength > 0 && wValueLength < 64)
+                            stream.Position = patternOffset + 26;
+                            byte[] valBytes = new byte[wValueLength * 2];
+                            int read = stream.Read(valBytes, 0, valBytes.Length);
+                            if (read == valBytes.Length)
                             {
-                                stream.Position = patternOffset + 26; // Value starts at Start + 32
-                                byte[] valBytes = new byte[wValueLength * 2];
-                                int read = stream.Read(valBytes, 0, valBytes.Length);
-                                if (read == valBytes.Length)
-                                {
-                                    var versionRaw = System.Text.Encoding.Unicode.GetString(valBytes).TrimEnd('\0').Trim();
-                                    
-                                    // Normalize version format: replace commas with dots and strip extra spaces
-                                    var version = versionRaw.Replace(',', '.').Replace(" ", "");
-                                    
-                                    // Strip trailing .0 if present (e.g. 3.7.10.0 -> 3.7.10)
-                                    if (version.EndsWith(".0"))
-                                    {
-                                        version = version.Substring(0, version.Length - 2);
-                                    }
+                                var versionRaw = System.Text.Encoding.Unicode.GetString(valBytes).TrimEnd('\0').Trim();
+                                var version = versionRaw.Replace(',', '.').Replace(" ", "");
 
-                                    if (!string.IsNullOrEmpty(version))
+                                while (version.EndsWith(".0"))
+                                {
+                                    version = version.Substring(0, version.Length - 2);
+                                }
+
+                                if (!string.IsNullOrEmpty(version))
+                                {
+                                    if (!version.StartsWith("v", StringComparison.OrdinalIgnoreCase))
                                     {
-                                        if (!version.StartsWith("v", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            version = "v" + version;
-                                        }
-                                        return version;
+                                        version = "v" + version;
                                     }
+                                    return version;
                                 }
                             }
                         }
                     }
                 }
-                return "Unknown";
             }
         }
         catch
         {
         }
+        return "Unknown";
+    }
 
-        return "N/A";
+    public string ScanDllVersion(string gameDirectory, params string[] dllFilenames)
+    {
+        if (string.IsNullOrEmpty(gameDirectory) || !Directory.Exists(gameDirectory)) return "Not found";
+
+        try
+        {
+            foreach (var filename in dllFilenames)
+            {
+                var files = Directory.GetFiles(gameDirectory, filename, SearchOption.AllDirectories);
+                if (files.Length > 0)
+                {
+                    var ver = ExtractDllVersionFromFile(files[0]);
+                    if (!string.IsNullOrEmpty(ver) && ver != "Unknown")
+                    {
+                        return ver;
+                    }
+                    return "Installed";
+                }
+            }
+        }
+        catch
+        {
+        }
+        return "Not found";
     }
 
     private static long FindBytes(Stream stream, byte[] pattern)

@@ -25,8 +25,20 @@ public partial class MainWindow : Window
 
     private async void OnFilterClick(object? sender, RoutedEventArgs e)
     {
-        var filterWin = new FilterWindow();
-        await filterWin.ShowDialog(this);
+        if (DataContext is MainWindowViewModel vm)
+        {
+            var gridVm = vm.GameGridViewModel;
+            var filterWin = new FilterWindow(gridVm.HideNoSwappableItems, gridVm.ShowHiddenGames, gridVm.GroupByLibrary);
+            await filterWin.ShowDialog(this);
+
+            if (filterWin.Applied)
+            {
+                gridVm.HideNoSwappableItems = filterWin.HideNoSwappableItems;
+                gridVm.ShowHiddenGames = filterWin.ShowHiddenGames;
+                gridVm.GroupByLibrary = filterWin.GroupByLibrary;
+                gridVm.ApplyFilters();
+            }
+        }
     }
 
     private async void OnAddGameClick(object? sender, RoutedEventArgs e)
