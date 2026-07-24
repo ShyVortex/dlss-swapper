@@ -20,6 +20,7 @@ public partial class GameDetailsWindow : Window
         InitializeComponent();
         SelectedGame = game;
         DataContext = game;
+        game.LoadPresets();
     }
 
     private void OnCloseClick(object? sender, RoutedEventArgs e)

@@ -6,6 +6,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DLSS_Swapper.Core.Interfaces;
+using DLSS_Swapper.Core.Models;
 
 namespace DLSS_Swapper.Core.Services;
 
@@ -283,6 +284,13 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                                     {
                                         version = "v" + version;
                                     }
+
+                                    bool isDebug = IsDebugDll(stream, filePath);
+                                    if (isDebug)
+                                    {
+                                        version += " (Debug)";
+                                    }
+
                                     return version;
                                 }
                             }
@@ -295,6 +303,66 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         {
         }
         return "Unknown";
+    }
+
+    private bool IsDebugDll(Stream stream, string filePath)
+    {
+        try
+        {
+            // Method 1: MD5 hash match against manifest dev records
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                using var md5 = System.Security.Cryptography.MD5.Create();
+                using var fileStream = File.OpenRead(filePath);
+                var hashBytes = md5.ComputeHash(fileStream);
+                var hashHex = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+                var storageService = new LibraryStorageService();
+                var manifestPath = Path.Combine(LibraryStorageService.StorageFolder, "json", "manifest.json");
+                if (File.Exists(manifestPath))
+                {
+                    var json = File.ReadAllText(manifestPath);
+                    var manifest = System.Text.Json.JsonSerializer.Deserialize<ManifestModel>(json);
+                    if (manifest != null)
+                    {
+                        var allRecords = new List<DllRecordModel>();
+                        allRecords.AddRange(manifest.Dlss ?? new());
+                        allRecords.AddRange(manifest.DlssG ?? new());
+                        allRecords.AddRange(manifest.DlssD ?? new());
+
+                        var matchedRecord = allRecords.FirstOrDefault(r => string.Equals(r.Md5Hash, hashHex, StringComparison.OrdinalIgnoreCase));
+                        if (matchedRecord != null)
+                        {
+                            return matchedRecord.IsDevFile;
+                        }
+                    }
+                }
+            }
+
+            // Method 2: PE String table inspection (OriginalFilename / FileDescription)
+            byte[] origFilenamePattern = System.Text.Encoding.Unicode.GetBytes("OriginalFilename\0");
+            long origOffset = FindBytes(stream, origFilenamePattern);
+            if (origOffset != -1)
+            {
+                stream.Position = origOffset + 26;
+                byte[] nameBytes = new byte[128];
+                int read = stream.Read(nameBytes, 0, nameBytes.Length);
+                if (read > 0)
+                {
+                    var origName = System.Text.Encoding.Unicode.GetString(nameBytes).TrimEnd('\0').Trim();
+                    if (origName.Contains("_dbg", StringComparison.OrdinalIgnoreCase) ||
+                        origName.Contains("_dev", StringComparison.OrdinalIgnoreCase) ||
+                        origName.Contains("debug", StringComparison.OrdinalIgnoreCase))
+                    {
+                        return true;
+                    }
+                }
+            }
+        }
+        catch
+        {
+        }
+        return false;
     }
 
     public string ScanDllVersion(string gameDirectory, params string[] dllFilenames)

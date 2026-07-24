@@ -183,7 +183,17 @@ public partial class SelectDllVersionViewModel : ObservableObject
 
     private void UpdateCanSwap()
     {
-        CanSwap = SelectedVersionItem != null && SelectedVersionItem.IsDownloaded;
+        if (SelectedVersionItem == null || !SelectedVersionItem.IsDownloaded)
+        {
+            CanSwap = false;
+            return;
+        }
+
+        // Disable Swap if the selected version is identical to the currently installed version
+        bool isSameVersion = string.Equals(SelectedVersionItem.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(SelectedVersionItem.Record.DisplayVersion, CurrentVersionText, StringComparison.OrdinalIgnoreCase);
+
+        CanSwap = !isSameVersion;
     }
 
     [RelayCommand]

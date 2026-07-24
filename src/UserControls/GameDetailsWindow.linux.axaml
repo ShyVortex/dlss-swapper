@@ -39,8 +39,16 @@
                 </StackPanel>
 
                 <!-- Right Panel: Game Metadata Fields and Library Version Options -->
-                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto">
-                    <StackPanel Spacing="16" x:CompileBindings="False">
+                <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,50,0">
+                    <StackPanel Spacing="16" x:CompileBindings="False" Margin="0,0,10,0">
+                        <!-- Steam Running Warning Banner -->
+                        <Border IsVisible="{Binding IsSteamRunning}" Background="#3D2B00" BorderBrush="#855B00" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,10,0">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <TextBlock Grid.Column="0" Text="⚠️" Foreground="#FFCC00" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                                <TextBlock Grid.Column="1" Text="Steam is currently running. Close Steam before changing presets to ensure launch options persist." Foreground="#FFD666" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+
                         <!-- Name Field -->
                         <StackPanel Spacing="6">
                             <TextBlock Text="Name" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
@@ -73,12 +81,7 @@
                                     <TextBlock Text="DLSS Preset" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                                     <TextBlock Text="ⓘ" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
-                                    <ComboBoxItem>NVIDIA recommended</ComboBoxItem>
-                                    <ComboBoxItem>Preset A</ComboBoxItem>
-                                    <ComboBoxItem>Preset B</ComboBoxItem>
-                                    <ComboBoxItem>Default</ComboBoxItem>
-                                </ComboBox>
+                                <ComboBox ItemsSource="{Binding SrPresetOptions}" SelectedItem="{Binding SelectedDlssPresetOption}" IsEnabled="{Binding HasDLSS}" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6" />
                             </StackPanel>
 
                             <!-- Row 2: DLSS Ray Reconstruction | DLSS RR Preset -->
@@ -96,10 +99,7 @@
                                     <TextBlock Text="DLSS RR Preset" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                                     <TextBlock Text="ⓘ" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
-                                    <ComboBoxItem>Preset E</ComboBoxItem>
-                                    <ComboBoxItem>Default</ComboBoxItem>
-                                </ComboBox>
+                                <ComboBox ItemsSource="{Binding RrPresetOptions}" SelectedItem="{Binding SelectedDlssRrPresetOption}" IsEnabled="{Binding HasDLSSD}" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6" />
                             </StackPanel>
 
                             <!-- Row 3: DLSS Frame Generation | DLSS FG Preset -->
@@ -117,10 +117,7 @@
                                     <TextBlock Text="DLSS FG Preset" Foreground="White" FontWeight="SemiBold" FontSize="13"/>
                                     <TextBlock Text="ⓘ" Foreground="#888888" FontSize="12" VerticalAlignment="Center"/>
                                 </StackPanel>
-                                <ComboBox SelectedIndex="0" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6">
-                                    <ComboBoxItem>Default</ComboBoxItem>
-                                    <ComboBoxItem>Preset A</ComboBoxItem>
-                                </ComboBox>
+                                <ComboBox ItemsSource="{Binding FgPresetOptions}" SelectedItem="{Binding SelectedDlssFgPresetOption}" IsEnabled="{Binding HasDLSSG}" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6" />
                             </StackPanel>
 
                             <!-- Row 4: FSR 3.1 | XeSS -->

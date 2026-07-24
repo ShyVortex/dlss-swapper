@@ -43,6 +43,62 @@ public partial class GameCardItem : ObservableObject
 
     public bool HasAnySwappableItem => HasDLSS || HasDLSSG || HasDLSSD || HasFsr31Dx12 || HasFsr31Vk || HasXeSS || HasXeSSDx11 || HasXeSSFg || HasXeLL;
 
+    public List<DLSS_Swapper.Core.Models.DlssPresetItem> SrPresetOptions { get; } = DLSS_Swapper.Core.Models.DlssPresetItem.GetSrPresetOptions();
+    public List<DLSS_Swapper.Core.Models.DlssPresetItem> RrPresetOptions { get; } = DLSS_Swapper.Core.Models.DlssPresetItem.GetRrPresetOptions();
+    public List<DLSS_Swapper.Core.Models.DlssPresetItem> FgPresetOptions { get; } = DLSS_Swapper.Core.Models.DlssPresetItem.GetFgPresetOptions();
+
+    [ObservableProperty] private DLSS_Swapper.Core.Models.DlssPresetItem? _selectedDlssPresetOption;
+    [ObservableProperty] private DLSS_Swapper.Core.Models.DlssPresetItem? _selectedDlssRrPresetOption;
+    [ObservableProperty] private DLSS_Swapper.Core.Models.DlssPresetItem? _selectedDlssFgPresetOption;
+
+    private bool _isInitializingPresets = false;
+    private readonly LinuxPresetService _presetService = new LinuxPresetService();
+
+    public bool IsSteamRunning => _presetService.IsSteamRunning();
+
+    public void LoadPresets()
+    {
+        if (string.IsNullOrEmpty(AppId)) return;
+
+        _isInitializingPresets = true;
+        try
+        {
+            var state = _presetService.ReadGamePresets(AppId);
+
+            SelectedDlssPresetOption = (!string.IsNullOrEmpty(state.SrPresetValue))
+                ? (SrPresetOptions.FirstOrDefault(x => x.EnvironmentValue == state.SrPresetValue) ?? SrPresetOptions[0])
+                : SrPresetOptions[0];
+
+            SelectedDlssRrPresetOption = (!string.IsNullOrEmpty(state.RrPresetValue))
+                ? (RrPresetOptions.FirstOrDefault(x => x.EnvironmentValue == state.RrPresetValue) ?? RrPresetOptions[0])
+                : RrPresetOptions[0];
+
+            SelectedDlssFgPresetOption = (!string.IsNullOrEmpty(state.FgPresetValue))
+                ? (FgPresetOptions.FirstOrDefault(x => x.EnvironmentValue == state.FgPresetValue) ?? FgPresetOptions[0])
+                : FgPresetOptions[0];
+        }
+        finally
+        {
+            _isInitializingPresets = false;
+        }
+    }
+
+    partial void OnSelectedDlssPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();
+    partial void OnSelectedDlssRrPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();
+    partial void OnSelectedDlssFgPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();
+
+    private void SavePresetsIfReady()
+    {
+        if (_isInitializingPresets || string.IsNullOrEmpty(AppId)) return;
+
+        _presetService.SaveGamePresets(
+            AppId,
+            SelectedDlssPresetOption?.EnvironmentValue,
+            SelectedDlssRrPresetOption?.EnvironmentValue,
+            SelectedDlssFgPresetOption?.EnvironmentValue
+        );
+    }
+
     [ObservableProperty]
     private Bitmap? _coverBitmap;
 
