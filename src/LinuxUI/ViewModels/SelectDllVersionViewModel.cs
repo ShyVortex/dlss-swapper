@@ -171,8 +171,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
             };
             Versions.Add(item);
 
-            if (string.Equals(item.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase) ||
-                string.Equals(record.DisplayVersion, CurrentVersionText, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(item.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase))
             {
                 SelectedVersionItem = item;
             }
@@ -189,9 +188,8 @@ public partial class SelectDllVersionViewModel : ObservableObject
             return;
         }
 
-        // Disable Swap if the selected version is identical to the currently installed version
-        bool isSameVersion = string.Equals(SelectedVersionItem.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase) ||
-                            string.Equals(SelectedVersionItem.Record.DisplayVersion, CurrentVersionText, StringComparison.OrdinalIgnoreCase);
+        // Disable Swap only if the selected version (including (Debug) suffix) is identical to the currently installed version
+        bool isSameVersion = string.Equals(SelectedVersionItem.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase);
 
         CanSwap = !isSameVersion;
     }
