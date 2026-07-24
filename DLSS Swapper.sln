@@ -5,9 +5,9 @@ VisualStudioVersion = 17.4.33110.190
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DLSS Swapper", "src\DLSS Swapper.csproj", "{63586228-FDDE-4E35-9138-7FF35ED61EC1}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DLSS_Swapper.Core", "src\DLSS_Swapper.Core\DLSS_Swapper.Core.csproj", "{A1B2C3D4-E5F6-7890-1234-56789ABCDEF0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinuxCore", "src\LinuxCore\LinuxCore.csproj", "{A1B2C3D4-E5F6-7890-1234-56789ABCDEF0}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DLSS_Swapper.Avalonia", "src\DLSS_Swapper.Avalonia\DLSS_Swapper.Avalonia.csproj", "{B2C3D4E5-F6A7-8901-2345-6789ABCDEF01}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LinuxUI", "src\LinuxUI\LinuxUI.csproj", "{B2C3D4E5-F6A7-8901-2345-6789ABCDEF01}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

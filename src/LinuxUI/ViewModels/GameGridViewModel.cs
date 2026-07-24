@@ -21,25 +21,25 @@ public partial class GameCardItem : ObservableObject
     public string CoverImagePath { get; set; } = string.Empty;
     public string CoverColor { get; set; } = "#2C2C2C";
 
-    [ObservableProperty] private string _dLSSVersion = "Not found";
-    [ObservableProperty] private string _dLSSGVersion = "Not found";
-    [ObservableProperty] private string _dLSSDVersion = "Not found";
-    [ObservableProperty] private string _fsr31Dx12Version = "Not found";
-    [ObservableProperty] private string _fsr31VkVersion = "Not found";
-    [ObservableProperty] private string _xessVersion = "Not found";
-    [ObservableProperty] private string _xessDx11Version = "Not found";
-    [ObservableProperty] private string _xessFgVersion = "Not found";
-    [ObservableProperty] private string _xellVersion = "Not found";
+    [ObservableProperty] private string _dLSSVersion = "N/A";
+    [ObservableProperty] private string _dLSSGVersion = "N/A";
+    [ObservableProperty] private string _dLSSDVersion = "N/A";
+    [ObservableProperty] private string _fsr31Dx12Version = "N/A";
+    [ObservableProperty] private string _fsr31VkVersion = "N/A";
+    [ObservableProperty] private string _xessVersion = "N/A";
+    [ObservableProperty] private string _xessDx11Version = "N/A";
+    [ObservableProperty] private string _xessFgVersion = "N/A";
+    [ObservableProperty] private string _xellVersion = "N/A";
 
-    public bool HasDLSS => DLSSVersion != "Not found" && DLSSVersion != "N/A" && !string.IsNullOrEmpty(DLSSVersion);
-    public bool HasDLSSG => DLSSGVersion != "Not found" && DLSSGVersion != "N/A" && !string.IsNullOrEmpty(DLSSGVersion);
-    public bool HasDLSSD => DLSSDVersion != "Not found" && DLSSDVersion != "N/A" && !string.IsNullOrEmpty(DLSSDVersion);
-    public bool HasFsr31Dx12 => Fsr31Dx12Version != "Not found" && Fsr31Dx12Version != "N/A" && !string.IsNullOrEmpty(Fsr31Dx12Version);
-    public bool HasFsr31Vk => Fsr31VkVersion != "Not found" && Fsr31VkVersion != "N/A" && !string.IsNullOrEmpty(Fsr31VkVersion);
-    public bool HasXeSS => XessVersion != "Not found" && XessVersion != "N/A" && !string.IsNullOrEmpty(XessVersion);
-    public bool HasXeSSDx11 => XessDx11Version != "Not found" && XessDx11Version != "N/A" && !string.IsNullOrEmpty(XessDx11Version);
-    public bool HasXeSSFg => XessFgVersion != "Not found" && XessFgVersion != "N/A" && !string.IsNullOrEmpty(XessFgVersion);
-    public bool HasXeLL => XellVersion != "Not found" && XellVersion != "N/A" && !string.IsNullOrEmpty(XellVersion);
+    public bool HasDLSS => DLSSVersion != "N/A" && !string.IsNullOrEmpty(DLSSVersion);
+    public bool HasDLSSG => DLSSGVersion != "N/A" && !string.IsNullOrEmpty(DLSSGVersion);
+    public bool HasDLSSD => DLSSDVersion != "N/A" && !string.IsNullOrEmpty(DLSSDVersion);
+    public bool HasFsr31Dx12 => Fsr31Dx12Version != "N/A" && !string.IsNullOrEmpty(Fsr31Dx12Version);
+    public bool HasFsr31Vk => Fsr31VkVersion != "N/A" && !string.IsNullOrEmpty(Fsr31VkVersion);
+    public bool HasXeSS => XessVersion != "N/A" && !string.IsNullOrEmpty(XessVersion);
+    public bool HasXeSSDx11 => XessDx11Version != "N/A" && !string.IsNullOrEmpty(XessDx11Version);
+    public bool HasXeSSFg => XessFgVersion != "N/A" && !string.IsNullOrEmpty(XessFgVersion);
+    public bool HasXeLL => XellVersion != "N/A" && !string.IsNullOrEmpty(XellVersion);
 
     public bool HasAnySwappableItem => HasDLSS || HasDLSSG || HasDLSSD || HasFsr31Dx12 || HasFsr31Vk || HasXeSS || HasXeSSDx11 || HasXeSSFg || HasXeLL;
 

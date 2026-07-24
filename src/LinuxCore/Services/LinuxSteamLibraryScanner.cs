@@ -299,7 +299,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
 
     public string ScanDllVersion(string gameDirectory, params string[] dllFilenames)
     {
-        if (string.IsNullOrEmpty(gameDirectory) || !Directory.Exists(gameDirectory)) return "Not found";
+        if (string.IsNullOrEmpty(gameDirectory) || !Directory.Exists(gameDirectory)) return "N/A";
 
         try
         {
@@ -320,7 +320,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         catch
         {
         }
-        return "Not found";
+        return "N/A";
     }
 
     private static long FindBytes(Stream stream, byte[] pattern)

@@ -6,7 +6,8 @@
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-    <RootNamespace>DLSS_Swapper.Avalonia</RootNamespace>
+    <RootNamespace>DLSS_Swapper.LinuxUI</RootNamespace>
+    <AssemblyName>LinuxUI</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -18,11 +19,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\DLSS_Swapper.Core\DLSS_Swapper.Core.csproj" />
+    <ProjectReference Include="..\LinuxCore\LinuxCore.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <AvaloniaResource Include="..\Assets\icon_256.png" Link="Assets\icon_256.png" />
+    <AvaloniaXaml Include="..\**\*.linux.axaml" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\**\*.linux.axaml.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -34,9 +34,21 @@
     <DefineConstants>$(DefineConstants);DEBUG;PORTABLE</DefineConstants>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)'=='Release_Portable'">
-    <DefineConstants>$(DefineConstants);RELEASE;PORTABLE</DefineConstants>
+  <PropertyGroup Condition="'$(TargetFramework)' != 'net10.0-windows10.0.26100.0'">
+    <DefineConstants>$(DefineConstants);LINUX</DefineConstants>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
+    <DefineConstants>$(DefineConstants);WINDOWS</DefineConstants>
+  </PropertyGroup>
+
+  <!-- Conditional XAML / AXAML Page & AvaloniaResource Inclusions -->
+  <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
+    <Page Include="**\*.windows.xaml" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)' != 'net10.0-windows10.0.26100.0'">
+    <AvaloniaResource Include="**\*.linux.axaml" />
+  </ItemGroup>
 
   <ItemGroup>
       <Content Remove="Assets\dlss_presets.json" />
@@ -416,7 +428,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="DLSS_Swapper.Core\DLSS_Swapper.Core.csproj" />
+    <ProjectReference Include="LinuxCore\LinuxCore.csproj" />
   </ItemGroup>
 
   <!--
