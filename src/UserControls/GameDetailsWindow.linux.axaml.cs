@@ -215,8 +215,8 @@ public partial class GameDetailsWindow : Window
             {
                 UpdateGameVersion(categoryType, newVer);
                 var historyService = new GameHistoryService();
-                var assetName = SelectDllVersionViewModel.GetDisplayNameForCategory(categoryType);
-                historyService.AddEvent(SelectedGame.GameId, "DLL swapped", assetName, newVer);
+                var assetType = GetGameAssetTypeForCategory(categoryType);
+                _ = historyService.AddEventAsync(SelectedGame.GameId, DLSS_Swapper.Data.GameHistoryEventType.DLLSwapped, assetType, newVer, vm.ResultSwappedPath);
             }
         }
     }
@@ -236,5 +236,22 @@ public partial class GameDetailsWindow : Window
             case "xess_fg": SelectedGame.XessFgVersion = newVer; break;
             case "xell": SelectedGame.XellVersion = newVer; break;
         }
+    }
+
+    private static DLSS_Swapper.Data.GameAssetType GetGameAssetTypeForCategory(string category)
+    {
+        return category.ToLowerInvariant() switch
+        {
+            "dlss" => DLSS_Swapper.Data.GameAssetType.DLSS,
+            "dlss_g" => DLSS_Swapper.Data.GameAssetType.DLSS_G,
+            "dlss_d" => DLSS_Swapper.Data.GameAssetType.DLSS_D,
+            "fsr_31_dx12" => DLSS_Swapper.Data.GameAssetType.FSR_31_DX12,
+            "fsr_31_vk" => DLSS_Swapper.Data.GameAssetType.FSR_31_VK,
+            "xess" => DLSS_Swapper.Data.GameAssetType.XeSS,
+            "xess_dx11" => DLSS_Swapper.Data.GameAssetType.XeSS_DX11,
+            "xess_fg" => DLSS_Swapper.Data.GameAssetType.XeSS_FG,
+            "xell" => DLSS_Swapper.Data.GameAssetType.XeLL,
+            _ => DLSS_Swapper.Data.GameAssetType.Unknown
+        };
     }
 }

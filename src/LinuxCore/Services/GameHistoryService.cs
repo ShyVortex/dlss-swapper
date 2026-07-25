@@ -1,93 +1,95 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
-using System.Linq;
-using System.Text.Json;
+using System.Threading.Tasks;
+using DLSS_Swapper.Data;
+using SQLite;
 
 namespace DLSS_Swapper.Core.Services;
 
-public class GameHistoryItem
-{
-    public string EventTime { get; set; } = string.Empty;
-    public string EventType { get; set; } = string.Empty;
-    public string AssetType { get; set; } = string.Empty;
-    public string Version { get; set; } = string.Empty;
-}
-
 public class GameHistoryService
 {
-    public static string StorageFolder =>
-        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DLSS Swapper");
+    public static string DatabasePath =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DLSS Swapper", "dlss-swapper.db");
 
-    private static string GetHistoryDirectory()
+    private SQLiteAsyncConnection GetConnection()
     {
-        var dir = Path.Combine(StorageFolder, "history");
+        var dir = Path.GetDirectoryName(DatabasePath)!;
         Directory.CreateDirectory(dir);
-        return dir;
+        var conn = new SQLiteAsyncConnection(DatabasePath);
+        return conn;
     }
 
-    private static string GetHistoryFilePath(string gameId)
+    public async Task InitializeAsync()
     {
-        var safeId = string.Join("_", gameId.Split(Path.GetInvalidFileNameChars()));
-        return Path.Combine(GetHistoryDirectory(), $"{safeId}.json");
+        var conn = GetConnection();
+        await conn.CreateTableAsync<GameHistory>();
     }
 
-    public List<GameHistoryItem> LoadHistory(string gameId)
+    public async Task<List<GameHistory>> LoadHistoryAsync(string gameId)
     {
-        if (string.IsNullOrEmpty(gameId)) return new List<GameHistoryItem>();
+        if (string.IsNullOrEmpty(gameId)) return new List<GameHistory>();
 
         try
         {
-            var path = GetHistoryFilePath(gameId);
-            if (File.Exists(path))
-            {
-                var json = File.ReadAllText(path);
-                var items = JsonSerializer.Deserialize<List<GameHistoryItem>>(json);
-                if (items != null)
-                {
-                    return items.OrderByDescending(x => x.EventTime).ToList();
-                }
-            }
+            await InitializeAsync();
+            var conn = GetConnection();
+            var items = await conn.Table<GameHistory>().Where(x => x.GameId == gameId).ToListAsync();
+            return items.FindAll(x => x != null).ConvertAll(x => x!);
         }
         catch
         {
+            return new List<GameHistory>();
         }
-
-        return new List<GameHistoryItem>();
     }
 
-    public void AddEvent(string gameId, string eventType, string assetType, string version)
+    public async Task AddEventAsync(string gameId, GameHistoryEventType eventType, GameAssetType? assetType = null, string? version = null, string? assetPath = null)
     {
         if (string.IsNullOrEmpty(gameId)) return;
 
         try
         {
-            var history = LoadHistory(gameId);
+            await InitializeAsync();
+            var conn = GetConnection();
 
-            // Avoid logging exact duplicates back-to-back within the same second
-            var timeStr = DateTime.Now.ToString("dd/MM/yyyy HH:mm:ss");
-            var duplicate = history.FirstOrDefault(h => h.EventTime == timeStr && h.EventType == eventType && h.AssetType == assetType && h.Version == version);
-            if (duplicate != null) return;
-
-            history.Insert(0, new GameHistoryItem
+            var historyItem = new GameHistory
             {
-                EventTime = timeStr,
+                GameId = gameId,
                 EventType = eventType,
                 AssetType = assetType,
-                Version = version
-            });
+                AssetVersion = version,
+                AssetPath = assetPath,
+                EventTime = DateTime.Now
+            };
 
-            var json = JsonSerializer.Serialize(history, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(GetHistoryFilePath(gameId), json);
+            await conn.InsertAsync(historyItem);
         }
         catch
         {
         }
     }
 
-    public void LogDetectedDlls(string gameId, string assetType, string version)
+    public async Task LogDetectedDllAsync(string gameId, GameAssetType assetType, string? version)
     {
         if (string.IsNullOrEmpty(version) || version == "N/A" || version == "Not found") return;
-        AddEvent(gameId, "DLL detected", assetType, version);
+
+        try
+        {
+            await InitializeAsync();
+            var conn = GetConnection();
+
+            // Avoid inserting duplicate detection records if already exists for this game and version
+            var existing = await conn.Table<GameHistory>()
+                .Where(x => x.GameId == gameId && x.EventType == GameHistoryEventType.DLLDetected && x.AssetVersion == version)
+                .FirstOrDefaultAsync();
+
+            if (existing == null)
+            {
+                await AddEventAsync(gameId, GameHistoryEventType.DLLDetected, assetType, version);
+            }
+        }
+        catch
+        {
+        }
     }
 }

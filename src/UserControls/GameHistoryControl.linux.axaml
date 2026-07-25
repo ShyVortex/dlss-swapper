@@ -28,8 +28,8 @@
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Event Time" Binding="{Binding EventTime}" Width="145"/>
                     <DataGridTextColumn Header="Event Type" Binding="{Binding EventType}" Width="120"/>
-                    <DataGridTextColumn Header="Asset Type" Binding="{Binding AssetType}" Width="195"/>
-                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="*"/>
+                    <DataGridTextColumn Header="Asset Type" Binding="{Binding AssetTypeName}" Width="195"/>
+                    <DataGridTextColumn Header="Version" Binding="{Binding AssetVersion}" Width="*"/>
                 </DataGrid.Columns>
             </DataGrid>
         </Border>

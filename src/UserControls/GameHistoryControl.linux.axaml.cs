@@ -11,10 +11,10 @@ public partial class GameHistoryControl : UserControl
         InitializeComponent();
     }
 
-    public void LoadHistory(string gameId)
+    public async void LoadHistory(string gameId)
     {
         var service = new GameHistoryService();
-        var history = service.LoadHistory(gameId);
+        var history = await service.LoadHistoryAsync(gameId);
 
         if (history != null && history.Count > 0)
         {

@@ -34,12 +34,19 @@ public class GameHistory
     {
         get
         {
-            if (AssetType is null)
+            return AssetType.Value switch
             {
-                return string.Empty;
-            }
-
-            return DLLManager.Instance.GetAssetTypeName(AssetType.Value);
+                GameAssetType.DLSS => "DLSS",
+                GameAssetType.DLSS_G => "DLSS Frame Generation",
+                GameAssetType.DLSS_D => "DLSS Ray Reconstruction",
+                GameAssetType.FSR_31_DX12 => "FSR 3.1 DirectX 12",
+                GameAssetType.FSR_31_VK => "FSR 3.1 Vulkan",
+                GameAssetType.XeSS => "XeSS",
+                GameAssetType.XeSS_DX11 => "XeSS (DX11)",
+                GameAssetType.XeSS_FG => "XeSS Frame Generation",
+                GameAssetType.XeLL => "XeLL",
+                _ => AssetType.Value.ToString()
+            };
         }
     }
 

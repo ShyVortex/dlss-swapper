@@ -27,6 +27,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Include="../Data/GameHistory.cs" Link="Data/GameHistory.cs" />
+    <Compile Include="../Data/GameAssetType.cs" Link="Data/GameAssetType.cs" />
     <EmbeddedResource Include="../Assets/static_manifest.json" Link="Assets/static_manifest.json" />
   </ItemGroup>
 
