@@ -34,6 +34,11 @@ public class GameHistory
     {
         get
         {
+            if (AssetType is null || !AssetType.HasValue)
+            {
+                return string.Empty;
+            }
+
             return AssetType.Value switch
             {
                 GameAssetType.DLSS => "DLSS",
@@ -46,6 +51,23 @@ public class GameHistory
                 GameAssetType.XeSS_FG => "XeSS Frame Generation",
                 GameAssetType.XeLL => "XeLL",
                 _ => AssetType.Value.ToString()
+            };
+        }
+    }
+
+    [Ignore]
+    public string EventTypeName
+    {
+        get
+        {
+            return EventType switch
+            {
+                GameHistoryEventType.DLLSwapped => "DLL swapped",
+                GameHistoryEventType.DLLReset => "DLL reset",
+                GameHistoryEventType.DLLDetected => "DLL detected",
+                GameHistoryEventType.DLLChangedExternally => "DLL changed externally",
+                GameHistoryEventType.DLLBackupRemoved => "DLL backup removed",
+                _ => "Unknown"
             };
         }
     }

@@ -1,7 +1,11 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:converters="clr-namespace:DLSS_Swapper.Converters"
              xmlns:services="clr-namespace:DLSS_Swapper.Core.Services;assembly=LinuxCore"
              x:Class="DLSS_Swapper.Avalonia.Views.GameHistoryControl">
+    <UserControl.Resources>
+        <converters:GameHistoryEventTypeToLabelConverter x:Key="EventTypeConverter"/>
+    </UserControl.Resources>
     <Grid x:CompileBindings="False">
         <!-- Data Table Grid for History Events -->
         <Border Background="#1D1D1D" BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Padding="2">
@@ -27,7 +31,7 @@
                 </DataGrid.Styles>
                 <DataGrid.Columns>
                     <DataGridTextColumn Header="Event Time" Binding="{Binding EventTime}" Width="145"/>
-                    <DataGridTextColumn Header="Event Type" Binding="{Binding EventType}" Width="120"/>
+                    <DataGridTextColumn Header="Event Type" Binding="{Binding EventTypeName}" Width="120"/>
                     <DataGridTextColumn Header="Asset Type" Binding="{Binding AssetTypeName}" Width="195"/>
                     <DataGridTextColumn Header="Version" Binding="{Binding AssetVersion}" Width="*"/>
                 </DataGrid.Columns>
