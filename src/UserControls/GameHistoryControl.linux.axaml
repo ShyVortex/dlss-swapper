@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:services="clr-namespace:DLSS_Swapper.Core.Services;assembly=LinuxCore"
+             x:Class="DLSS_Swapper.Avalonia.Views.GameHistoryControl">
+    <Grid x:CompileBindings="False">
+        <!-- Data Table Grid for History Events -->
+        <Border Background="#1D1D1D" BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Padding="2">
+            <DataGrid x:Name="HistoryDataGrid" 
+                      AutoGenerateColumns="False" 
+                      IsReadOnly="True" 
+                      CanUserSortColumns="True" 
+                      GridLinesVisibility="Horizontal"
+                      Background="Transparent"
+                      Foreground="White"
+                      RowBackground="#1D1D1D"
+                      HorizontalGridLinesBrush="#333333"
+                      VerticalGridLinesBrush="#333333"
+                      FontSize="12">
+                <DataGrid.Styles>
+                    <Style Selector="DataGridCell">
+                        <Setter Property="FontSize" Value="12"/>
+                    </Style>
+                    <Style Selector="DataGridColumnHeader">
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Style>
+                </DataGrid.Styles>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="Event Time" Binding="{Binding EventTime}" Width="145"/>
+                    <DataGridTextColumn Header="Event Type" Binding="{Binding EventType}" Width="120"/>
+                    <DataGridTextColumn Header="Asset Type" Binding="{Binding AssetType}" Width="195"/>
+                    <DataGridTextColumn Header="Version" Binding="{Binding Version}" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Empty State Text Block -->
+        <TextBlock x:Name="EmptyTextBlock" 
+                   Text="No history records found for this game." 
+                   Foreground="#888888" 
+                   FontSize="14" 
+                   HorizontalAlignment="Center" 
+                   VerticalAlignment="Center" 
+                   IsVisible="False"/>
+    </Grid>
+</UserControl>

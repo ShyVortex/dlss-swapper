@@ -169,23 +169,23 @@
                 <Grid ColumnDefinitions="*,Auto">
                     <!-- Quick Action Toolbar Buttons -->
                     <StackPanel Grid.Column="0" Orientation="Horizontal" Spacing="8">
-                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                        <Button Click="OnPlayClick" Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6" ToolTip.Tip="Play Game">
                             <PathIcon Data="M8 5.14v13.72L19 12 8 5.14z" Width="16" Height="16" Foreground="White"/>
                         </Button>
 
-                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
-                            <PathIcon Data="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z" Width="16" Height="16" Foreground="White"/>
+                        <Button Click="OnNotesClick" Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6" ToolTip.Tip="Notes">
+                            <PathIcon Data="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" Width="16" Height="16" Foreground="White"/>
                         </Button>
 
-                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                        <Button Click="OnHistoryClick" Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6" ToolTip.Tip="History">
                             <PathIcon Data="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 1 1 7 7 7.07 7.07 0 0 1-6-3.38l-1.42 1.42A8.92 8.92 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z" Width="16" Height="16" Foreground="White"/>
                         </Button>
 
-                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
-                            <PathIcon Data="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" Width="16" Height="16" Foreground="White"/>
+                        <Button Click="OnFavouriteClick" Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6" ToolTip.Tip="Toggle Favourite">
+                            <PathIcon Data="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" Width="16" Height="16" Foreground="{Binding IsFavourite, Converter={x:Static ObjectConverters.IsNotNull}, FallbackValue=White}"/>
                         </Button>
 
-                        <Button Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6">
+                        <Button Click="OnRefreshClick" Width="42" Height="38" Background="#333333" BorderBrush="#444444" BorderThickness="1" CornerRadius="6" ToolTip.Tip="Refresh Game Details">
                             <PathIcon Data="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" Width="16" Height="16" Foreground="White"/>
                         </Button>
 
@@ -197,6 +197,14 @@
                     <!-- Close Button -->
                     <Button Grid.Column="1" Content="Close" Click="OnCloseClick" Width="90" Height="38" Background="#383838" Foreground="White" CornerRadius="6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
                 </Grid>
+            </Border>
+
+            <!-- Loading Overlay with Indeterminate ProgressBar -->
+            <Border x:Name="RefreshLoadingOverlay" Grid.RowSpan="2" Background="#99181818" IsVisible="False" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" CornerRadius="8">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                    <ProgressBar IsIndeterminate="True" Width="260" Height="6" Foreground="#E89B56" Background="#333333" CornerRadius="3"/>
+                    <TextBlock Text="Refreshing game details..." Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                </StackPanel>
             </Border>
         </Grid>
     </Border>

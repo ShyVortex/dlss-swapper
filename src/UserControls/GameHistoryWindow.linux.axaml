@@ -1,0 +1,22 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:views="clr-namespace:DLSS_Swapper.Avalonia.Views"
+        x:Class="DLSS_Swapper.Avalonia.Views.GameHistoryWindow"
+        Title="History" Width="680" Height="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#242424">
+
+    <Border Padding="24" Background="#242424">
+        <Grid RowDefinitions="Auto,*,Auto">
+            <!-- Header Title -->
+            <TextBlock Grid.Row="0" x:Name="TitleTextBlock" Text="History" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,16"/>
+
+            <!-- Embedded History Table Control -->
+            <views:GameHistoryControl Grid.Row="1" x:Name="HistoryControl"/>
+
+            <!-- Bottom Action Bar -->
+            <Button Grid.Row="2" Content="Close" Click="OnCloseClick" Width="360" Height="42" Background="#E89B56" Foreground="#121212" FontWeight="SemiBold" CornerRadius="6" HorizontalAlignment="Center" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Margin="0,20,0,0"/>
+        </Grid>
+    </Border>
+</Window>

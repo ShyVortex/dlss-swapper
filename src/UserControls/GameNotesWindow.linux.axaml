@@ -1,0 +1,52 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DLSS_Swapper.Avalonia.Views.GameNotesWindow"
+        Title="Notes" Width="680" Height="520"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#242424">
+
+    <Border Padding="24" Background="#242424">
+        <Grid RowDefinitions="Auto,*,Auto" PointerPressed="OnWindowPointerPressed" Background="Transparent">
+            <!-- Header Title -->
+            <TextBlock Grid.Row="0" x:Name="TitleTextBlock" Text="Notes" FontSize="18" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,16"/>
+
+            <!-- Main Notes Text Editor Box -->
+            <Border Grid.Row="1" Background="#1D1D1D" BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Padding="4">
+                <TextBox x:Name="NotesTextBox" 
+                         AcceptsReturn="True" 
+                         TextWrapping="Wrap" 
+                         Background="Transparent" 
+                         Foreground="White" 
+                         BorderThickness="0" 
+                         FontSize="14" 
+                         Watermark="Enter game notes here..."
+                         FocusAdorner="{x:Null}">
+                    <TextBox.Styles>
+                        <Style Selector="TextBox /template/ Border#PART_BorderElement">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                        </Style>
+                        <Style Selector="TextBox:pointerover /template/ Border#PART_BorderElement">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                        </Style>
+                        <Style Selector="TextBox:focus /template/ Border#PART_BorderElement">
+                            <Setter Property="Background" Value="Transparent"/>
+                            <Setter Property="BorderThickness" Value="0"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                        </Style>
+                    </TextBox.Styles>
+                </TextBox>
+            </Border>
+
+            <!-- Bottom Action Bar -->
+            <StackPanel Grid.Row="2" Orientation="Horizontal" HorizontalAlignment="Stretch" Margin="0,20,0,0" Spacing="12">
+                <Button Content="Save" Click="OnSaveClick" Width="260" Height="42" Background="#E89B56" Foreground="#121212" FontWeight="SemiBold" CornerRadius="6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+                <Button Content="Cancel" Click="OnCancelClick" Width="360" Height="42" Background="#333333" Foreground="White" CornerRadius="6" HorizontalContentAlignment="Center" VerticalContentAlignment="Center"/>
+            </StackPanel>
+        </Grid>
+    </Border>
+</Window>

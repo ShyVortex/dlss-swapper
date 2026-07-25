@@ -1,7 +1,10 @@
 using System;
 using System.IO;
+using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using Avalonia.Layout;
+using Avalonia.Media;
 using DLSS_Swapper.Avalonia.ViewModels;
 using DLSS_Swapper.Core.Services;
 
@@ -26,6 +29,130 @@ public partial class GameDetailsWindow : Window
     private void OnCloseClick(object? sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private async void OnNotesClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame == null) return;
+        var dialog = new GameNotesWindow(SelectedGame.GameId, SelectedGame.Name);
+        await dialog.ShowDialog(this);
+    }
+
+    private async void OnHistoryClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame == null) return;
+        var dialog = new GameHistoryWindow(SelectedGame.GameId, SelectedGame.Name);
+        await dialog.ShowDialog(this);
+    }
+
+    private async void OnRefreshClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame == null || string.IsNullOrEmpty(SelectedGame.InstallPath)) return;
+
+        RefreshLoadingOverlay.IsVisible = true;
+        try
+        {
+            var installPath = SelectedGame.InstallPath;
+            await System.Threading.Tasks.Task.Run(() =>
+            {
+                var scanner = new LinuxSteamLibraryScanner();
+                var dlss = scanner.ScanDllVersion(installPath, "nvngx_dlss.dll");
+                var dlssg = scanner.ScanDllVersion(installPath, "nvngx_dlssg.dll");
+                var dlssd = scanner.ScanDllVersion(installPath, "nvngx_dlssd.dll");
+                var fsrDx12 = scanner.ScanDllVersion(installPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll");
+                var fsrVk = scanner.ScanDllVersion(installPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll");
+                var xess = scanner.ScanDllVersion(installPath, "libxess.dll");
+                var xessDx11 = scanner.ScanDllVersion(installPath, "libxess_dx11.dll");
+                var xessFg = scanner.ScanDllVersion(installPath, "libxess_fg.dll");
+                var xell = scanner.ScanDllVersion(installPath, "libxell.dll");
+
+                global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+                {
+                    SelectedGame.DLSSVersion = dlss;
+                    SelectedGame.DLSSGVersion = dlssg;
+                    SelectedGame.DLSSDVersion = dlssd;
+                    SelectedGame.Fsr31Dx12Version = fsrDx12;
+                    SelectedGame.Fsr31VkVersion = fsrVk;
+                    SelectedGame.XessVersion = xess;
+                    SelectedGame.XessDx11Version = xessDx11;
+                    SelectedGame.XessFgVersion = xessFg;
+                    SelectedGame.XellVersion = xell;
+                    SelectedGame.LoadPresets();
+                });
+            });
+
+            // Ensure smooth visual transition
+            await System.Threading.Tasks.Task.Delay(300);
+        }
+        finally
+        {
+            RefreshLoadingOverlay.IsVisible = false;
+        }
+    }
+
+    private void OnPlayClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame == null) return;
+
+        LinuxGameLauncherService.LaunchGame(
+            SelectedGame.LibraryName,
+            SelectedGame.AppId,
+            SelectedGame.InstallPath,
+            async () =>
+            {
+                // Show prompt dialog asking if user wants to install proton-autogen
+                var confirmWindow = new Window
+                {
+                    Title = "Install Proton Autogen",
+                    Width = 420,
+                    Height = 200,
+                    WindowStartupLocation = WindowStartupLocation.CenterOwner,
+                    CanResize = false,
+                    Background = global::Avalonia.Media.Brush.Parse("#242424")
+                };
+
+                bool result = false;
+                var text = new TextBlock
+                {
+                    Text = "Proton Autogen is required to launch manually added games without Steam.\n\nWould you like to install proton-autogen now?",
+                    Foreground = global::Avalonia.Media.Brushes.White,
+                    FontSize = 13,
+                    TextWrapping = global::Avalonia.Media.TextWrapping.Wrap,
+                    Margin = new global::Avalonia.Thickness(20)
+                };
+
+                var yesBtn = new Button { Content = "Yes, Install", Width = 110, Height = 34, Margin = new global::Avalonia.Thickness(5), Background = global::Avalonia.Media.Brush.Parse("#E85A24"), Foreground = global::Avalonia.Media.Brushes.White };
+                var noBtn = new Button { Content = "Cancel", Width = 90, Height = 34, Margin = new global::Avalonia.Thickness(5), Background = global::Avalonia.Media.Brush.Parse("#383838"), Foreground = global::Avalonia.Media.Brushes.White };
+
+                yesBtn.Click += (_, _) => { result = true; confirmWindow.Close(); };
+                noBtn.Click += (_, _) => { result = false; confirmWindow.Close(); };
+
+                var btnStack = new StackPanel { Orientation = global::Avalonia.Layout.Orientation.Horizontal, HorizontalAlignment = global::Avalonia.Layout.HorizontalAlignment.Right, Margin = new global::Avalonia.Thickness(15) };
+                btnStack.Children.Add(yesBtn);
+                btnStack.Children.Add(noBtn);
+
+                var grid = new Grid();
+                grid.RowDefinitions.Add(new RowDefinition { Height = new global::Avalonia.Controls.GridLength(1, global::Avalonia.Controls.GridUnitType.Star) });
+                grid.RowDefinitions.Add(new RowDefinition { Height = global::Avalonia.Controls.GridLength.Auto });
+
+                Grid.SetRow(text, 0);
+                Grid.SetRow(btnStack, 1);
+                grid.Children.Add(text);
+                grid.Children.Add(btnStack);
+
+                confirmWindow.Content = grid;
+                await confirmWindow.ShowDialog(this);
+                return result;
+            }
+        );
+    }
+
+    private void OnFavouriteClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame != null)
+        {
+            SelectedGame.IsFavourite = !SelectedGame.IsFavourite;
+        }
     }
 
     private void OnDlssClick(object? sender, RoutedEventArgs e) => OpenVersionPicker("dlss", SelectedGame?.DLSSVersion);
@@ -87,6 +214,9 @@ public partial class GameDetailsWindow : Window
             if (!string.IsNullOrEmpty(newVer))
             {
                 UpdateGameVersion(categoryType, newVer);
+                var historyService = new GameHistoryService();
+                var assetName = SelectDllVersionViewModel.GetDisplayNameForCategory(categoryType);
+                historyService.AddEvent(SelectedGame.GameId, "DLL swapped", assetName, newVer);
             }
         }
     }

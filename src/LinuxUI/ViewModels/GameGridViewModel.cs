@@ -21,6 +21,17 @@ public partial class GameCardItem : ObservableObject
     public string CoverImagePath { get; set; } = string.Empty;
     public string CoverColor { get; set; } = "#2C2C2C";
 
+    public string GameId => !string.IsNullOrEmpty(AppId) ? AppId : (InstallPath ?? Name);
+
+    [ObservableProperty] private bool _isFavourite;
+
+    public Action<GameCardItem>? OnFavouriteToggled { get; set; }
+
+    partial void OnIsFavouriteChanged(bool value)
+    {
+        OnFavouriteToggled?.Invoke(this);
+    }
+
     [ObservableProperty] private string _dLSSVersion = "N/A";
     [ObservableProperty] private string _dLSSGVersion = "N/A";
     [ObservableProperty] private string _dLSSDVersion = "N/A";
@@ -76,6 +87,18 @@ public partial class GameCardItem : ObservableObject
             SelectedDlssFgPresetOption = (!string.IsNullOrEmpty(state.FgPresetValue))
                 ? (FgPresetOptions.FirstOrDefault(x => x.EnvironmentValue == state.FgPresetValue) ?? FgPresetOptions[0])
                 : FgPresetOptions[0];
+
+            // Log initial detected DLLs
+            var history = new GameHistoryService();
+            if (HasDLSS) history.LogDetectedDlls(GameId, "DLSS", DLSSVersion);
+            if (HasDLSSG) history.LogDetectedDlls(GameId, "DLSS Frame Generation", DLSSGVersion);
+            if (HasDLSSD) history.LogDetectedDlls(GameId, "DLSS Ray Reconstruction", DLSSDVersion);
+            if (HasFsr31Dx12) history.LogDetectedDlls(GameId, "FSR 3.1 DirectX 12", Fsr31Dx12Version);
+            if (HasFsr31Vk) history.LogDetectedDlls(GameId, "FSR 3.1 Vulkan", Fsr31VkVersion);
+            if (HasXeSS) history.LogDetectedDlls(GameId, "XeSS", XessVersion);
+            if (HasXeSSDx11) history.LogDetectedDlls(GameId, "XeSS (DX11)", XessDx11Version);
+            if (HasXeSSFg) history.LogDetectedDlls(GameId, "XeSS Frame Generation", XessFgVersion);
+            if (HasXeLL) history.LogDetectedDlls(GameId, "XeLL", XellVersion);
         }
         finally
         {
@@ -83,11 +106,11 @@ public partial class GameCardItem : ObservableObject
         }
     }
 
-    partial void OnSelectedDlssPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();
-    partial void OnSelectedDlssRrPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();
-    partial void OnSelectedDlssFgPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();
+    partial void OnSelectedDlssPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady("DLSS Preset", value?.Name);
+    partial void OnSelectedDlssRrPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady("DLSS RR Preset", value?.Name);
+    partial void OnSelectedDlssFgPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady("DLSS FG Preset", value?.Name);
 
-    private void SavePresetsIfReady()
+    private void SavePresetsIfReady(string presetType, string? presetName)
     {
         if (_isInitializingPresets || string.IsNullOrEmpty(AppId)) return;
 
@@ -97,6 +120,12 @@ public partial class GameCardItem : ObservableObject
             SelectedDlssRrPresetOption?.EnvironmentValue,
             SelectedDlssFgPresetOption?.EnvironmentValue
         );
+
+        if (!string.IsNullOrEmpty(presetName))
+        {
+            var history = new GameHistoryService();
+            history.AddEvent(GameId, "DLSS preset changed", presetType, presetName);
+        }
     }
 
     [ObservableProperty]
@@ -114,6 +143,8 @@ public partial class GameCardItem : ObservableObject
 public partial class GameGridViewModel : ObservableObject
 {
     private readonly List<GameCardItem> _allDiscoveredGames = new();
+    private readonly GameMetadataStorageService _metadataService = new();
+    private HashSet<string> _favouriteIds = new();
 
     [ObservableProperty]
     private string _searchText = string.Empty;
@@ -125,12 +156,17 @@ public partial class GameGridViewModel : ObservableObject
     private bool _hasGames = false;
 
     [ObservableProperty]
+    private bool _hasFavourites = false;
+
+    [ObservableProperty]
     private bool _isGridView = true;
 
+    public ObservableCollection<GameCardItem> FavouriteGames { get; } = new();
     public ObservableCollection<GameCardItem> SteamGames { get; } = new();
 
     public GameGridViewModel()
     {
+        _favouriteIds = _metadataService.LoadFavourites();
         ScanRealGames();
     }
 
@@ -185,6 +221,8 @@ public partial class GameGridViewModel : ObservableObject
             InstallPath = folderPath,
             CoverColor = GetColorForGame(folderName)
         };
+        card.IsFavourite = _favouriteIds.Contains(card.GameId);
+        card.OnFavouriteToggled = OnCardFavouriteToggled;
 
         _allDiscoveredGames.Add(card);
         FilterGames();
@@ -193,6 +231,7 @@ public partial class GameGridViewModel : ObservableObject
     public void ScanRealGames()
     {
         _allDiscoveredGames.Clear();
+        _favouriteIds = _metadataService.LoadFavourites();
 
         var steamScanner = new LinuxSteamLibraryScanner();
         if (steamScanner.IsLauncherInstalled())
@@ -218,11 +257,28 @@ public partial class GameGridViewModel : ObservableObject
                     CoverImagePath = g.CoverImagePath,
                     CoverColor = GetColorForGame(g.Name)
                 };
+                card.IsFavourite = _favouriteIds.Contains(card.GameId);
+                card.OnFavouriteToggled = OnCardFavouriteToggled;
+
                 _allDiscoveredGames.Add(card);
                 _ = card.LoadCoverAsync(); // Asynchronously load poster artwork
             }
         }
 
+        FilterGames();
+    }
+
+    private void OnCardFavouriteToggled(GameCardItem card)
+    {
+        if (card.IsFavourite)
+        {
+            _favouriteIds.Add(card.GameId);
+        }
+        else
+        {
+            _favouriteIds.Remove(card.GameId);
+        }
+        _metadataService.SaveFavourites(_favouriteIds);
         FilterGames();
     }
 
@@ -242,9 +298,10 @@ public partial class GameGridViewModel : ObservableObject
 
     private void FilterGames()
     {
+        FavouriteGames.Clear();
         SteamGames.Clear();
-        var query = SearchText?.Trim() ?? string.Empty;
 
+        var query = SearchText?.Trim() ?? string.Empty;
         var matches = _allDiscoveredGames.AsEnumerable();
 
         if (!string.IsNullOrEmpty(query))
@@ -259,10 +316,15 @@ public partial class GameGridViewModel : ObservableObject
 
         foreach (var g in matches)
         {
+            if (g.IsFavourite)
+            {
+                FavouriteGames.Add(g);
+            }
             SteamGames.Add(g);
         }
 
-        HasGames = SteamGames.Count > 0;
+        HasFavourites = FavouriteGames.Count > 0;
+        HasGames = SteamGames.Count > 0 || HasFavourites;
     }
 
     private string GetColorForGame(string name)

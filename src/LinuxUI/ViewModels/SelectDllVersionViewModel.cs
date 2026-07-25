@@ -133,7 +133,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
         UpdateCanSwap();
     }
 
-    private string GetDisplayNameForCategory(string category)
+    public static string GetDisplayNameForCategory(string category)
     {
         return category.ToLowerInvariant() switch
         {
