@@ -71,13 +71,13 @@
                 </StackPanel>
 
                 <!-- Section Header & Separation Line for Steam -->
-                <StackPanel IsVisible="{Binding HasGames}" Spacing="10" Margin="0,0,0,10">
+                <StackPanel IsVisible="{Binding HasGames}" Spacing="10" Margin="0">
                     <TextBlock Text="Steam" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
                     <Rectangle Height="1" Fill="#2E2E2E" HorizontalAlignment="Stretch"/>
                 </StackPanel>
 
                 <!-- 1. Poster Grid View (When IsGridView == True) -->
-                <ItemsControl ItemsSource="{Binding SteamGames}" IsVisible="{Binding IsGridView}">
+                <ItemsControl ItemsSource="{Binding SteamGames}" IsVisible="{Binding IsGridView}" Margin="0,15,0,0">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
                             <WrapPanel Orientation="Horizontal"/>
@@ -119,12 +119,12 @@
                 <ItemsControl ItemsSource="{Binding SteamGames}" IsVisible="{Binding !IsGridView}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <StackPanel Spacing="14"/>
+                            <StackPanel Spacing="0"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:CompileBindings="False">
-                            <Border Background="Transparent" Padding="0,4" PointerPressed="OnCardPointerPressed" Cursor="Hand">
+                            <Border Background="Transparent" BorderBrush="#2E2E2E" BorderThickness="0,0,0,1" Padding="0,12" Margin="0,0,24,0" PointerPressed="OnCardPointerPressed" Cursor="Hand">
                                 <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
                                     <!-- Thumbnail Artwork (44x60px) -->
                                     <Border Grid.Column="0" Width="44" Height="60" CornerRadius="4" ClipToBounds="True" Background="{Binding CoverColor}">

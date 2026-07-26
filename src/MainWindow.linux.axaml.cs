@@ -16,6 +16,35 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
         DataContext = new MainWindowViewModel();
+
+        Opened += OnWindowOpened;
+    }
+
+    private async void OnWindowOpened(object? sender, EventArgs e)
+    {
+        await Task.Delay(50);
+        if (Screens.Primary is { } primaryScreen)
+        {
+            var bounds = primaryScreen.Bounds;
+            var scaling = primaryScreen.Scaling > 0 ? primaryScreen.Scaling : DesktopScaling;
+
+            // Compute logical width of primary monitor
+            double screenLogicalWidth = bounds.Width / scaling;
+            double screenLogicalHeight = bounds.Height / scaling;
+
+            double winWidth = Bounds.Width > 0 ? Bounds.Width : Width;
+            double winHeight = Bounds.Height > 0 ? Bounds.Height : Height;
+
+            // Target DIP coordinates relative to primary screen origin
+            double targetLogicalX = (bounds.X / scaling) + (screenLogicalWidth - winWidth) / 2.0;
+            double targetLogicalY = (bounds.Y / scaling) + (screenLogicalHeight - winHeight) / 2.0;
+
+            // Convert logical target coordinates to physical PixelPoint
+            int pixelX = (int)(targetLogicalX * scaling);
+            int pixelY = (int)(targetLogicalY * scaling);
+
+            Position = new global::Avalonia.PixelPoint(pixelX, pixelY);
+        }
     }
 
     private void OnWindowPointerPressed(object? sender, PointerPressedEventArgs e)

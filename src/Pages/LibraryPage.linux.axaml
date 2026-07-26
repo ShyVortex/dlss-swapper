@@ -85,12 +85,12 @@
             <ItemsControl ItemsSource="{Binding VisibleRecords}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
-                        <UniformGrid Columns="4"/>
+                        <WrapPanel Orientation="Horizontal"/>
                     </ItemsPanelTemplate>
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate x:CompileBindings="False">
-                        <Border Background="#2B2B2B" Margin="0,0,16,16" Padding="16,14" CornerRadius="6" Height="76" ClipToBounds="True">
+                        <Border Background="#2B2B2B" Width="245" Margin="0,0,16,16" Padding="16,14" CornerRadius="6" Height="76" ClipToBounds="True">
                             <Panel VerticalAlignment="Center">
                                 <!-- Standard State: Text and Action Buttons (Hidden during download) -->
                                 <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsDownloading}" VerticalAlignment="Center">

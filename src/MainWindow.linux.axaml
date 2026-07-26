@@ -4,7 +4,7 @@
         xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
         x:Class="DLSS_Swapper.Avalonia.Views.MainWindow"
         x:DataType="vm:MainWindowViewModel"
-        Title="DLSS Swapper" Width="1200" Height="780"
+        Title="DLSS Swapper" Width="1155" Height="700"
         WindowStartupLocation="CenterScreen"
         Background="#202020">
 
