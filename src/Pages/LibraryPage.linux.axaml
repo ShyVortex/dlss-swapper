@@ -13,8 +13,17 @@
 
             <!-- Top Right Action Toolbar -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
-                <!-- Import Button -->
-                <Button Command="{Binding ImportCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
+                <!-- Import Button with Dropdown Menu -->
+                <Button Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
+                    <Button.Flyout>
+                        <MenuFlyout Placement="Bottom">
+                            <MenuItem Header="From local files" Command="{Binding ImportLocalFilesCommand}"/>
+                            <MenuItem Header="NVIDIA">
+                                <MenuItem Header="From driver" Command="{Binding ImportFromNvidiaDriverCommand}"/>
+                                <MenuItem Header="Download from server" Command="{Binding ImportFromNvidiaServerCommand}"/>
+                            </MenuItem>
+                        </MenuFlyout>
+                    </Button.Flyout>
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                         <PathIcon Data="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
                         <TextBlock Text="Import" FontSize="11" Foreground="#CCCCCC"/>
@@ -80,60 +89,70 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <!-- 3. Version Cards Grid (4 Columns Grid Layout) -->
-        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
-            <ItemsControl ItemsSource="{Binding VisibleRecords}">
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <WrapPanel Orientation="Horizontal"/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate x:CompileBindings="False">
-                        <Border Background="#2B2B2B" Width="245" Margin="0,0,16,16" Padding="16,14" CornerRadius="6" Height="76" ClipToBounds="True">
-                            <Panel VerticalAlignment="Center">
-                                <!-- Standard State: Text and Action Buttons (Hidden during download) -->
-                                <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsDownloading}" VerticalAlignment="Center">
-                                    <!-- Version Title -->
-                                    <TextBlock Grid.Column="0" Text="{Binding VersionText}" FontSize="15" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+        <!-- 3. Version Cards Grid (4 Columns Grid Layout) & Loading Overlay -->
+        <Grid Grid.Row="2">
+            <ScrollViewer VerticalScrollBarVisibility="Auto">
+                <ItemsControl ItemsSource="{Binding VisibleRecords}">
+                    <ItemsControl.ItemsPanel>
+                        <ItemsPanelTemplate>
+                            <WrapPanel Orientation="Horizontal"/>
+                        </ItemsPanelTemplate>
+                    </ItemsControl.ItemsPanel>
+                    <ItemsControl.ItemTemplate>
+                        <DataTemplate x:CompileBindings="False">
+                            <Border Background="#2B2B2B" Width="245" Margin="0,0,16,16" Padding="16,14" CornerRadius="6" Height="76" ClipToBounds="True">
+                                <Panel VerticalAlignment="Center">
+                                    <!-- Standard State: Text and Action Buttons (Hidden during download) -->
+                                    <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsDownloading}" VerticalAlignment="Center">
+                                        <!-- Version Title -->
+                                        <TextBlock Grid.Column="0" Text="{Binding VersionText}" FontSize="15" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
 
-                                    <!-- Card Action Controls -->
-                                    <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
-                                        <!-- Download Button (When NOT Downloaded) -->
-                                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DownloadRecordCommand}" 
-                                                CommandParameter="{Binding}"
-                                                IsVisible="{Binding !IsDownloaded}" 
-                                                Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Download DLL version">
-                                            <PathIcon Data="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" Width="16" Height="16" Foreground="White"/>
-                                        </Button>
+                                        <!-- Card Action Controls -->
+                                        <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                                            <!-- Download Button (When NOT Downloaded) -->
+                                            <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DownloadRecordCommand}" 
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding !IsDownloaded}" 
+                                                    Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Download DLL version">
+                                                <PathIcon Data="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" Width="16" Height="16" Foreground="White"/>
+                                            </Button>
 
-                                        <!-- Export / Open Folder Button (When Downloaded) -->
-                                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenDownloadedFolderCommand}"
-                                                CommandParameter="{Binding}"
-                                                IsVisible="{Binding IsDownloaded}" 
-                                                Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Open downloaded files folder">
-                                            <PathIcon Data="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" Width="16" Height="16" Foreground="White"/>
-                                        </Button>
+                                            <!-- Export / Open Folder Button (When Downloaded) -->
+                                            <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).OpenDownloadedFolderCommand}"
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding IsDownloaded}" 
+                                                    Width="36" Height="36" Background="#363636" BorderThickness="0" Cursor="Hand" ToolTip.Tip="Open downloaded files folder">
+                                                <PathIcon Data="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" Width="16" Height="16" Foreground="White"/>
+                                            </Button>
 
-                                        <!-- Trash / Delete Button (When Downloaded) -->
-                                        <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DeleteRecordCommand}" 
-                                                CommandParameter="{Binding}"
-                                                IsVisible="{Binding IsDownloaded}" 
-                                                Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Delete downloaded DLL">
-                                            <PathIcon Data="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" Width="16" Height="16" Foreground="#FF6B6B"/>
-                                        </Button>
-                                    </StackPanel>
-                                </Grid>
+                                            <!-- Trash / Delete Button (When Downloaded) -->
+                                            <Button Command="{Binding $parent[UserControl].((vm:LibraryViewModel)DataContext).DeleteRecordCommand}" 
+                                                    CommandParameter="{Binding}"
+                                                    IsVisible="{Binding IsDownloaded}" 
+                                                    Width="36" Height="36" Background="#363636" BorderThickness="0" CornerRadius="4" Cursor="Hand" ToolTip.Tip="Delete downloaded DLL">
+                                                <PathIcon Data="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z" Width="16" Height="16" Foreground="#FF6B6B"/>
+                                            </Button>
+                                        </StackPanel>
+                                    </Grid>
 
-                                <!-- Download Progress State: Only Full-Width Progress Bar Visible -->
-                                <Grid IsVisible="{Binding IsDownloading}" VerticalAlignment="Center">
-                                    <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="10" Foreground="#E8A068" Background="#363636" CornerRadius="5" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
-                                </Grid>
-                            </Panel>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
+                                    <!-- Download Progress State: Only Full-Width Progress Bar Visible -->
+                                    <Grid IsVisible="{Binding IsDownloading}" VerticalAlignment="Center">
+                                        <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="10" Foreground="#E8A068" Background="#363636" CornerRadius="5" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Panel>
+                            </Border>
+                        </DataTemplate>
+                    </ItemsControl.ItemTemplate>
+                </ItemsControl>
+            </ScrollViewer>
+
+            <!-- Loading Overlay -->
+            <Border Background="#C0202020" IsVisible="{Binding IsLoading}" CornerRadius="8">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="6" Foreground="#E85A24" Background="#333333" CornerRadius="3"/>
+                    <TextBlock Text="Refreshing library manifest..." FontSize="14" Foreground="#CCCCCC" HorizontalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </Grid>
     </Grid>
 </UserControl>

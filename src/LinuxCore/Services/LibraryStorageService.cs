@@ -19,6 +19,51 @@ public class LibraryStorageService
 
     public static string DllsFolder => Path.Combine(StorageFolder, "dlls");
 
+    public async Task<(bool Success, int ExportedCount, string ErrorMessage)> ExportAllToZipAsync(string zipDestinationPath, Action<int, int>? progressCallback = null)
+    {
+        return await Task.Run(() =>
+        {
+            try
+            {
+                if (!Directory.Exists(DllsFolder))
+                    return (false, 0, "Library directory does not exist.");
+
+                var allFiles = Directory.GetFiles(DllsFolder, "*.*", SearchOption.AllDirectories)
+                    .Where(f => !f.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+                    .ToList();
+
+                if (allFiles.Count == 0)
+                    return (false, 0, "No DLLs found in storage to export.");
+
+                if (File.Exists(zipDestinationPath))
+                {
+                    File.Delete(zipDestinationPath);
+                }
+
+                using var zipStream = File.Create(zipDestinationPath);
+                using var archive = new ZipArchive(zipStream, ZipArchiveMode.Create);
+
+                int count = 0;
+                int total = allFiles.Count;
+                progressCallback?.Invoke(0, total);
+
+                foreach (var file in allFiles)
+                {
+                    var relativePath = Path.GetRelativePath(DllsFolder, file);
+                    archive.CreateEntryFromFile(file, relativePath, CompressionLevel.Optimal);
+                    count++;
+                    progressCallback?.Invoke(count, total);
+                }
+
+                return (true, count, string.Empty);
+            }
+            catch (Exception ex)
+            {
+                return (false, 0, ex.Message);
+            }
+        });
+    }
+
     public LibraryStorageService()
     {
         Directory.CreateDirectory(StorageFolder);
@@ -64,6 +109,34 @@ public class LibraryStorageService
     {
         var dllPath = GetExpectedDllPath(type, record);
         return File.Exists(dllPath);
+    }
+
+    public bool ImportLocalFile(string filePath, string type)
+    {
+        try
+        {
+            if (!File.Exists(filePath)) return false;
+            var ext = Path.GetExtension(filePath).ToLowerInvariant();
+            var recordType = type.ToLowerInvariant();
+            var importedFolder = Path.Combine(DllsFolder, recordType, $"imported_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(importedFolder);
+
+            if (ext == ".zip")
+            {
+                ZipFile.ExtractToDirectory(filePath, importedFolder, true);
+            }
+            else if (ext == ".dll")
+            {
+                var targetDllName = GetDllFilenameForType(recordType);
+                File.Copy(filePath, Path.Combine(importedFolder, targetDllName), true);
+            }
+
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     public bool DeleteRecord(string type, DllRecordModel record)

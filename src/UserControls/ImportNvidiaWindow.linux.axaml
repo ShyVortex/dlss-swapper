@@ -1,0 +1,53 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DLSS_Swapper.Avalonia.Views.ImportNvidiaWindow"
+        Title="Import from NVIDIA" Width="720" Height="520"
+        WindowStartupLocation="CenterOwner"
+        Background="#202020">
+    <Grid RowDefinitions="*,Auto" Margin="20">
+        <!-- Models DataGrid -->
+        <Border Grid.Row="0" Background="#1D1D1D" BorderBrush="#333333" BorderThickness="1" CornerRadius="6" Padding="2">
+            <DataGrid x:Name="ModelsDataGrid"
+                      AutoGenerateColumns="False"
+                      IsReadOnly="False"
+                      GridLinesVisibility="Horizontal"
+                      Background="Transparent"
+                      Foreground="White"
+                      RowBackground="#1D1D1D"
+                      HorizontalGridLinesBrush="#333333"
+                      VerticalGridLinesBrush="#333333"
+                      FontSize="12" x:CompileBindings="False">
+                <DataGrid.Styles>
+                    <Style Selector="DataGridCell">
+                        <Setter Property="FontSize" Value="12"/>
+                    </Style>
+                    <Style Selector="DataGridColumnHeader">
+                        <Setter Property="FontSize" Value="12"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                    </Style>
+                </DataGrid.Styles>
+                <DataGrid.Columns>
+                    <DataGridCheckBoxColumn Header="" Binding="{Binding IsChecked, Mode=TwoWay}" Width="40"/>
+                    <DataGridTextColumn Header="Asset Type" Binding="{Binding AssetTypeDisplay}" IsReadOnly="True" Width="180"/>
+                    <DataGridTextColumn Header="Version" Binding="{Binding VersionDisplay}" IsReadOnly="True" Width="140"/>
+                    <DataGridTextColumn Header="Size" Binding="{Binding SizeDisplay}" IsReadOnly="True" Width="110"/>
+                    <DataGridTextColumn Header="Status" Binding="{Binding StatusDisplay}" IsReadOnly="True" Width="*"/>
+                </DataGrid.Columns>
+            </DataGrid>
+        </Border>
+
+        <!-- Loading Overlay (Visible during XML download / NGX scanning) -->
+        <Border Grid.Row="0" x:Name="LoadingBorder" Background="#DD181818" CornerRadius="6" IsVisible="False">
+            <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
+                <ProgressBar IsIndeterminate="True" Width="160" Height="4" Foreground="#E8A068"/>
+                <TextBlock x:Name="LoadingTextBlock" Text="Fetching file list..." Foreground="White" FontSize="14" HorizontalAlignment="Center"/>
+            </StackPanel>
+        </Border>
+
+        <!-- Action Buttons -->
+        <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="0,16,0,0">
+            <Button Grid.Column="0" x:Name="ActionButton" Click="OnActionButtonClick" Content="Import" Background="#E8A068" Foreground="Black" FontWeight="SemiBold" Height="36" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,8,0" Cursor="Hand"/>
+            <Button Grid.Column="1" Click="OnCloseClick" Content="Close" Background="#363636" Foreground="White" Height="36" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="8,0,0,0" Cursor="Hand"/>
+        </Grid>
+    </Grid>
+</Window>

@@ -29,6 +29,8 @@
   <ItemGroup>
     <Compile Include="../Data/GameHistory.cs" Link="Data/GameHistory.cs" />
     <Compile Include="../Data/GameAssetType.cs" Link="Data/GameAssetType.cs" />
+    <Compile Include="../Data/NVIDIA/ListBucketResult.cs" Link="Data/NVIDIA/ListBucketResult.cs" />
+    <Compile Include="../Data/NVIDIA/ListBucketResultContents.cs" Link="Data/NVIDIA/ListBucketResultContents.cs" />
     <EmbeddedResource Include="../Assets/static_manifest.json" Link="Assets/static_manifest.json" />
   </ItemGroup>
 

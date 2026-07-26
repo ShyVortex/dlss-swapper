@@ -6,6 +6,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
+using DLSS_Swapper.Avalonia.Views;
 using DLSS_Swapper.Core.Models;
 using DLSS_Swapper.Core.Services;
 
@@ -186,42 +187,169 @@ public partial class LibraryViewModel : ObservableObject
         }
     }
 
+    public Func<List<(string CategoryKey, DllRecordModel Record, string CategoryName)>, Task>? DownloadBatchWithProgressAsync { get; set; }
+
     [RelayCommand]
     public async Task DownloadLatestAsync()
     {
-        var latest = VisibleRecords.FirstOrDefault(r => !r.IsDownloaded && !r.IsDownloading);
-        if (latest != null)
+        if (_manifest == null) return;
+
+        var categoryList = new List<(string Key, string Name, List<DllRecordModel> Records)>
         {
-            await DownloadRecordAsync(latest);
+            ("dlss", "DLSS", _manifest.Dlss),
+            ("dlss_g", "DLSS Frame Generation", _manifest.DlssG),
+            ("dlss_d", "DLSS Ray Reconstruction", _manifest.DlssD),
+            ("fsr_31_dx12", "FSR 3.1 DirectX 12", _manifest.Fsr31Dx12),
+            ("fsr_31_vk", "FSR 3.1 Vulkan", _manifest.Fsr31Vk),
+            ("xess", "XeSS", _manifest.Xess),
+            ("xess_dx11", "XeSS (DX11)", _manifest.XessDx11),
+            ("xess_fg", "XeSS Frame Generation", _manifest.XessFg),
+            ("xell", "XeLL", _manifest.Xell)
+        };
+
+        var toDownload = new List<(string CategoryKey, DllRecordModel Record, string CategoryName)>();
+
+        foreach (var c in categoryList)
+        {
+            if (c.Records == null || c.Records.Count == 0) continue;
+
+            var latest = c.Records
+                .OrderByDescending(r => r.VersionNumber)
+                .ThenByDescending(r => r.Version)
+                .FirstOrDefault();
+
+            if (latest != null && !_storageService.IsDownloaded(c.Key, latest))
+            {
+                toDownload.Add((c.Key, latest, c.Name));
+            }
+        }
+
+        if (toDownload.Count == 0)
+        {
+            if (ShowMessageDialogAsync != null)
+            {
+                await ShowMessageDialogAsync("No Downloads Needed", "You already have the latest versions of all DLLs downloaded.");
+            }
+            return;
+        }
+
+        if (DownloadBatchWithProgressAsync != null)
+        {
+            await DownloadBatchWithProgressAsync(toDownload);
+        }
+        else
+        {
+            foreach (var item in toDownload)
+            {
+                await _storageService.DownloadAndExtractAsync(item.CategoryKey, item.Record);
+            }
+        }
+
+        UpdateVisibleRecords();
+    }
+
+    public Func<string, Task<string?>>? SaveFilePickerAsync { get; set; }
+    public Func<string, string, Task>? ShowMessageDialogAsync { get; set; }
+    public Func<string, Task<(bool Success, int ExportedCount, string ErrorMessage)>>? ExportWithProgressAsync { get; set; }
+
+    [RelayCommand]
+    public async Task ExportAllAsync()
+    {
+        if (SaveFilePickerAsync == null) return;
+
+        var zipPath = await SaveFilePickerAsync("dlss_swapper_export.zip");
+        if (string.IsNullOrWhiteSpace(zipPath)) return;
+
+        (bool Success, int ExportedCount, string ErrorMessage) result;
+
+        if (ExportWithProgressAsync != null)
+        {
+            result = await ExportWithProgressAsync(zipPath);
+        }
+        else
+        {
+            result = await _storageService.ExportAllToZipAsync(zipPath);
+        }
+
+        if (ShowMessageDialogAsync != null)
+        {
+            if (result.Success)
+            {
+                await ShowMessageDialogAsync("Export Successful", $"Successfully exported {result.ExportedCount} file(s) to:\n{zipPath}");
+            }
+            else
+            {
+                await ShowMessageDialogAsync("Export Failed", result.ErrorMessage);
+            }
         }
     }
 
+    public Func<Task<IReadOnlyList<string>>>? OpenFilePickerAsync { get; set; }
+
     [RelayCommand]
-    public void ExportAll()
+    public async Task ImportLocalFilesAsync()
     {
-        var folder = LibraryStorageService.DllsFolder;
-        if (Directory.Exists(folder))
+        if (OpenFilePickerAsync == null) return;
+        var files = await OpenFilePickerAsync();
+        if (files == null || files.Count == 0) return;
+
+        foreach (var file in files)
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            if (File.Exists(file))
             {
-                FileName = folder,
-                UseShellExecute = true
-            });
+                var ext = Path.GetExtension(file).ToLowerInvariant();
+                if (ext == ".dll" || ext == ".zip")
+                {
+                    _storageService.ImportLocalFile(file, SelectedCategory?.Key ?? "dlss");
+                }
+            }
         }
+
+        UpdateVisibleRecords();
+    }
+
+    public Func<bool, Task<List<NvidiaModelRowItem>>>? OpenNvidiaImportDialogAsync { get; set; }
+
+    [RelayCommand]
+    public async Task ImportFromNvidiaDriverAsync()
+    {
+        if (OpenNvidiaImportDialogAsync == null) return;
+        var selected = await OpenNvidiaImportDialogAsync(true);
+        if (selected == null || selected.Count == 0) return;
+
+        foreach (var item in selected)
+        {
+            if (File.Exists(item.LocalFilePath))
+            {
+                _storageService.ImportLocalFile(item.LocalFilePath, item.CategoryKey);
+            }
+        }
+
+        UpdateVisibleRecords();
     }
 
     [RelayCommand]
-    public void Import()
+    public async Task ImportFromNvidiaServerAsync()
     {
-        var folder = LibraryStorageService.DllsFolder;
-        if (Directory.Exists(folder))
+        if (OpenNvidiaImportDialogAsync == null) return;
+        var selected = await OpenNvidiaImportDialogAsync(false);
+        if (selected == null || selected.Count == 0) return;
+
+        foreach (var item in selected)
         {
-            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
+            if (!string.IsNullOrEmpty(item.DownloadUrl))
             {
-                FileName = folder,
-                UseShellExecute = true
-            });
+                var record = new DllRecordModel
+                {
+                    Version = item.VersionDisplay,
+                    DownloadUrl = item.DownloadUrl,
+                    ZipFileSize = 1000000
+                };
+                await _storageService.DownloadAndExtractAsync(item.CategoryKey, record);
+            }
         }
+
+        UpdateVisibleRecords();
     }
 
     [RelayCommand]
