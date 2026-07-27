@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
+             xmlns:views="clr-namespace:DLSS_Swapper.Avalonia.Views"
              x:Class="DLSS_Swapper.Avalonia.Views.LibraryView"
              x:DataType="vm:LibraryViewModel"
              Background="#202020">
@@ -89,18 +90,18 @@
             </ItemsControl>
         </ScrollViewer>
 
-        <!-- 3. Version Cards Grid (4 Columns Grid Layout) & Loading Overlay -->
+        <!-- 3. Version Cards Grid (Dynamic Columns Layout) & Loading Overlay -->
         <Grid Grid.Row="2">
             <ScrollViewer VerticalScrollBarVisibility="Auto">
                 <ItemsControl ItemsSource="{Binding VisibleRecords}">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal"/>
+                            <views:ResponsiveWrapPanel MinItemWidth="245" ItemHeight="76" HorizontalSpacing="16" VerticalSpacing="16"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:CompileBindings="False">
-                            <Border Background="#2B2B2B" Width="245" Margin="0,0,16,16" Padding="16,14" CornerRadius="6" Height="76" ClipToBounds="True">
+                            <Border Background="#2B2B2B" Padding="16,14" CornerRadius="6" ClipToBounds="True">
                                 <Panel VerticalAlignment="Center">
                                     <!-- Standard State: Text and Action Buttons (Hidden during download) -->
                                     <Grid ColumnDefinitions="*,Auto" IsVisible="{Binding !IsDownloading}" VerticalAlignment="Center">

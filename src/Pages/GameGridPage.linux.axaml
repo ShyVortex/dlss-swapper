@@ -1,6 +1,7 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
+             xmlns:views="clr-namespace:DLSS_Swapper.Avalonia.Views"
              x:Class="DLSS_Swapper.Avalonia.Views.GameGridView"
              x:DataType="vm:GameGridViewModel"
              Background="#202020">
@@ -18,12 +19,12 @@
                     <ItemsControl ItemsSource="{Binding FavouriteGames}" IsVisible="{Binding IsGridView}">
                         <ItemsControl.ItemsPanel>
                             <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal"/>
+                                <views:ResponsiveWrapPanel MinItemWidth="175" ItemAspectRatio="1.4857" HorizontalSpacing="16" VerticalSpacing="20"/>
                             </ItemsPanelTemplate>
                         </ItemsControl.ItemsPanel>
                         <ItemsControl.ItemTemplate>
                             <DataTemplate x:CompileBindings="False">
-                                <Border Width="175" Height="260" Margin="0,0,16,20" CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed" Cursor="Hand">
+                                <Border CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed" Cursor="Hand">
                                     <Grid RowDefinitions="*,Auto">
                                         <Panel Grid.Row="0" Background="{Binding CoverColor}">
                                             <TextBlock Text="{Binding Name}" HorizontalAlignment="Center" VerticalAlignment="Center" TextAlignment="Center" Foreground="White" FontWeight="Bold" FontSize="15" TextWrapping="Wrap" Margin="12"/>
@@ -80,13 +81,13 @@
                 <ItemsControl ItemsSource="{Binding SteamGames}" IsVisible="{Binding IsGridView}" Margin="0,15,0,0">
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <WrapPanel Orientation="Horizontal"/>
+                            <views:ResponsiveWrapPanel MinItemWidth="175" ItemAspectRatio="1.4857" HorizontalSpacing="16" VerticalSpacing="20"/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
                     <ItemsControl.ItemTemplate>
                         <DataTemplate x:CompileBindings="False">
                             <!-- Poster Card (Aspect Ratio ~2:3) -->
-                            <Border Width="175" Height="260" Margin="0,0,16,20" CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed" Cursor="Hand">
+                            <Border CornerRadius="6" ClipToBounds="True" Background="#2B2B2B" PointerPressed="OnCardPointerPressed" Cursor="Hand">
                                 <Grid RowDefinitions="*,Auto">
                                     <!-- Game Cover Poster -->
                                     <Panel Grid.Row="0" Background="{Binding CoverColor}">
