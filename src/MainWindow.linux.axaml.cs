@@ -29,7 +29,28 @@ public partial class MainWindow : Window
         vm.LibraryViewModel.DownloadBatchWithProgressAsync = DownloadBatchWithProgressAsync;
         vm.LibraryViewModel.OpenNvidiaImportDialogAsync = OpenNvidiaImportDialogAsync;
 
+        LinuxUI.Services.LinuxAccentColorService.Instance.ApplyAccentColor(DLSS_Swapper.Core.Services.LinuxSettingsService.Instance.Settings.AccentColor);
+
+        UpdateTranslations();
+        DLSS_Swapper.Core.Services.LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+
         Opened += OnWindowOpened;
+    }
+
+    private void UpdateTranslations()
+    {
+        GamesHeaderTitleTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Title", "Games");
+        ToolTip.SetTip(GamesNavButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("Main_Games", "Games"));
+        ToolTip.SetTip(LibraryNavButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("Main_Library", "Library"));
+        ToolTip.SetTip(SettingsNavButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("Main_Settings", "Settings"));
+
+        AddGameButtonTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_AddGame", "Add Game");
+        RefreshGamesButtonTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Refresh", "Refresh");
+        FilterButtonTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Filter", "Filter");
+        ViewTypeButtonTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ViewType", "View Type");
+        GridViewMenuItem.Header = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ViewType_GridView", "Grid View");
+        ListViewMenuItem.Header = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ViewType_ListView", "List View");
+        SearchTextBox.Watermark = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Search", "Search");
     }
 
     private async Task<System.Collections.Generic.List<NvidiaModelRowItem>> OpenNvidiaImportDialogAsync(bool isDriverImport)
@@ -46,7 +67,7 @@ public partial class MainWindow : Window
         {
             var files = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "Select DLL or ZIP file to import",
+                Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Import", "Select DLL or ZIP file to import"),
                 AllowMultiple = true,
                 FileTypeFilter = new[]
                 {
@@ -69,7 +90,7 @@ public partial class MainWindow : Window
         {
             var file = await storage.SaveFilePickerAsync(new FilePickerSaveOptions
             {
-                Title = "Export All DLLs to ZIP",
+                Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_ExportAll", "Export All DLLs to ZIP"),
                 SuggestedFileName = defaultFileName,
                 DefaultExtension = "zip",
                 FileTypeChoices = new[]
@@ -149,7 +170,7 @@ public partial class MainWindow : Window
     {
         var dialog = new Window
         {
-            Title = "Exporting DLLs...",
+            Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_Exporting", "Exporting DLLs..."),
             Width = 420,
             SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -168,7 +189,7 @@ public partial class MainWindow : Window
 
         var titleText = new TextBlock
         {
-            Text = "Exporting DLLs...",
+            Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_Exporting", "Exporting DLLs..."),
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
             Foreground = Brushes.White
@@ -180,14 +201,14 @@ public partial class MainWindow : Window
             IsIndeterminate = true,
             Minimum = 0,
             Maximum = 100,
-            Foreground = Brush.Parse("#E85A24"),
+            Foreground = LinuxUI.Services.LinuxAccentColorService.Instance.CurrentAccentBrush,
             Background = Brush.Parse("#333333"),
             CornerRadius = new CornerRadius(4)
         };
 
         var statusText = new TextBlock
         {
-            Text = "Preparing export archive...",
+            Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_Exporting", "Preparing export archive..."),
             FontSize = 13,
             Foreground = Brush.Parse("#AAAAAA")
         };
@@ -213,7 +234,8 @@ public partial class MainWindow : Window
                     progressBar.IsIndeterminate = false;
                     progressBar.Maximum = total;
                     progressBar.Value = current;
-                    statusText.Text = $"Exported {current} of {total} file(s)...";
+                    var template = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_ExportedDLLs", "Exported {0} of {1} file(s)...");
+                    statusText.Text = string.Format(template, current, total);
                 }
             });
         });
@@ -230,7 +252,7 @@ public partial class MainWindow : Window
 
         var dialog = new Window
         {
-            Title = "Downloading Latest DLLs...",
+            Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_Downloading", "Downloading Latest DLLs..."),
             Width = 440,
             SizeToContent = SizeToContent.Height,
             WindowStartupLocation = WindowStartupLocation.CenterOwner,
@@ -249,7 +271,7 @@ public partial class MainWindow : Window
 
         var titleText = new TextBlock
         {
-            Text = "Downloading Latest DLLs...",
+            Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_Downloading", "Downloading Latest DLLs..."),
             FontSize = 18,
             FontWeight = FontWeight.SemiBold,
             Foreground = Brushes.White
@@ -261,7 +283,7 @@ public partial class MainWindow : Window
             Minimum = 0,
             Maximum = items.Count,
             Value = 0,
-            Foreground = Brush.Parse("#E85A24"),
+            Foreground = LinuxUI.Services.LinuxAccentColorService.Instance.CurrentAccentBrush,
             Background = Brush.Parse("#333333"),
             CornerRadius = new CornerRadius(4)
         };
@@ -400,7 +422,7 @@ public partial class MainWindow : Window
         {
             var result = await storage.OpenFolderPickerAsync(new FolderPickerOpenOptions
             {
-                Title = "Select Game Directory",
+                Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ManuallyAdding_SelectGameFolder", "Select Game Directory"),
                 AllowMultiple = false
             });
 

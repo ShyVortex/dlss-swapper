@@ -31,7 +31,11 @@
     <Compile Include="../Data/GameAssetType.cs" Link="Data/GameAssetType.cs" />
     <Compile Include="../Data/NVIDIA/ListBucketResult.cs" Link="Data/NVIDIA/ListBucketResult.cs" />
     <Compile Include="../Data/NVIDIA/ListBucketResultContents.cs" Link="Data/NVIDIA/ListBucketResultContents.cs" />
+    <Compile Include="../Helpers/ResourceHelper.cs" Link="Helpers/ResourceHelper.cs" />
     <EmbeddedResource Include="../Assets/static_manifest.json" Link="Assets/static_manifest.json" />
+    <Content Include="../Translations/**/*.resw" Link="Translations/%(RecursiveDir)%(Filename)%(Extension)">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
 
 </Project>

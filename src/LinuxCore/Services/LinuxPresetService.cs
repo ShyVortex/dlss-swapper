@@ -16,6 +16,13 @@ public class LinuxPresetService
     private const string ENV_FG_KEY1 = "DXVK_NVAPI_SET_NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION";
     private const string ENV_FG_KEY2 = "DXVK_NVAPI_DRS_NGX_DLSS_FG_OVERRIDE_RENDER_PRESET_SELECTION";
 
+    private static readonly Lazy<LinuxPresetService> _instance = new(() => new LinuxPresetService());
+    public static LinuxPresetService Instance => _instance.Value;
+
+    public List<DlssPresetItem> GetDlssSrPresets() => DlssPresetItem.GetSrPresetOptions();
+    public List<DlssPresetItem> GetDlssRrPresets() => DlssPresetItem.GetRrPresetOptions();
+    public List<DlssPresetItem> GetDlssFgPresets() => DlssPresetItem.GetFgPresetOptions();
+
     public bool IsSteamRunning()
     {
         try

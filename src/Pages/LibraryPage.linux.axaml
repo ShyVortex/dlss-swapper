@@ -10,7 +10,7 @@
         <!-- 1. Header Title & Top Action Bar -->
         <Grid Grid.Row="0" ColumnDefinitions="*,Auto" Margin="0,0,0,16">
             <!-- Page Title -->
-            <TextBlock Grid.Column="0" Text="Library" FontSize="28" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+            <TextBlock x:Name="LibraryTitleTextBlock" Grid.Column="0" Text="Library" FontSize="28" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
 
             <!-- Top Right Action Toolbar -->
             <StackPanel Grid.Column="1" Orientation="Horizontal" Spacing="16" VerticalAlignment="Center">
@@ -18,16 +18,16 @@
                 <Button Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                     <Button.Flyout>
                         <MenuFlyout Placement="Bottom">
-                            <MenuItem Header="From local files" Command="{Binding ImportLocalFilesCommand}"/>
-                            <MenuItem Header="NVIDIA">
-                                <MenuItem Header="From driver" Command="{Binding ImportFromNvidiaDriverCommand}"/>
-                                <MenuItem Header="Download from server" Command="{Binding ImportFromNvidiaServerCommand}"/>
+                            <MenuItem x:Name="ImportLocalFilesMenuItem" Header="From local files" Command="{Binding ImportLocalFilesCommand}"/>
+                            <MenuItem x:Name="ImportNvidiaHeaderMenuItem" Header="NVIDIA">
+                                <MenuItem x:Name="ImportFromDriverMenuItem" Header="From driver" Command="{Binding ImportFromNvidiaDriverCommand}"/>
+                                <MenuItem x:Name="ImportFromServerMenuItem" Header="Download from server" Command="{Binding ImportFromNvidiaServerCommand}"/>
                             </MenuItem>
                         </MenuFlyout>
                     </Button.Flyout>
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                         <PathIcon Data="M9 16h6v-6h4l-7-7-7 7h4v6zm-4 2h14v2H5v-2z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Import" FontSize="11" Foreground="#CCCCCC"/>
+                        <TextBlock x:Name="ImportButtonTextBlock" Text="Import" FontSize="11" Foreground="#CCCCCC"/>
                     </StackPanel>
                 </Button>
 
@@ -35,7 +35,7 @@
                 <Button Command="{Binding ExportAllCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                         <PathIcon Data="M9 10v6h6v-6h4l-7-7-7 7h4zm-4 8h14v2H5v-2z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Export All" FontSize="11" Foreground="#CCCCCC"/>
+                        <TextBlock x:Name="ExportAllButtonTextBlock" Text="Export All" FontSize="11" Foreground="#CCCCCC"/>
                     </StackPanel>
                 </Button>
 
@@ -43,7 +43,7 @@
                 <Button Command="{Binding DownloadLatestCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                         <PathIcon Data="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Download Latest" FontSize="11" Foreground="#CCCCCC"/>
+                        <TextBlock x:Name="DownloadLatestButtonTextBlock" Text="Download Latest" FontSize="11" Foreground="#CCCCCC"/>
                     </StackPanel>
                 </Button>
 
@@ -51,7 +51,7 @@
                 <Button Command="{Binding RefreshManifestCommand}" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                     <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                         <PathIcon Data="M17.65 6.35A7.958 7.958 0 0 0 12 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0 1 12 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
-                        <TextBlock Text="Refresh" FontSize="11" Foreground="#CCCCCC"/>
+                        <TextBlock x:Name="RefreshButtonTextBlock" Text="Refresh" FontSize="11" Foreground="#CCCCCC"/>
                     </StackPanel>
                 </Button>
             </StackPanel>
@@ -82,7 +82,7 @@
                                            FontWeight="{Binding IsSelected, Converter={x:Static StringConverters.IsNotNullOrEmpty}}" 
                                            Foreground="{Binding IsSelected, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
                                 <!-- Active Tab Orange Indicator -->
-                                <Border Height="2" Background="#E8A068" IsVisible="{Binding IsSelected}" HorizontalAlignment="Stretch"/>
+                                <Border Height="2" Background="{DynamicResource AppAccentBrush}" IsVisible="{Binding IsSelected}" HorizontalAlignment="Stretch"/>
                             </StackPanel>
                         </Button>
                     </DataTemplate>
@@ -138,7 +138,7 @@
 
                                     <!-- Download Progress State: Only Full-Width Progress Bar Visible -->
                                     <Grid IsVisible="{Binding IsDownloading}" VerticalAlignment="Center">
-                                        <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="10" Foreground="#E8A068" Background="#363636" CornerRadius="5" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+                                        <ProgressBar Value="{Binding DownloadProgress}" Minimum="0" Maximum="1" Height="10" Foreground="{DynamicResource AppAccentBrush}" Background="#363636" CornerRadius="5" HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
                                     </Grid>
                                 </Panel>
                             </Border>
@@ -150,8 +150,8 @@
             <!-- Loading Overlay -->
             <Border Background="#C0202020" IsVisible="{Binding IsLoading}" CornerRadius="8">
                 <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="16">
-                    <ProgressBar IsIndeterminate="True" Width="200" Height="6" Foreground="#E85A24" Background="#333333" CornerRadius="3"/>
-                    <TextBlock Text="Refreshing library manifest..." FontSize="14" Foreground="#CCCCCC" HorizontalAlignment="Center"/>
+                    <ProgressBar IsIndeterminate="True" Width="200" Height="6" Foreground="{DynamicResource AppAccentBrush}" Background="#333333" CornerRadius="3"/>
+                    <TextBlock x:Name="LoadingOverlayTextBlock" Text="Refreshing library manifest..." FontSize="14" Foreground="#CCCCCC" HorizontalAlignment="Center"/>
                 </StackPanel>
             </Border>
         </Grid>

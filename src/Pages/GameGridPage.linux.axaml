@@ -11,7 +11,7 @@
                 <!-- Favourites Section Header & Grid/List View -->
                 <StackPanel IsVisible="{Binding HasFavourites}" Spacing="15" Margin="0,0,0,15">
                     <StackPanel Spacing="10">
-                        <TextBlock Text="Favourites" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
+                        <TextBlock x:Name="FavouritesHeaderTextBlock" Text="Favourites" FontSize="22" FontWeight="SemiBold" Foreground="White"/>
                         <Rectangle Height="1" Fill="#2E2E2E" HorizontalAlignment="Stretch"/>
                     </StackPanel>
 
@@ -162,7 +162,7 @@
         <!-- Visible Refresh Loading Overlay -->
         <Border IsVisible="{Binding IsLoading}" Background="#DD151515" CornerRadius="8" Padding="30,24" HorizontalAlignment="Center" VerticalAlignment="Center" ZIndex="10">
             <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-                <ProgressBar IsIndeterminate="True" Width="180" Height="4" Foreground="#E85A24"/>
+                <ProgressBar IsIndeterminate="True" Width="180" Height="4" Foreground="{DynamicResource AppAccentBrush}"/>
                 <TextBlock Text="Scanning libraries &amp; refreshing games..." Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>

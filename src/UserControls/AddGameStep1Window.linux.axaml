@@ -9,21 +9,21 @@
     <Border Padding="24" Background="#242424" CornerRadius="8">
         <StackPanel Spacing="18">
             <!-- Title -->
-            <TextBlock Text="Note for manually adding games" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+            <TextBlock x:Name="TitleTextBlock" Text="Note for manually adding games" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
 
             <!-- Message Body -->
             <StackPanel Spacing="12">
-                <TextBlock Text="DLSS Swapper should find games from your installed game libraries automatically. If your game is not listed there may be a few settings preventing it. Please check:" 
+                <TextBlock x:Name="MessageBodyTextBlock" Text="DLSS Swapper should find games from your installed game libraries automatically. If your game is not listed there may be a few settings preventing it. Please check:" 
                            FontSize="13" Foreground="#DDDDDD" TextWrapping="Wrap" LineHeight="20"/>
 
                 <StackPanel Spacing="4" Margin="10,0,0,0">
-                    <TextBlock Text="- Games list filter is not set to &quot;Hide games with no swappable items&quot;" 
+                    <TextBlock x:Name="CheckItem1TextBlock" Text="- Games list filter is not set to &quot;Hide games with no swappable items&quot;" 
                                FontSize="13" Foreground="#DDDDDD" TextWrapping="Wrap"/>
-                    <TextBlock Text="- Specific game library is enabled in settings" 
+                    <TextBlock x:Name="CheckItem2TextBlock" Text="- Specific game library is enabled in settings" 
                                FontSize="13" Foreground="#DDDDDD" TextWrapping="Wrap"/>
                 </StackPanel>
 
-                <TextBlock Text="If you have checked these and your game is still not showing up there may be a bug. We would appreciate it if you could report the issue on our GitHub repository so we can make a fix and have your games better detected in the future." 
+                <TextBlock x:Name="FooterNoticeTextBlock" Text="If you have checked these and your game is still not showing up there may be a bug. We would appreciate it if you could report the issue on our GitHub repository so we can make a fix and have your games better detected in the future." 
                            FontSize="13" Foreground="#DDDDDD" TextWrapping="Wrap" LineHeight="20"/>
             </StackPanel>
 
@@ -33,9 +33,9 @@
             <!-- Action Buttons Footer -->
             <Border Padding="0,15,0,0" BorderBrush="#333333" BorderThickness="0,1,0,0">
                 <Grid ColumnDefinitions="*,*,*">
-                    <Button Grid.Column="0" Content="Add Game" Click="OnAddGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#E8A068" Foreground="Black" FontWeight="SemiBold" CornerRadius="4" Margin="0,0,6,0"/>
-                    <Button Grid.Column="1" Content="Report issue" Click="OnReportIssueClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#333333" Foreground="White" CornerRadius="4" Margin="3,0,3,0"/>
-                    <Button Grid.Column="2" Content="Cancel" Click="OnCancelClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#333333" Foreground="White" CornerRadius="4" Margin="6,0,0,0"/>
+                    <Button x:Name="AddGameButton" Grid.Column="0" Content="Add Game" Click="OnAddGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="{DynamicResource AppAccentBrush}" Foreground="Black" FontWeight="SemiBold" CornerRadius="4" Margin="0,0,6,0"/>
+                    <Button x:Name="ReportIssueButton" Grid.Column="1" Content="Report issue" Click="OnReportIssueClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#333333" Foreground="White" CornerRadius="4" Margin="3,0,3,0"/>
+                    <Button x:Name="CancelButton" Grid.Column="2" Content="Cancel" Click="OnCancelClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#333333" Foreground="White" CornerRadius="4" Margin="6,0,0,0"/>
                 </Grid>
             </Border>
         </StackPanel>

@@ -20,16 +20,16 @@
                 <StackPanel Grid.Row="1" Spacing="6" HorizontalAlignment="Stretch">
                     <!-- Games Nav Button (Active when IsGamesPageVisible == True) -->
                     <Grid Height="40">
-                        <Border Width="3" Height="20" Background="#E85A24" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsGamesPageVisible}"/>
-                        <Button Command="{Binding NavigateToGamesCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand">
+                        <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsGamesPageVisible}"/>
+                        <Button x:Name="GamesNavButton" Command="{Binding NavigateToGamesCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" ToolTip.Tip="Games">
                             <PathIcon Data="M21,6H3A2,2 0 0,0 1,8V16A2,2 0 0,0 3,18H21A2,2 0 0,0 23,16V8A2,2 0 0,0 21,6M6,14H4V12H6V14M6,11H4V9H6V11M13,13H11V15H9V13H7V11H9V9H11V11H13V13M19,11A1,1 0 0,1 18,12A1,1 0 0,1 17,11A1,1 0 0,1 18,10A1,1 0 0,1 19,11M17,14A1,1 0 0,1 16,15A1,1 0 0,1 15,14A1,1 0 0,1 16,13A1,1 0 0,1 17,14Z" Foreground="White" Width="20" Height="20"/>
                         </Button>
                     </Grid>
 
                     <!-- Library Nav Button (Active when IsLibraryPageVisible == True) -->
                     <Grid Height="40">
-                        <Border Width="3" Height="20" Background="#E85A24" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsLibraryPageVisible}"/>
-                        <Button Command="{Binding NavigateToLibraryCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand">
+                        <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsLibraryPageVisible}"/>
+                        <Button x:Name="LibraryNavButton" Command="{Binding NavigateToLibraryCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" ToolTip.Tip="Library">
                             <PathIcon Data="M4 4h3.5v16H4V4zm5.5 0h3.5v16h-3.5V4zm5.5 0h3.5v16h-3.5V4z" Foreground="White" Width="20" Height="20"/>
                         </Button>
                     </Grid>
@@ -37,8 +37,8 @@
 
                 <!-- Settings Nav Button (Pinned to Bottom) -->
                 <Grid Grid.Row="2" Height="40">
-                    <Border Width="3" Height="20" Background="#E85A24" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsSettingsPageVisible}"/>
-                    <Button Command="{Binding NavigateToSettingsCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand">
+                    <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsSettingsPageVisible}"/>
+                    <Button x:Name="SettingsNavButton" Command="{Binding NavigateToSettingsCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" ToolTip.Tip="Settings">
                         <PathIcon Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 c-0.12,0.21-0.08,0.47,0.12,0.61l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12c0,0.31,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" Foreground="#888888" Width="20" Height="20"/>
                     </Button>
                 </Grid>
@@ -52,13 +52,13 @@
                 <!-- Header Control Bar -->
                 <Grid Grid.Row="0" ColumnDefinitions="Auto,*,Auto" Margin="25,20,25,10">
                     <!-- Page Title -->
-                    <TextBlock Grid.Column="0" Text="Games" FontSize="28" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="GamesHeaderTitleTextBlock" Grid.Column="0" Text="Games" FontSize="28" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
 
                     <!-- Search Input Control -->
                     <Border Grid.Column="1" HorizontalAlignment="Center" Width="320" Height="32" Background="#252525" CornerRadius="4" BorderBrush="#3A3A3A" BorderThickness="1" Padding="8,0" VerticalAlignment="Center">
                         <Grid ColumnDefinitions="Auto,*,Auto" VerticalAlignment="Center">
                             <PathIcon Grid.Column="0" Data="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z" Width="14" Height="14" Foreground="#AAAAAA" VerticalAlignment="Center" Margin="2,0,8,0"/>
-                            <TextBox Grid.Column="1" Text="{Binding GameGridViewModel.SearchText, Mode=TwoWay}" Watermark="Search" Background="Transparent" BorderThickness="0" Foreground="White" Padding="0" VerticalAlignment="Center" VerticalContentAlignment="Center" FontSize="13" FocusAdorner="{x:Null}">
+                            <TextBox x:Name="SearchTextBox" Grid.Column="1" Text="{Binding GameGridViewModel.SearchText, Mode=TwoWay}" Watermark="Search" Background="Transparent" BorderThickness="0" Foreground="White" Padding="0" VerticalAlignment="Center" VerticalContentAlignment="Center" FontSize="13" FocusAdorner="{x:Null}">
                                 <TextBox.Styles>
                                     <Style Selector="TextBox /template/ Border#PART_BorderElement">
                                         <Setter Property="Background" Value="Transparent"/>
@@ -88,34 +88,34 @@
                         <Button Click="OnAddGameClick" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                                 <TextBlock Text="+" FontSize="16" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Add Game" FontSize="11" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="AddGameButtonTextBlock" Text="Add Game" FontSize="11" Foreground="#CCCCCC"/>
                             </StackPanel>
                         </Button>
 
                         <Button Command="{Binding GameGridViewModel.RefreshGamesCommand}" Background="Transparent" BorderThickness="0" Foreground="White">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                                 <TextBlock Text="↻" FontSize="16" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Refresh" FontSize="11" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="RefreshGamesButtonTextBlock" Text="Refresh" FontSize="11" Foreground="#CCCCCC"/>
                             </StackPanel>
                         </Button>
 
                         <Button Click="OnFilterClick" Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                                 <PathIcon Data="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
-                                <TextBlock Text="Filter" FontSize="11" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="FilterButtonTextBlock" Text="Filter" FontSize="11" Foreground="#CCCCCC"/>
                             </StackPanel>
                         </Button>
 
                         <Button Background="Transparent" BorderThickness="0" Foreground="White" Cursor="Hand">
                             <Button.Flyout>
                                 <MenuFlyout Placement="Bottom">
-                                    <MenuItem Header="Grid View" Command="{Binding GameGridViewModel.SetGridViewCommand}"/>
-                                    <MenuItem Header="List View" Command="{Binding GameGridViewModel.SetListViewCommand}"/>
+                                    <MenuItem x:Name="GridViewMenuItem" Header="Grid View" Command="{Binding GameGridViewModel.SetGridViewCommand}"/>
+                                    <MenuItem x:Name="ListViewMenuItem" Header="List View" Command="{Binding GameGridViewModel.SetListViewCommand}"/>
                                 </MenuFlyout>
                             </Button.Flyout>
                             <StackPanel Orientation="Vertical" HorizontalAlignment="Center" Spacing="2">
                                 <PathIcon Data="M3 5h4v4H3V5zm6 0h4v4H9V5zm6 0h4v4h-4V5zM3 11h4v4H3v-4zm6 0h4v4H9v-4zm6 0h4v4h-4v-4zM3 17h4v4H3v-4zm6 0h4v4H9v-4zm6 0h4v4h-4v-4z" Width="16" Height="16" Foreground="White" HorizontalAlignment="Center"/>
-                                <TextBlock Text="View Type" FontSize="11" Foreground="#CCCCCC"/>
+                                <TextBlock x:Name="ViewTypeButtonTextBlock" Text="View Type" FontSize="11" Foreground="#CCCCCC"/>
                             </StackPanel>
                         </Button>
                     </StackPanel>

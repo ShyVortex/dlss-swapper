@@ -11,6 +11,7 @@ using Avalonia.Controls;
 using Avalonia.Interactivity;
 using DLSS_Swapper.Data.NVIDIA;
 using DLSS_Swapper.Core.Services;
+using DLSS_Swapper.Helpers;
 
 namespace DLSS_Swapper.Avalonia.Views;
 
@@ -42,11 +43,25 @@ public partial class ImportNvidiaWindow : Window
     {
         _isDriverImport = isDriverImport;
         InitializeComponent();
-        Title = isDriverImport ? "Import from NVIDIA driver" : "Download from NVIDIA";
-        ActionButton.Content = isDriverImport ? "Import" : "Download";
         ModelsDataGrid.ItemsSource = Items;
+        UpdateTranslations();
+        LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
 
         _ = LoadModelsAsync();
+    }
+
+    private void UpdateTranslations()
+    {
+        Title = _isDriverImport ? ResourceHelper.GetString("LibraryPage_ImportFromNVIDIADriver", "Import from NVIDIA driver") : ResourceHelper.GetString("LibraryPage_DownloadFromNVIDIA", "Download from NVIDIA");
+        ActionButton.Content = _isDriverImport ? ResourceHelper.GetString("General_Import", "Import") : ResourceHelper.GetString("General_Download", "Download");
+        CloseButton.Content = ResourceHelper.GetString("General_Close", "Close");
+        if (ModelsDataGrid != null && ModelsDataGrid.Columns.Count >= 5)
+        {
+            ModelsDataGrid.Columns[1].Header = ResourceHelper.GetString("General_Name", "Asset Type");
+            ModelsDataGrid.Columns[2].Header = ResourceHelper.GetString("General_Version", "Version");
+            ModelsDataGrid.Columns[3].Header = ResourceHelper.GetString("General_Size", "Size");
+            ModelsDataGrid.Columns[4].Header = ResourceHelper.GetString("General_Status", "Status");
+        }
     }
 
     private async Task LoadModelsAsync()

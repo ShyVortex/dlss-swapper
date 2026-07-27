@@ -1,32 +1,236 @@
 <UserControl xmlns="https://github.com/avaloniaui"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
              x:Class="DLSS_Swapper.Avalonia.Views.SettingsView"
-             Background="#1E1E1E">
-    <ScrollViewer Padding="15">
-        <StackPanel Spacing="20" MaxWidth="700" HorizontalAlignment="Left">
-            <TextBlock Text="Settings" FontSize="22" FontWeight="Bold" Foreground="White"/>
+             x:Name="RootSettingsPage"
+             Background="#202020">
+    <Grid RowDefinitions="Auto,*">
+        <!-- 0. Header Title -->
+        <Grid Grid.Row="0" Margin="25,20,25,10">
+            <TextBlock x:Name="HeaderTitleTextBlock" Text="Settings" FontSize="28" FontWeight="SemiBold" Foreground="White" VerticalAlignment="Center"/>
+        </Grid>
 
-            <!-- App Theme -->
-            <Border Background="#2B2B2B" Padding="15" CornerRadius="6">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Application Theme" FontWeight="SemiBold" Foreground="White"/>
-                    <ComboBox SelectedIndex="0" Width="200" HorizontalAlignment="Left" SelectionChanged="OnThemeSelectionChanged">
-                        <ComboBoxItem>Dark</ComboBoxItem>
-                        <ComboBoxItem>Light</ComboBoxItem>
-                        <ComboBoxItem>System Default</ComboBoxItem>
+        <!-- 1. Settings Scrollable Content Area -->
+        <ScrollViewer Grid.Row="1">
+            <StackPanel Margin="25,10,56,56" MaxWidth="800" HorizontalAlignment="Left" Spacing="0">
+                
+                <!-- Section 1: Theme Mode -->
+                <TextBlock x:Name="ThemeTitleTextBlock" Text="Theme Mode" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="12" Margin="0,0,0,30">
+                    <RadioButton x:Name="LightThemeRadioButton" GroupName="ThemeGroup" Content="Light" Foreground="White" IsCheckedChanged="OnThemeRadioButtonChecked"/>
+                    <RadioButton x:Name="DarkThemeRadioButton" GroupName="ThemeGroup" Content="Dark" Foreground="White" IsCheckedChanged="OnThemeRadioButtonChecked"/>
+                    <RadioButton x:Name="DefaultThemeRadioButton" GroupName="ThemeGroup" Content="Use system setting" Foreground="White" IsCheckedChanged="OnThemeRadioButtonChecked"/>
+
+                    <!-- Accent Color Selector -->
+                    <StackPanel Spacing="6" Margin="0,8,0,0">
+                        <TextBlock x:Name="AccentColorTitleTextBlock" Text="Accent Color" FontSize="14" FontWeight="SemiBold" Foreground="#CCCCCC"/>
+                        <StackPanel Orientation="Horizontal" Spacing="8" VerticalAlignment="Center">
+                            <Button Click="OnAccentColorSwatchClick" Tag="#E85A24" Width="28" Height="28" CornerRadius="14" Background="#E85A24" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Default Orange"/>
+                            <Button Click="OnAccentColorSwatchClick" Tag="#0078D4" Width="28" Height="28" CornerRadius="14" Background="#0078D4" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Blue"/>
+                            <Button Click="OnAccentColorSwatchClick" Tag="#886CE4" Width="28" Height="28" CornerRadius="14" Background="#886CE4" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Purple"/>
+                            <Button Click="OnAccentColorSwatchClick" Tag="#107C41" Width="28" Height="28" CornerRadius="14" Background="#107C41" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Green"/>
+                            <Button Click="OnAccentColorSwatchClick" Tag="#E81123" Width="28" Height="28" CornerRadius="14" Background="#E81123" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Red"/>
+                            <Button Click="OnAccentColorSwatchClick" Tag="#00B7C3" Width="28" Height="28" CornerRadius="14" Background="#00B7C3" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Cyan"/>
+                            <Button Click="OnAccentColorSwatchClick" Tag="#FF8C00" Width="28" Height="28" CornerRadius="14" Background="#FF8C00" BorderThickness="1" BorderBrush="#555555" Cursor="Hand" ToolTip.Tip="Amber"/>
+
+                            <TextBox x:Name="AccentColorHexTextBox" Width="100" Margin="8,0,0,0" Watermark="#E85A24" Background="#2B2B2B" Foreground="White" BorderBrush="#3A3A3A" TextChanged="OnAccentColorHexTextChanged"/>
+                        </StackPanel>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Section 2: Game Libraries -->
+                <TextBlock x:Name="GameLibrariesTitleTextBlock" Text="Game Libraries" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="10" Margin="0,0,0,30">
+                    <ToggleSwitch x:Name="SteamToggle" OffContent="Steam disabled" OnContent="Steam enabled" Foreground="White" IsCheckedChanged="OnGameLibraryToggleChanged"/>
+                    <ToggleSwitch x:Name="HeroicToggle" OffContent="Heroic Games Launcher disabled" OnContent="Heroic Games Launcher enabled" Foreground="White" IsCheckedChanged="OnGameLibraryToggleChanged"/>
+                    <ToggleSwitch x:Name="GogToggle" OffContent="GOG disabled" OnContent="GOG enabled" Foreground="White" IsCheckedChanged="OnGameLibraryToggleChanged"/>
+                    <ToggleSwitch x:Name="EpicToggle" OffContent="Epic Games Store disabled" OnContent="Epic Games Store enabled" Foreground="White" IsCheckedChanged="OnGameLibraryToggleChanged"/>
+                    <ToggleSwitch x:Name="ManuallyAddedToggle" OffContent="Manually Added disabled" OnContent="Manually Added enabled" Foreground="White" IsCheckedChanged="OnGameLibraryToggleChanged"/>
+                </StackPanel>
+
+                <!-- Section 3: Ignored Paths -->
+                <TextBlock x:Name="IgnoredPathsTitleTextBlock" Text="Ignored Paths" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="10" Margin="0,0,0,30">
+                    <Button x:Name="AddIgnoredPathButton" Content="Add Ignored Path" Click="OnAddIgnoredPathClick" Padding="12,6" Background="#2B2B2B" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand" HorizontalAlignment="Left"/>
+                    <ItemsControl x:Name="IgnoredPathsItemsControl">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate x:CompileBindings="False">
+                                <Border Background="#282828" Padding="12,8" Margin="0,4" CornerRadius="4" BorderBrush="#383838" BorderThickness="1">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Grid.Column="0" Text="{Binding}" Foreground="White" VerticalAlignment="Center" TextWrapping="Wrap"/>
+                                        <Button Grid.Column="1" Content="Remove" Click="OnRemoveIgnoredPathClick" Tag="{Binding}" Background="#3A2020" Foreground="#FF6B6B" BorderThickness="0" CornerRadius="4" Padding="8,4" Cursor="Hand"/>
+                                    </Grid>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </StackPanel>
+
+                <!-- Section 4: DLSS Options -->
+                <TextBlock x:Name="DlssOptionsTitleTextBlock" Text="DLSS Options" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="12" Margin="0,0,0,30">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="GlobalSrTitleTextBlock" Text="Global Super Resolution preset" FontSize="13" Foreground="#CCCCCC"/>
+                        <ComboBox x:Name="DlssPresetComboBox" Width="240" HorizontalAlignment="Left" SelectionChanged="OnDlssPresetSelectionChanged"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="GlobalRrTitleTextBlock" Text="Global Ray Reconstruction preset" FontSize="13" Foreground="#CCCCCC"/>
+                        <ComboBox x:Name="DlssDPresetComboBox" Width="240" HorizontalAlignment="Left" SelectionChanged="OnDlssDPresetSelectionChanged"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="GlobalFgTitleTextBlock" Text="Global Frame Generation preset" FontSize="13" Foreground="#CCCCCC"/>
+                        <ComboBox x:Name="DlssGPresetComboBox" Width="240" HorizontalAlignment="Left" SelectionChanged="OnDlssGPresetSelectionChanged"/>
+                    </StackPanel>
+
+                    <TextBlock FontSize="12" Foreground="#888888" FontStyle="Italic" TextWrapping="Wrap">
+                        Setting a DLSS preset does not guarantee that the preset is used. 
+                        <Button Click="OnDlssPresetInfoClick" Background="Transparent" BorderThickness="0" Padding="0" Foreground="{DynamicResource AppAccentBrush}" Cursor="Hand" Content="Preset information."/>
+                    </TextBlock>
+                </StackPanel>
+
+                <!-- Section 5: DLSS Developer Options -->
+                <TextBlock x:Name="DlssDeveloperTitleTextBlock" Text="DLSS Developer Options" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="10" Margin="0,0,0,30">
+                    <StackPanel Spacing="4">
+                        <TextBlock x:Name="OnScreenIndicatorTitleTextBlock" Text="Show on-screen indicator" FontSize="13" Foreground="#CCCCCC"/>
+                        <ComboBox x:Name="IndicatorComboBox" Width="300" HorizontalAlignment="Left" SelectionChanged="OnIndicatorSelectionChanged">
+                            <ComboBoxItem Tag="0">None</ComboBoxItem>
+                            <ComboBoxItem Tag="1">Enabled for Debug DLSS DLL only</ComboBoxItem>
+                            <ComboBoxItem Tag="1024">Enabled for all DLSS DLLs</ComboBoxItem>
+                        </ComboBox>
+                    </StackPanel>
+
+                    <CheckBox x:Name="EnableLoggingToFileCheckBox" Content="Enable logging to file" Foreground="White" IsCheckedChanged="OnDlssLoggingChanged"/>
+                    <CheckBox x:Name="VerboseLoggingCheckBox" Content="Verbose logging" Foreground="White" IsEnabled="{Binding #EnableLoggingToFileCheckBox.IsChecked}" IsCheckedChanged="OnDlssLoggingChanged"/>
+                    <CheckBox x:Name="EnableLoggingToConsoleCheckBox" Content="Enable logging to console window" Foreground="White" IsCheckedChanged="OnDlssLoggingChanged"/>
+                </StackPanel>
+
+                <!-- Section 6: Allow Untrusted -->
+                <TextBlock x:Name="AllowUntrustedTitleTextBlock" Text="Allow Untrusted" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <ToggleSwitch x:Name="AllowUntrustedToggle" OffContent="No" OnContent="Yes" Foreground="White" IsCheckedChanged="OnAllowUntrustedChanged"/>
+                    <TextBlock x:Name="AllowUntrustedCaptionTextBlock" Text="DLLs are checked if they are trusted in Windows by validating the signature before being swapped into a game folder. If a DLL fails signature validation then it will not be used. It is recommended to keep this off." 
+                               FontSize="12" Foreground="#888888" FontStyle="Italic" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Section 7: Allow Debug DLLs -->
+                <TextBlock x:Name="AllowDebugDllsTitleTextBlock" Text="Allow Debug DLLs" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <ToggleSwitch x:Name="AllowDebugDllsToggle" OffContent="No" OnContent="Yes" Foreground="White" IsCheckedChanged="OnAllowDebugDllsChanged"/>
+                    <TextBlock x:Name="AllowDebugDllsCaptionTextBlock" Text="SDKs sometimes release debug DLLs which allow additional on-screen information to be displayed." 
+                               FontSize="12" Foreground="#888888" FontStyle="Italic" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Section 8: Only Show Downloaded DLLs -->
+                <TextBlock x:Name="OnlyShowDownloadedTitleTextBlock" Text="Only Show Downloaded DLLs" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <ToggleSwitch x:Name="OnlyShowDownloadedDllsToggle" OffContent="No" OnContent="Yes" Foreground="White" IsCheckedChanged="OnOnlyShowDownloadedDllsChanged"/>
+                    <TextBlock x:Name="OnlyShowDownloadedCaptionTextBlock" Text="This only applies to the DLL picker, not the library page." 
+                               FontSize="12" Foreground="#888888" FontStyle="Italic" TextWrapping="Wrap"/>
+                </StackPanel>
+
+                <!-- Section 9: Networking -->
+                <TextBlock x:Name="NetworkingTitleTextBlock" Text="Networking" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <Button x:Name="ProxySettingsButton" Content="Proxy Settings" Click="OnProxySettingsClick" Padding="12,6" Background="#2B2B2B" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand" HorizontalAlignment="Left"/>
+                </StackPanel>
+
+                <!-- Section 10: Logging -->
+                <TextBlock x:Name="LoggingTitleTextBlock" Text="Logging" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <ComboBox x:Name="LoggingLevelComboBox" Width="180" HorizontalAlignment="Left" SelectionChanged="OnLoggingLevelSelectionChanged">
+                        <ComboBoxItem Tag="Error">Error</ComboBoxItem>
+                        <ComboBoxItem Tag="Warning">Warning</ComboBoxItem>
+                        <ComboBoxItem Tag="Info">Info</ComboBoxItem>
+                        <ComboBoxItem Tag="Debug">Debug</ComboBoxItem>
+                        <ComboBoxItem Tag="Verbose">Verbose</ComboBoxItem>
+                        <ComboBoxItem Tag="Off">Off</ComboBoxItem>
                     </ComboBox>
+                    <StackPanel Orientation="Horizontal" Spacing="4">
+                        <TextBlock x:Name="CurrentLogFileLabelTextBlock" Text="Your current log file is " FontSize="12" Foreground="#888888" FontStyle="Italic"/>
+                        <Button Click="OnOpenLogFileClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
+                            <TextBlock x:Name="CurrentLogFileTextBlock" Text="/tmp/dlss_swapper.log" FontSize="12" Foreground="{DynamicResource AppAccentBrush}" FontStyle="Italic" TextDecorations="Underline"/>
+                        </Button>
+                    </StackPanel>
                 </StackPanel>
-            </Border>
 
-            <!-- Game Libraries Scan Settings -->
-            <Border Background="#2B2B2B" Padding="15" CornerRadius="6">
-                <StackPanel Spacing="10">
-                    <TextBlock Text="Game Launchers" FontWeight="SemiBold" Foreground="White"/>
-                    <CheckBox Content="Scan Steam Games" IsChecked="True" Foreground="White"/>
-                    <CheckBox Content="Scan Heroic / GOG / Epic Games" IsChecked="True" Foreground="White"/>
-                    <CheckBox Content="Scan Manually Added Folders" IsChecked="True" Foreground="White"/>
+                <!-- Section 11: Language -->
+                <TextBlock x:Name="LanguageTitleTextBlock" Text="Language" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="10" Margin="0,0,0,30">
+                    <ComboBox x:Name="LanguageComboBox" Width="300" HorizontalAlignment="Left" SelectionChanged="OnLanguageSelectionChanged"/>
+                    <Button x:Name="OpenTranslationToolboxButton" Content="Open translation toolbox" Click="OnOpenTranslationToolboxClick" Padding="12,6" Background="#2B2B2B" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand" HorizontalAlignment="Left"/>
                 </StackPanel>
-            </Border>
-        </StackPanel>
-    </ScrollViewer>
+
+                <!-- Section 12: About -->
+                <TextBlock Text="About" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Version:" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock x:Name="VersionTextBlock" Text="1.2.5" Foreground="{DynamicResource AppAccentBrush}" Cursor="Hand"/>
+                    </StackPanel>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock Text="Build date:" FontWeight="Bold" Foreground="White"/>
+                        <TextBlock x:Name="BuildDateTextBlock" Text="27/07/2026 09:41" Foreground="#CCCCCC"/>
+                    </StackPanel>
+
+                    <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,6,0,12">
+                        <Button Content="Check for updates" Click="OnCheckForUpdatesClick" Padding="12,6" Background="#2B2B2B" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+                        <ProgressBar x:Name="UpdateProgressBar" IsIndeterminate="True" Width="100" Height="4" IsVisible="False" Foreground="{DynamicResource AppAccentBrush}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <StackPanel Spacing="4">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="GitHub:" Foreground="#888888"/>
+                            <Button Click="OnGitHubLinkClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
+                                <TextBlock Text="beeradmoore/dlss-swapper" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Twitter:" Foreground="#888888"/>
+                            <Button Click="OnTwitterLinkClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
+                                <TextBlock Text="@dlss_swapper" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                            </Button>
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <TextBlock Text="Reddit:" Foreground="#888888"/>
+                            <Button Click="OnRedditLinkClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
+                                <TextBlock Text="r/DLSS_Swapper" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                            </Button>
+                        </StackPanel>
+                        <Button Click="OnAcknowledgementsClick" Background="Transparent" BorderThickness="0" Padding="0,4,0,0" Cursor="Hand">
+                            <TextBlock Text="Acknowledgements" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                        </Button>
+                    </StackPanel>
+                </StackPanel>
+
+                <!-- Section 13: Give Feedback -->
+                <TextBlock Text="Give Feedback" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="6" Margin="0,0,0,30">
+                    <WrapPanel>
+                        <TextBlock Text="You can suggest a feature or report a problem on the " Foreground="#CCCCCC"/>
+                        <Button Click="OnGitHubIssuesLinkClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
+                            <TextBlock Text="GitHub repository" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                        </Button>
+                    </WrapPanel>
+                </StackPanel>
+
+                <!-- Section 14: Troubleshooting -->
+                <TextBlock Text="Troubleshooting" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <StackPanel Spacing="8" Margin="0,0,0,30">
+                    <Button Click="OnTroubleshootingGuideClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
+                        <TextBlock Text="General troubleshooting guide" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                    </Button>
+                    <Button Click="OnNetworkTesterClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
+                        <TextBlock Text="Network Tester" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                    </Button>
+                    <Button Click="OnDiagnosticsClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
+                        <TextBlock Text="Diagnostics" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                    </Button>
+                </StackPanel>
+
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
 </UserControl>

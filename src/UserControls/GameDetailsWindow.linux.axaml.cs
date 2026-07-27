@@ -24,6 +24,37 @@ public partial class GameDetailsWindow : Window
         SelectedGame = game;
         DataContext = game;
         game.LoadPresets();
+        UpdateTranslations();
+        LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+    }
+
+    private void UpdateTranslations()
+    {
+        Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Title", "Game Details");
+        AddCustomCoverButton.Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_AddCustomCover", "Add Custom Cover");
+        NameLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name", "Name");
+        InstallPathLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_InstallPath", "Install path");
+        DlssLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS", "DLSS");
+        DlssPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_DLSSOptions_GlobalPreset", "DLSS Preset");
+        var tooltip = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_DLSSPresetInfo_Tooltip", "Setting a DLSS preset does not guarantee that the preset is used.");
+        ToolTip.SetTip(DlssPresetInfoIcon, tooltip);
+        DlssRrLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS_D", "DLSS Ray Reconstruction");
+        DlssRrPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_DLSSDOptions_GlobalPreset", "DLSS RR Preset");
+        ToolTip.SetTip(DlssRrPresetInfoIcon, tooltip);
+        DlssFgLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS_G", "DLSS Frame Generation");
+        DlssFgPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_DLSSGOptions_GlobalPreset", "DLSS FG Preset");
+        ToolTip.SetTip(DlssFgPresetInfoIcon, tooltip);
+        FsrDx12LabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_FSR_31_DX12", "FSR 3.1 DirectX 12");
+        XessLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_XeSS", "XeSS");
+        XessDx11LabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_XeSS_DX11", "XeSS (DX11)");
+        XellLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_XeLL", "XeLL");
+        ToolTip.SetTip(PlayButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_Launch", "Launch"));
+        ToolTip.SetTip(NotesButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_Notes", "Notes"));
+        ToolTip.SetTip(HistoryButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_History", "History"));
+        ToolTip.SetTip(FavouriteButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_Favorited", "Favorited"));
+        ToolTip.SetTip(RefreshButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Refresh", "Refresh"));
+        CloseButton.Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Close", "Close");
+        RefreshLoadingOverlayTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ReloadingGame", "Refreshing game details...");
     }
 
     private void OnCloseClick(object? sender, RoutedEventArgs e)

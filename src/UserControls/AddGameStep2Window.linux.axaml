@@ -9,14 +9,14 @@
     <Border Padding="24" Background="#242424" CornerRadius="8">
         <StackPanel Spacing="18">
             <!-- Title -->
-            <TextBlock Text="Another note for manually adding games" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
+            <TextBlock x:Name="TitleTextBlock" Text="Another note for manually adding games" FontSize="18" FontWeight="SemiBold" Foreground="White"/>
 
             <!-- Message Body -->
             <StackPanel Spacing="12">
-                <TextBlock Text="You must select your game directory, not your games directory." 
+                <TextBlock x:Name="Instruction1TextBlock" Text="You must select your game directory, not your games directory." 
                            FontSize="13" Foreground="#DDDDDD" TextWrapping="Wrap" LineHeight="20"/>
 
-                <TextBlock Text="For example, if you have a game at:" 
+                <TextBlock x:Name="ExampleHeaderTextBlock" Text="For example, if you have a game at:" 
                            FontSize="13" Foreground="#DDDDDD"/>
 
                 <Border Background="#1A1A1A" Padding="12,8" CornerRadius="4">
@@ -24,15 +24,15 @@
                                FontSize="13" FontFamily="Consolas, Monospace" FontWeight="Bold" Foreground="White" TextWrapping="Wrap"/>
                 </Border>
 
-                <TextBlock Text="You would select the MyFavGame directory and not the MyGamesFolder directory." 
+                <TextBlock x:Name="Instruction2TextBlock" Text="You would select the MyFavGame directory and not the MyGamesFolder directory." 
                            FontSize="13" Foreground="#DDDDDD" TextWrapping="Wrap" LineHeight="20"/>
             </StackPanel>
 
             <!-- Action Buttons Footer -->
             <Border Padding="0,15,0,0" BorderBrush="#333333" BorderThickness="0,1,0,0">
                 <Grid ColumnDefinitions="*,*">
-                    <Button Grid.Column="0" Content="Add Game" Click="OnAddGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#E8A068" Foreground="Black" FontWeight="SemiBold" CornerRadius="4" Margin="0,0,8,0"/>
-                    <Button Grid.Column="1" Content="Close" Click="OnCloseClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#333333" Foreground="White" CornerRadius="4" Margin="8,0,0,0"/>
+                    <Button x:Name="AddGameButton" Grid.Column="0" Content="Add Game" Click="OnAddGameClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="{DynamicResource AppAccentBrush}" Foreground="Black" FontWeight="SemiBold" CornerRadius="4" Margin="0,0,8,0"/>
+                    <Button x:Name="CloseButton" Grid.Column="1" Content="Close" Click="OnCloseClick" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" VerticalContentAlignment="Center" Height="36" Background="#333333" Foreground="White" CornerRadius="4" Margin="8,0,0,0"/>
                 </Grid>
             </Border>
         </StackPanel>

@@ -39,15 +39,15 @@
         <!-- Loading Overlay (Visible during XML download / NGX scanning) -->
         <Border Grid.Row="0" x:Name="LoadingBorder" Background="#DD181818" CornerRadius="6" IsVisible="False">
             <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12">
-                <ProgressBar IsIndeterminate="True" Width="160" Height="4" Foreground="#E8A068"/>
+                <ProgressBar IsIndeterminate="True" Width="160" Height="4" Foreground="{DynamicResource AppAccentBrush}"/>
                 <TextBlock x:Name="LoadingTextBlock" Text="Fetching file list..." Foreground="White" FontSize="14" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
 
         <!-- Action Buttons -->
         <Grid Grid.Row="1" ColumnDefinitions="*,*" Margin="0,16,0,0">
-            <Button Grid.Column="0" x:Name="ActionButton" Click="OnActionButtonClick" Content="Import" Background="#E8A068" Foreground="Black" FontWeight="SemiBold" Height="36" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,8,0" Cursor="Hand"/>
-            <Button Grid.Column="1" Click="OnCloseClick" Content="Close" Background="#363636" Foreground="White" Height="36" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="8,0,0,0" Cursor="Hand"/>
+            <Button Grid.Column="0" x:Name="ActionButton" Click="OnActionButtonClick" Content="Import" Background="{DynamicResource AppAccentBrush}" Foreground="Black" FontWeight="SemiBold" Height="36" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="0,0,8,0" Cursor="Hand"/>
+            <Button Grid.Column="1" x:Name="CloseButton" Click="OnCloseClick" Content="Close" Background="#363636" Foreground="White" Height="36" CornerRadius="4" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center" Margin="8,0,0,0" Cursor="Hand"/>
         </Grid>
     </Grid>
 </Window>

@@ -9,6 +9,13 @@ public partial class GameGridView : UserControl
     public GameGridView()
     {
         InitializeComponent();
+        UpdateTranslations();
+        DLSS_Swapper.Core.Services.LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+    }
+
+    private void UpdateTranslations()
+    {
+        FavouritesHeaderTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Favourites", "Favourites");
     }
 
     private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e)

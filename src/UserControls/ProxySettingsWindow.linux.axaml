@@ -1,0 +1,44 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DLSS_Swapper.Avalonia.Views.ProxySettingsWindow"
+        Title="Proxy Settings"
+        Width="460" SizeToContent="Height"
+        WindowStartupLocation="CenterOwner"
+        CanResize="False"
+        Background="#202020">
+
+    <Grid RowDefinitions="*,Auto" Margin="24">
+        <StackPanel Grid.Row="0" Spacing="14" Margin="0,0,0,20">
+            <TextBlock x:Name="TitleTextBlock" Text="Proxy Settings" FontSize="20" FontWeight="SemiBold" Foreground="White"/>
+
+            <CheckBox x:Name="UseProxyCheckBox" Content="Use Proxy Server" Foreground="White" IsCheckedChanged="OnUseProxyChanged"/>
+
+            <StackPanel Spacing="4" IsEnabled="{Binding #UseProxyCheckBox.IsChecked}">
+                <TextBlock x:Name="ServerAddressTextBlock" Text="Proxy Server Address" FontSize="13" Foreground="#CCCCCC"/>
+                <TextBox x:Name="ServerTextBox" Watermark="e.g. http://127.0.0.1:8080" Background="#2B2B2B" Foreground="White" BorderBrush="#3A3A3A"/>
+            </StackPanel>
+
+            <CheckBox x:Name="UseAuthCheckBox" Content="Requires Authentication" Foreground="White" IsEnabled="{Binding #UseProxyCheckBox.IsChecked}"/>
+
+            <StackPanel Spacing="10" IsEnabled="{Binding #UseAuthCheckBox.IsChecked}">
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="UsernameTextBlock" Text="Username" FontSize="13" Foreground="#CCCCCC"/>
+                    <TextBox x:Name="UsernameTextBox" Background="#2B2B2B" Foreground="White" BorderBrush="#3A3A3A"/>
+                </StackPanel>
+
+                <StackPanel Spacing="4">
+                    <TextBlock x:Name="PasswordTextBlock" Text="Password" FontSize="13" Foreground="#CCCCCC"/>
+                    <TextBox x:Name="PasswordTextBox" PasswordChar="*" Background="#2B2B2B" Foreground="White" BorderBrush="#3A3A3A"/>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- Action Buttons -->
+        <Border Grid.Row="1" Padding="0,15,0,0" BorderBrush="#333333" BorderThickness="0,1,0,0">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="12">
+                <Button x:Name="CancelButton" Content="Cancel" Click="OnCancelClick" Padding="20,8" Background="#333333" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+                <Button x:Name="SaveButton" Content="Save" Click="OnSaveClick" Padding="24,8" Background="{DynamicResource AppAccentBrush}" Foreground="Black" FontWeight="SemiBold" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

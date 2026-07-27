@@ -2,9 +2,11 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Globalization;
+#if WINDOWS
 using DLSS_Swapper.Language;
 using Windows.ApplicationModel.Resources;
 using Windows.ApplicationModel.Resources.Core;
+#endif
 
 namespace DLSS_Swapper.Helpers;
 
@@ -12,9 +14,11 @@ public class ResourceHelper
 {
     private const string error = "LangResourceError";
 
+#if WINDOWS
     static readonly ResourceLoader _resourceLoader = new ResourceLoader();
     static readonly ResourceContext _resourceContext = ResourceContext.GetForViewIndependentUse();
     static readonly ResourceMap _resourceMap = ResourceManager.Current.MainResourceMap.GetSubtree("Resources");
+#endif
 
     static readonly Dictionary<string, string> _resources = new Dictionary<string, string>();
 
@@ -23,6 +27,7 @@ public class ResourceHelper
     static bool _langHunterEnabled;
 #endif
 
+#if WINDOWS
     internal static bool TranslatorModeEnabled
     {
         get { return _translatorModeEnabled; }
@@ -35,18 +40,16 @@ public class ResourceHelper
             }
         }
     }
+#endif
 
 
-    internal static void LoadResource(string key)
+#if WINDOWS
+    internal static void SetLanguageKey(string key)
     {
 #if DEBUG
-        if (key == "LANG_HUNT")
+        if (_langHunterEnabled)
         {
-            _langHunterEnabled = true;
-        }
-        else
-        {
-            _langHunterEnabled = false;
+            return;
         }
 #endif
         _resources.Clear();
@@ -74,10 +77,13 @@ public class ResourceHelper
         }
         LanguageManager.Instance.ReloadLanguage();
     }
+#endif
 
-    public static string GetString(string resourceName)
+    public static string GetString(string resourceName, string? fallback = null)
     {
-
+#if !WINDOWS
+        return DLSS_Swapper.Core.Services.LinuxLanguageService.Instance.GetString(resourceName, fallback);
+#else
 #if DEBUG
         if (_langHunterEnabled)
         {
@@ -102,15 +108,8 @@ public class ResourceHelper
 
         // If not we fallback to the original language.
         var fallbackString = _resourceLoader.GetString(resourceName);
-
-#if DEBUG
-        if (string.IsNullOrWhiteSpace(fallbackString))
-        {
-            Debug.WriteLine($"Translation not found: {resourceName}");
-            Debugger.Break();
-        }
-#endif
         return fallbackString;
+#endif
     }
 
     public static string GetFormattedResourceTemplate(string templateResourceName, params object[] args)
