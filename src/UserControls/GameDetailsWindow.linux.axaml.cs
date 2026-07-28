@@ -36,14 +36,14 @@ public partial class GameDetailsWindow : Window
         NameLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name", "Name");
         InstallPathLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_InstallPath", "Install path");
         DlssLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS", "DLSS");
-        DlssPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_DLSSOptions_GlobalPreset", "DLSS Preset");
+        DlssPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_DLSSPreset", "DLSS Preset");
         var tooltip = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_DLSSPresetInfo_Tooltip", "Setting a DLSS preset does not guarantee that the preset is used.");
         ToolTip.SetTip(DlssPresetInfoIcon, tooltip);
         DlssRrLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS_D", "DLSS Ray Reconstruction");
-        DlssRrPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_DLSSDOptions_GlobalPreset", "DLSS RR Preset");
+        DlssRrPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_DLSSDPreset", "DLSS RR Preset");
         ToolTip.SetTip(DlssRrPresetInfoIcon, tooltip);
         DlssFgLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS_G", "DLSS Frame Generation");
-        DlssFgPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_DLSSGOptions_GlobalPreset", "DLSS FG Preset");
+        DlssFgPresetLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_DLSSGPreset", "DLSS FG Preset");
         ToolTip.SetTip(DlssFgPresetInfoIcon, tooltip);
         FsrDx12LabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_FSR_31_DX12", "FSR 3.1 DirectX 12");
         XessLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_XeSS", "XeSS");
