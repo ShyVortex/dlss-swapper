@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
     Microsoft ResX Schema
@@ -1028,5 +1028,20 @@ Per questo motivo, ti consigliamo di usare cautela nelle partite multi-giocatore
   </data>
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Strumenti per la traduzione</value>
+  </data>
+  <data name="LibraryPage_ImportFrom_DownloadFromServer" xml:space="preserve">
+    <value>Scarica dal server</value>
+  </data>
+  <data name="LibraryPage_ImportFrom_Driver" xml:space="preserve">
+    <value>Da driver</value>
+  </data>
+  <data name="LibraryPage_ImportFrom_LocalFiles" xml:space="preserve">
+    <value>Da file locali</value>
+  </data>
+  <data name="LibraryPage_ImportFromNVIDIADriver" xml:space="preserve">
+    <value>Importa da driver NVIDIA</value>
+  </data>
+  <data name="LibraryPage_DownloadFromNVIDIA" xml:space="preserve">
+    <value>Scarica da NVIDIA</value>
   </data>
 </root>

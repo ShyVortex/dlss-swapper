@@ -63,6 +63,16 @@ public partial class SettingsView : UserControl
         CurrentLogFileLabelTextBlock.Text = ResourceHelper.GetString("SettingsPage_YourCurrentLogFile");
         LanguageTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_Language");
         OpenTranslationToolboxButton.Content = ResourceHelper.GetString("SettingsPage_OpenTranslationToolbox");
+        CheckForUpdatesButton.Content = ResourceHelper.GetString("SettingsPage_SettingsCheckForUpdates", "Check for updates");
+        AboutTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_About", "About");
+        AcknowledgementsButtonTextBlock.Text = ResourceHelper.GetString("SettingsPage_OpenAcknowledgements", "Acknowledgements");
+        GiveFeedbackTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_GiveFeedback", "Give Feedback");
+        var feedbackMsg = ResourceHelper.GetString("SettingsPage_GiveFeedbackInfo", "You can suggest a feature or report a problem on the {0}.");
+        GiveFeedbackInfoTextBlock.Text = feedbackMsg.Contains("{0}") ? feedbackMsg.Replace("{0}", "").Trim() : feedbackMsg;
+        TroubleshootingTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_Troubleshooting", "Troubleshooting");
+        TroubleshootingGuideButtonTextBlock.Text = ResourceHelper.GetString("SettingsPage_GeneralTroubleshootingGuide", "General troubleshooting guide");
+        NetworkTesterButtonTextBlock.Text = ResourceHelper.GetString("SettingsPage_OpenNetworkTester", "Network Tester");
+        DiagnosticsButtonTextBlock.Text = ResourceHelper.GetString("SettingsPage_OpenDiagnostics", "Diagnostics");
     }
 
     private void LoadSettings()
@@ -396,6 +406,7 @@ public partial class SettingsView : UserControl
     private async void OnCheckForUpdatesClick(object? sender, RoutedEventArgs e)
     {
         UpdateProgressBar.IsVisible = true;
+        var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_SettingsCheckForUpdates", "Check for Updates");
         try
         {
             using var client = new HttpClient();
@@ -405,12 +416,14 @@ public partial class SettingsView : UserControl
             var tagName = doc.RootElement.GetProperty("tag_name").GetString();
             UpdateProgressBar.IsVisible = false;
 
-            await ShowDialogAsync("Check for Updates", $"Latest release on GitHub is {tagName}. You are running version 1.2.5.");
+            var noUpdatesText = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_NoNewUpdatesAvailable", "No new updates available");
+            await ShowDialogAsync(title, $"{noUpdatesText} ({tagName}).");
         }
         catch
         {
             UpdateProgressBar.IsVisible = false;
-            await ShowDialogAsync("Check for Updates", "No new updates available or could not reach GitHub.");
+            var noUpdatesText = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_NoNewUpdatesAvailable", "No new updates available");
+            await ShowDialogAsync(title, noUpdatesText);
         }
     }
 
@@ -430,15 +443,18 @@ public partial class SettingsView : UserControl
             proxyWin.Show();
     }
 
+    private async void OnTranslationToolboxClick(object? sender, RoutedEventArgs e)
+    {
+        var window = TopLevel.GetTopLevel(this) as Window;
+        var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("TranslationToolboxPage_WindowTitle", "Translation Toolbox");
+        var msg = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_OpenTranslationToolbox", "Translation Toolbox");
+        await ShowDialogAsync(title, msg);
+    }
+
     private async void OnAcknowledgementsClick(object? sender, RoutedEventArgs e)
     {
-        await ShowDialogAsync("Acknowledgements", 
-            "DLSS Swapper is made possible by open-source libraries & contributions:\n\n" +
-            "• NVIDIA DLSS / Streamline / XeSS / FSR SDKs\n" +
-            "• Avalonia UI Framework\n" +
-            "• Serilog & SQLite-net\n" +
-            "• ValveKeyValue & CommunityToolkit\n" +
-            "• Open-source community translators & contributors.");
+        var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_OpenAcknowledgements", "Acknowledgements");
+        await ShowDialogAsync(title, "DLSS Swapper makes use of several open source projects:\n- Avalonia UI\n- DynamicData\n- ReactiveUI\n- TMDs.DBus");
     }
 
     private async void OnNetworkTesterClick(object? sender, RoutedEventArgs e)

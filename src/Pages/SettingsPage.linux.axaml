@@ -164,7 +164,7 @@
                 </StackPanel>
 
                 <!-- Section 12: About -->
-                <TextBlock Text="About" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <TextBlock x:Name="AboutTitleTextBlock" Text="About" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
                 <StackPanel Spacing="8" Margin="0,0,0,30">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Version:" FontWeight="Bold" Foreground="White"/>
@@ -176,7 +176,7 @@
                     </StackPanel>
 
                     <StackPanel Orientation="Horizontal" Spacing="12" Margin="0,6,0,12">
-                        <Button Content="Check for updates" Click="OnCheckForUpdatesClick" Padding="12,6" Background="#2B2B2B" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+                        <Button x:Name="CheckForUpdatesButton" Content="Check for updates" Click="OnCheckForUpdatesClick" Padding="12,6" Background="#2B2B2B" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
                         <ProgressBar x:Name="UpdateProgressBar" IsIndeterminate="True" Width="100" Height="4" IsVisible="False" Foreground="{DynamicResource AppAccentBrush}" VerticalAlignment="Center"/>
                     </StackPanel>
 
@@ -200,33 +200,33 @@
                             </Button>
                         </StackPanel>
                         <Button Click="OnAcknowledgementsClick" Background="Transparent" BorderThickness="0" Padding="0,4,0,0" Cursor="Hand">
-                            <TextBlock Text="Acknowledgements" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                            <TextBlock x:Name="AcknowledgementsButtonTextBlock" Text="Acknowledgements" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
                         </Button>
                     </StackPanel>
                 </StackPanel>
 
                 <!-- Section 13: Give Feedback -->
-                <TextBlock Text="Give Feedback" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <TextBlock x:Name="GiveFeedbackTitleTextBlock" Text="Give Feedback" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
                 <StackPanel Spacing="6" Margin="0,0,0,30">
-                    <WrapPanel>
-                        <TextBlock Text="You can suggest a feature or report a problem on the " Foreground="#CCCCCC"/>
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <TextBlock x:Name="GiveFeedbackInfoTextBlock" Text="You can suggest a feature or report a problem on the " Foreground="#CCCCCC"/>
                         <Button Click="OnGitHubIssuesLinkClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand">
                             <TextBlock Text="GitHub repository" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
                         </Button>
-                    </WrapPanel>
+                    </StackPanel>
                 </StackPanel>
 
                 <!-- Section 14: Troubleshooting -->
-                <TextBlock Text="Troubleshooting" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
+                <TextBlock x:Name="TroubleshootingTitleTextBlock" Text="Troubleshooting" FontSize="20" FontWeight="SemiBold" Foreground="White" Margin="0,10,0,10"/>
                 <StackPanel Spacing="8" Margin="0,0,0,30">
                     <Button Click="OnTroubleshootingGuideClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
-                        <TextBlock Text="General troubleshooting guide" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                        <TextBlock x:Name="TroubleshootingGuideButtonTextBlock" Text="General troubleshooting guide" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
                     </Button>
                     <Button Click="OnNetworkTesterClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
-                        <TextBlock Text="Network Tester" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                        <TextBlock x:Name="NetworkTesterButtonTextBlock" Text="Network Tester" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
                     </Button>
                     <Button Click="OnDiagnosticsClick" Background="Transparent" BorderThickness="0" Padding="0" Cursor="Hand" HorizontalAlignment="Left">
-                        <TextBlock Text="Diagnostics" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
+                        <TextBlock x:Name="DiagnosticsButtonTextBlock" Text="Diagnostics" Foreground="{DynamicResource AppAccentBrush}" TextDecorations="Underline"/>
                     </Button>
                 </StackPanel>
 

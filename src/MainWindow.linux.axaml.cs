@@ -143,14 +143,14 @@ public partial class MainWindow : Window
 
         var okBtn = new Button
         {
-            Content = "OK",
+            Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Okay", "OK"),
             HorizontalAlignment = HorizontalAlignment.Right,
             HorizontalContentAlignment = HorizontalAlignment.Center,
             VerticalContentAlignment = VerticalAlignment.Center,
             Width = 100,
             Height = 36,
-            Background = Brush.Parse("#E85A24"),
-            Foreground = Brushes.White,
+            Background = LinuxUI.Services.LinuxAccentColorService.Instance.CurrentAccentBrush,
+            Foreground = Brushes.Black,
             FontWeight = FontWeight.SemiBold,
             CornerRadius = new CornerRadius(4),
             Cursor = new Cursor(StandardCursorType.Hand)
@@ -234,8 +234,8 @@ public partial class MainWindow : Window
                     progressBar.IsIndeterminate = false;
                     progressBar.Maximum = total;
                     progressBar.Value = current;
-                    var template = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_ExportedDLLs", "Exported {0} of {1} file(s)...");
-                    statusText.Text = string.Format(template, current, total);
+                    var exportedLabel = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_ExportedDLLs", "Exported DLLs:");
+                    statusText.Text = $"{exportedLabel.TrimEnd(':', ' ')} {current} / {total}";
                 }
             });
         });

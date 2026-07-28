@@ -275,11 +275,15 @@ public partial class LibraryViewModel : ObservableObject
         {
             if (result.Success)
             {
-                await ShowMessageDialogAsync("Export Successful", $"Successfully exported {result.ExportedCount} file(s) to:\n{zipPath}");
+                var successTitle = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Success", "Export Successful");
+                var msgTemplate = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_ExportedDLLsCount_Message", "Exported {0} DLLs.");
+                var msg = string.Format(msgTemplate, result.ExportedCount);
+                await ShowMessageDialogAsync(successTitle, $"{msg}\n{zipPath}");
             }
             else
             {
-                await ShowMessageDialogAsync("Export Failed", result.ErrorMessage);
+                var failTitle = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Failed", "Export Failed");
+                await ShowMessageDialogAsync(failTitle, result.ErrorMessage);
             }
         }
     }

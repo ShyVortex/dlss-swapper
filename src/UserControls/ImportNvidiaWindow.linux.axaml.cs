@@ -67,7 +67,9 @@ public partial class ImportNvidiaWindow : Window
     private async Task LoadModelsAsync()
     {
         LoadingBorder.IsVisible = true;
-        LoadingTextBlock.Text = _isDriverImport ? "Scanning system driver NGX models..." : "Fetching file list from NVIDIA server...";
+        LoadingTextBlock.Text = _isDriverImport 
+            ? ResourceHelper.GetString("LibraryPage_Importing", "Scanning system driver NGX models...") 
+            : ResourceHelper.GetString("LibraryPage_FetchingFileList", "Fetching file list...");
 
         try
         {

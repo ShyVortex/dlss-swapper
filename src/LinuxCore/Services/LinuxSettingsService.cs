@@ -44,6 +44,10 @@ public class LinuxSettingsData
     public bool AllowDebugDlls { get; set; } = false;
     public bool OnlyShowDownloadedDlls { get; set; } = false;
     public LinuxLoggingLevel LoggingLevel { get; set; } = LinuxLoggingLevel.Error;
+    public bool IsGridView { get; set; } = true;
+    public bool HideNoSwappableItems { get; set; } = false;
+    public bool ShowHiddenGames { get; set; } = false;
+    public bool GroupByLibrary { get; set; } = true;
 }
 
 public class LinuxSettingsService

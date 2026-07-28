@@ -160,8 +160,20 @@ public partial class GameGridViewModel : ObservableObject
 
     public GameGridViewModel()
     {
+        var settings = LinuxSettingsService.Instance.Settings;
+        _isGridView = settings.IsGridView;
+        _hideNoSwappableItems = settings.HideNoSwappableItems;
+        _showHiddenGames = settings.ShowHiddenGames;
+        _groupByLibrary = settings.GroupByLibrary;
+
         _favouriteIds = _metadataService.LoadFavourites();
         ScanRealGames();
+    }
+
+    partial void OnIsGridViewChanged(bool value)
+    {
+        LinuxSettingsService.Instance.Settings.IsGridView = value;
+        LinuxSettingsService.Instance.SaveSettings();
     }
 
     partial void OnSearchTextChanged(string value)
@@ -287,6 +299,12 @@ public partial class GameGridViewModel : ObservableObject
 
     public void ApplyFilters()
     {
+        var settings = LinuxSettingsService.Instance.Settings;
+        settings.HideNoSwappableItems = HideNoSwappableItems;
+        settings.ShowHiddenGames = ShowHiddenGames;
+        settings.GroupByLibrary = GroupByLibrary;
+        LinuxSettingsService.Instance.SaveSettings();
+
         FilterGames();
     }
 
