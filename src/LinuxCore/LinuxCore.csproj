@@ -33,6 +33,8 @@
     <Compile Include="../Data/NVIDIA/ListBucketResultContents.cs" Link="Data/NVIDIA/ListBucketResultContents.cs" />
     <Compile Include="../Helpers/ResourceHelper.cs" Link="Helpers/ResourceHelper.cs" />
     <EmbeddedResource Include="../Assets/static_manifest.json" Link="Assets/static_manifest.json" />
+    <EmbeddedResource Include="../Acknowledgements/**/notes.md" Link="Acknowledgements/%(RecursiveDir)%(Filename)%(Extension)" />
+    <EmbeddedResource Include="../Acknowledgements/**/license.txt" Link="Acknowledgements/%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="../Translations/**/*.resw" Link="Translations/%(RecursiveDir)%(Filename)%(Extension)">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -384,9 +384,14 @@ public partial class SettingsView : UserControl
         }
     }
 
-    private void OnOpenTranslationToolboxClick(object? sender, RoutedEventArgs e)
+    private async void OnOpenTranslationToolboxClick(object? sender, RoutedEventArgs e)
     {
-        OpenUrl("https://github.com/beeradmoore/dlss-swapper/wiki/Translating");
+        var window = TopLevel.GetTopLevel(this) as Window;
+        var toolboxWin = new DLSS_Swapper.TranslationToolboxWindow();
+        if (window != null)
+            await toolboxWin.ShowDialog(window);
+        else
+            toolboxWin.Show();
     }
 
     private void OnLanguageSelectionChanged(object? sender, SelectionChangedEventArgs e)
@@ -443,50 +448,34 @@ public partial class SettingsView : UserControl
             proxyWin.Show();
     }
 
-    private async void OnTranslationToolboxClick(object? sender, RoutedEventArgs e)
-    {
-        var window = TopLevel.GetTopLevel(this) as Window;
-        var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("TranslationToolboxPage_WindowTitle", "Translation Toolbox");
-        var msg = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_OpenTranslationToolbox", "Translation Toolbox");
-        await ShowDialogAsync(title, msg);
-    }
-
     private async void OnAcknowledgementsClick(object? sender, RoutedEventArgs e)
     {
-        var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_OpenAcknowledgements", "Acknowledgements");
-        await ShowDialogAsync(title, "DLSS Swapper makes use of several open source projects:\n- Avalonia UI\n- DynamicData\n- ReactiveUI\n- TMDs.DBus");
+        var window = TopLevel.GetTopLevel(this) as Window;
+        var ackWin = new DLSS_Swapper.Pages.AcknowledgementsPage();
+        if (window != null)
+            await ackWin.ShowDialog(window);
+        else
+            ackWin.Show();
     }
 
     private async void OnNetworkTesterClick(object? sender, RoutedEventArgs e)
     {
-        UpdateProgressBar.IsVisible = true;
-        try
-        {
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(5) };
-            var ping = await client.GetAsync("https://api.github.com");
-            UpdateProgressBar.IsVisible = false;
-            await ShowDialogAsync("Network Tester", $"Network connectivity test successful!\nStatus code: {(int)ping.StatusCode} ({ping.StatusCode})");
-        }
-        catch (Exception ex)
-        {
-            UpdateProgressBar.IsVisible = false;
-            await ShowDialogAsync("Network Tester", $"Network connectivity test failed:\n{ex.Message}");
-        }
+        var window = TopLevel.GetTopLevel(this) as Window;
+        var netWin = new DLSS_Swapper.NetworkTesterWindow();
+        if (window != null)
+            await netWin.ShowDialog(window);
+        else
+            netWin.Show();
     }
 
     private async void OnDiagnosticsClick(object? sender, RoutedEventArgs e)
     {
-        var settings = LinuxSettingsService.Instance.Settings;
-        var diag = $"DLSS Swapper Linux Diagnostics\n" +
-                   $"App Version: 1.2.5\n" +
-                   $"OS: {Environment.OSVersion.VersionString}\n" +
-                   $"Runtime: {System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription}\n" +
-                   $"Theme: {settings.AppTheme}\n" +
-                   $"Steam Enabled: {settings.EnableSteam}\n" +
-                   $"Heroic Enabled: {settings.EnableHeroic}\n" +
-                   $"Ignored Paths Count: {settings.IgnoredPaths?.Count ?? 0}";
-
-        await ShowDialogAsync("Diagnostics", diag);
+        var window = TopLevel.GetTopLevel(this) as Window;
+        var diagWin = new DLSS_Swapper.DiagnosticsWindow();
+        if (window != null)
+            await diagWin.ShowDialog(window);
+        else
+            diagWin.Show();
     }
 
     private async Task ShowDialogAsync(string title, string message)

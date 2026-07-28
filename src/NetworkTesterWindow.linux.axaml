@@ -1,0 +1,35 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        x:Class="DLSS_Swapper.NetworkTesterWindow"
+        Title="Network Tester"
+        Width="920" Height="680"
+        WindowStartupLocation="CenterOwner"
+        CanResize="True"
+        Background="#181818">
+
+    <Grid RowDefinitions="*, Auto, 180" Margin="16">
+        <!-- Diagnostic Test List -->
+        <ScrollViewer Grid.Row="0" Padding="0,0,16,0" Margin="0,0,0,16">
+            <StackPanel x:Name="TestsStackPanel" Spacing="12"/>
+        </ScrollViewer>
+
+        <!-- Main Action Buttons -->
+        <StackPanel Grid.Row="1" Orientation="Horizontal" HorizontalAlignment="Center" Spacing="12" Margin="0,0,0,16">
+            <Button x:Name="CopyResultsButton" Content="Copy test results" Click="OnCopyResultsClick"
+                    Padding="14,8" Background="#2C2C2C" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+            <Button x:Name="CreateBugReportButton" Content="Create bug report" Click="OnCreateBugReportClick"
+                    Padding="14,8" Background="#2C2C2C" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+            <Button x:Name="CancelTestButton" Content="Cancel current test" Click="OnCancelTestClick"
+                    Padding="14,8" Background="#2C2C2C" Foreground="White" BorderThickness="0" CornerRadius="4" Cursor="Hand"/>
+        </StackPanel>
+
+        <!-- Results Output Log -->
+        <Grid Grid.Row="2" RowDefinitions="Auto, *">
+            <TextBlock Text="Results" FontSize="13" Foreground="#AAAAAA" Margin="0,0,0,6"/>
+            <TextBox Grid.Row="1" x:Name="ResultsTextBox" IsReadOnly="True" AcceptsReturn="True" TextWrapping="Wrap"
+                     FontFamily="Cascadia Code, Consolas, Courier New, monospace" FontSize="12"
+                     Background="#121212" Foreground="#00FF66" BorderBrush="#333333" BorderThickness="1"
+                     CornerRadius="4" Padding="12"/>
+        </Grid>
+    </Grid>
+</Window>

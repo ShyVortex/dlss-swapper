@@ -75,6 +75,12 @@ public class ResponsiveWrapPanel : Panel
         double minW = MinItemWidth;
         double hSpace = HorizontalSpacing;
 
+        // Reserve 16px right margin buffer so rightmost items do not collide with the vertical scrollbar
+        if (!double.IsInfinity(availWidth) && availWidth > 32)
+        {
+            availWidth -= 16;
+        }
+
         if (availWidth <= 0 || double.IsInfinity(availWidth))
         {
             double fallbackH = ItemAspectRatio > 0

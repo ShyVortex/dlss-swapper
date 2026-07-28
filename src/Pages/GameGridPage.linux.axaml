@@ -6,7 +6,7 @@
              x:DataType="vm:GameGridViewModel"
              Background="#202020">
     <Grid>
-        <ScrollViewer VerticalScrollBarVisibility="Auto">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" Margin="0,0,16,0">
             <StackPanel Spacing="15">
                 <!-- Favourites Section Header & Grid/List View -->
                 <StackPanel IsVisible="{Binding HasFavourites}" Spacing="15" Margin="0,0,0,15">
