@@ -161,8 +161,25 @@ public partial class SelectDllVersionViewModel : ObservableObject
 
         Versions.Clear();
 
+        var settings = LinuxSettingsService.Instance.Settings;
+        bool allowDebug = settings.AllowDebugDlls;
+        bool onlyDownloaded = settings.OnlyShowDownloadedDlls;
+
         foreach (var record in records)
         {
+            bool isDownloaded = _storageService.IsDownloaded(_categoryType, record);
+            bool isDebug = record.IsDevFile || (record.Version != null && record.Version.Contains("debug", StringComparison.OrdinalIgnoreCase)) || (record.AdditionalLabel != null && record.AdditionalLabel.Contains("debug", StringComparison.OrdinalIgnoreCase));
+
+            if (!allowDebug && isDebug && !isDownloaded)
+            {
+                continue;
+            }
+
+            if (onlyDownloaded && !isDownloaded)
+            {
+                continue;
+            }
+
             var item = new DllVersionItemViewModel(record, _categoryType, _storageService);
             item.OnDownloadCompletedAction = () =>
             {

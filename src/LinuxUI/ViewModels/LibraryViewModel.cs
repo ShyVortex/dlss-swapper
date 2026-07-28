@@ -59,6 +59,14 @@ public partial class LibraryViewModel : ObservableObject
     {
         InitializeCategories();
         _ = LoadManifestAndRecordsAsync();
+
+        LinuxSettingsService.Instance.OnSettingsChanged += () =>
+        {
+            global::Avalonia.Threading.Dispatcher.UIThread.Post(async () =>
+            {
+                await LoadManifestAndRecordsAsync();
+            });
+        };
     }
 
     private void InitializeCategories()
@@ -101,6 +109,7 @@ public partial class LibraryViewModel : ObservableObject
     public async Task LoadManifestAndRecordsAsync()
     {
         IsLoading = true;
+        await Task.Delay(200);
         _manifest = await _storageService.LoadManifestAsync();
         UpdateVisibleRecords();
         IsLoading = false;
@@ -129,13 +138,30 @@ public partial class LibraryViewModel : ObservableObject
             .OrderByDescending(r => r.VersionNumber)
             .ThenByDescending(r => r.Version);
 
+        var settings = LinuxSettingsService.Instance.Settings;
+        bool allowDebug = settings.AllowDebugDlls;
+        bool onlyDownloaded = settings.OnlyShowDownloadedDlls;
+
         foreach (var r in sortedRecords)
         {
+            bool isDownloaded = _storageService.IsDownloaded(SelectedCategory.Key, r);
+            bool isDebug = r.IsDevFile || (r.Version != null && r.Version.Contains("debug", StringComparison.OrdinalIgnoreCase)) || (r.AdditionalLabel != null && r.AdditionalLabel.Contains("debug", StringComparison.OrdinalIgnoreCase));
+
+            if (!allowDebug && isDebug && !isDownloaded)
+            {
+                continue;
+            }
+
+            if (onlyDownloaded && !isDownloaded)
+            {
+                continue;
+            }
+
             var card = new DllRecordCardItem
             {
                 CategoryKey = SelectedCategory.Key,
                 Record = r,
-                IsDownloaded = _storageService.IsDownloaded(SelectedCategory.Key, r)
+                IsDownloaded = isDownloaded
             };
             VisibleRecords.Add(card);
         }

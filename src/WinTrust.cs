@@ -237,6 +237,11 @@ internal static class WinTrust
 
     public static bool VerifyEmbeddedSignature(string fileName)
     {
+        if (!OperatingSystem.IsWindows())
+        {
+            return Helpers.PeSignatureVerifier.VerifyPeSignature(fileName);
+        }
+
         WinVerifyTrustResult lStatus;
         uint dwLastError;
 

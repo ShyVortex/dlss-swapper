@@ -160,6 +160,23 @@
                                 </Button>
                             </StackPanel>
                         </Grid>
+                        <!-- Section: DLSS Developer Options -->
+                        <Border Height="1" Background="#333333" Margin="0,15,0,10"/>
+                        <TextBlock Text="DLSS Developer Options" FontSize="16" FontWeight="SemiBold" Foreground="White" Margin="0,0,0,8"/>
+                        <StackPanel Spacing="10" Margin="0,0,0,10">
+                            <StackPanel Spacing="4">
+                                <TextBlock Text="Show on-screen indicator" FontSize="13" Foreground="#CCCCCC"/>
+                                <ComboBox x:Name="IndicatorComboBox" HorizontalAlignment="Stretch" Background="#333333" Foreground="White" CornerRadius="6" SelectionChanged="OnDevOptionChanged">
+                                    <ComboBoxItem Tag="0">None</ComboBoxItem>
+                                    <ComboBoxItem Tag="1">Enabled for Debug DLSS DLL only</ComboBoxItem>
+                                    <ComboBoxItem Tag="1024">Enabled for all DLSS DLLs</ComboBoxItem>
+                                </ComboBox>
+                            </StackPanel>
+
+                            <CheckBox x:Name="EnableLoggingToFileCheckBox" Content="Enable logging to file" Foreground="White" IsCheckedChanged="OnDevOptionChanged"/>
+                            <CheckBox x:Name="VerboseLoggingCheckBox" Content="Verbose logging" Foreground="White" IsEnabled="{Binding #EnableLoggingToFileCheckBox.IsChecked}" IsCheckedChanged="OnDevOptionChanged"/>
+                            <CheckBox x:Name="EnableLoggingToConsoleCheckBox" Content="Enable logging to console window" Foreground="White" IsCheckedChanged="OnDevOptionChanged"/>
+                        </StackPanel>
                     </StackPanel>
                 </ScrollViewer>
             </Grid>

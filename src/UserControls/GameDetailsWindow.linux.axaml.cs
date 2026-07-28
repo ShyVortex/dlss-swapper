@@ -25,6 +25,7 @@ public partial class GameDetailsWindow : Window
         DataContext = game;
         game.LoadPresets();
         UpdateTranslations();
+        LoadDevOptions();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
     }
 
@@ -284,5 +285,106 @@ public partial class GameDetailsWindow : Window
             "xell" => DLSS_Swapper.Data.GameAssetType.XeLL,
             _ => DLSS_Swapper.Data.GameAssetType.Unknown
         };
+    }
+
+    private bool _isInitializingDevOptions = false;
+
+    private string? GetUserRegPath()
+    {
+        if (SelectedGame == null) return null;
+
+        if (!string.IsNullOrEmpty(SelectedGame.AppId))
+        {
+            var home = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            var candidates = new[]
+            {
+                Path.Combine(home, ".steam", "steam", "steamapps", "compatdata", SelectedGame.AppId, "pfx", "user.reg"),
+                Path.Combine(home, ".local", "share", "Steam", "steamapps", "compatdata", SelectedGame.AppId, "pfx", "user.reg"),
+                Path.Combine(home, ".var", "app", "com.valvesoftware.Steam", "data", "Steam", "steamapps", "compatdata", SelectedGame.AppId, "pfx", "user.reg")
+            };
+
+            foreach (var candidate in candidates)
+            {
+                if (File.Exists(candidate)) return candidate;
+            }
+        }
+
+        if (!string.IsNullOrEmpty(SelectedGame.InstallPath))
+        {
+            var pfxUserReg = Path.Combine(SelectedGame.InstallPath, "pfx", "user.reg");
+            if (File.Exists(pfxUserReg)) return pfxUserReg;
+
+            var parentPfx = Path.Combine(Directory.GetParent(SelectedGame.InstallPath)?.FullName ?? string.Empty, "pfx", "user.reg");
+            if (File.Exists(parentPfx)) return parentPfx;
+        }
+
+        return null;
+    }
+
+    private void LoadDevOptions()
+    {
+        _isInitializingDevOptions = true;
+        try
+        {
+            var regPath = GetUserRegPath();
+            if (regPath != null && File.Exists(regPath))
+            {
+                var options = DLSS_Swapper.LinuxCore.Services.ProtonRegistryService.ReadDeveloperOptions(regPath);
+
+                if (IndicatorComboBox != null && IndicatorComboBox.Items != null)
+                {
+                    foreach (var rawItem in IndicatorComboBox.Items)
+                    {
+                        if (rawItem is ComboBoxItem item && item.Tag?.ToString() == options.IndicatorOption.ToString())
+                        {
+                            IndicatorComboBox.SelectedItem = item;
+                            break;
+                        }
+                    }
+                }
+
+                if (EnableLoggingToFileCheckBox != null)
+                    EnableLoggingToFileCheckBox.IsChecked = options.EnableLoggingToFile;
+
+                if (VerboseLoggingCheckBox != null)
+                    VerboseLoggingCheckBox.IsChecked = options.VerboseLogging;
+
+                if (EnableLoggingToConsoleCheckBox != null)
+                    EnableLoggingToConsoleCheckBox.IsChecked = options.EnableLoggingToConsole;
+            }
+            else if (IndicatorComboBox != null)
+            {
+                IndicatorComboBox.SelectedIndex = 0;
+            }
+        }
+        catch { }
+        finally
+        {
+            _isInitializingDevOptions = false;
+        }
+    }
+
+    private void OnDevOptionChanged(object? sender, RoutedEventArgs e)
+    {
+        if (_isInitializingDevOptions || SelectedGame == null) return;
+
+        var regPath = GetUserRegPath();
+        if (regPath == null || !File.Exists(regPath)) return;
+
+        int indicator = 0;
+        if (IndicatorComboBox?.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out var opt))
+        {
+            indicator = opt;
+        }
+
+        var options = new DLSS_Swapper.LinuxCore.Services.NgxDeveloperOptions
+        {
+            IndicatorOption = indicator,
+            EnableLoggingToFile = EnableLoggingToFileCheckBox?.IsChecked == true,
+            VerboseLogging = VerboseLoggingCheckBox?.IsChecked == true,
+            EnableLoggingToConsole = EnableLoggingToConsoleCheckBox?.IsChecked == true
+        };
+
+        DLSS_Swapper.LinuxCore.Services.ProtonRegistryService.WriteDeveloperOptions(regPath, options);
     }
 }

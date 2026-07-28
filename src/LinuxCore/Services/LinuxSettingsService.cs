@@ -88,12 +88,15 @@ public class LinuxSettingsService
         return new LinuxSettingsData();
     }
 
+    public event Action? OnSettingsChanged;
+
     public void SaveSettings()
     {
         try
         {
             var json = JsonSerializer.Serialize(Settings, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(_settingsFilePath, json);
+            OnSettingsChanged?.Invoke();
         }
         catch { }
     }

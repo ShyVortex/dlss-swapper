@@ -40,17 +40,6 @@ public partial class SettingsView : UserControl
         ThemeTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_ThemeMode");
         AccentColorTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_AccentColor", "Accent Color");
         GameLibrariesTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_GameLibraries");
-        IgnoredPathsTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_IgnoredPaths");
-        AddIgnoredPathButton.Content = ResourceHelper.GetString("SettingsPage_AddIgnoredPath");
-        DlssOptionsTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_DLSSOptions");
-        GlobalSrTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_DLSSOptions_GlobalPreset", "Global Super Resolution preset");
-        GlobalRrTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_DLSSOptions_GlobalRayReconstructionPreset", "Global Ray Reconstruction preset");
-        GlobalFgTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_DLSSOptions_GlobalFrameGenerationPreset", "Global Frame Generation preset");
-        DlssDeveloperTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_DLSSDeveloperOptions");
-        OnScreenIndicatorTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_DLSSDeveloperOptions_ShowOnScreenIndicator");
-        EnableLoggingToFileCheckBox.Content = ResourceHelper.GetString("SettingsPage_DLSSDeveloperOptions_EnableLoggingToFile");
-        VerboseLoggingCheckBox.Content = ResourceHelper.GetString("SettingsPage_DLSSDeveloperOptions_VerboseLogging");
-        EnableLoggingToConsoleCheckBox.Content = ResourceHelper.GetString("SettingsPage_DLSSDeveloperOptions_EnableLoggingToConsoleWindow");
         AllowUntrustedTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_SettingsAllowUntrusted", "Allow Untrusted");
         AllowUntrustedCaptionTextBlock.Text = ResourceHelper.GetString("SettingsPage_AllowUntrustedInfo");
         AllowDebugDllsTitleTextBlock.Text = ResourceHelper.GetString("SettingsPage_AllowDebugDlls");
@@ -97,8 +86,6 @@ public partial class SettingsView : UserControl
             // 2. Game Library Toggles
             SteamToggle.IsChecked = settings.EnableSteam;
             HeroicToggle.IsChecked = settings.EnableHeroic;
-            GogToggle.IsChecked = settings.EnableGog;
-            EpicToggle.IsChecked = settings.EnableEpic;
             ManuallyAddedToggle.IsChecked = settings.EnableManuallyAdded;
 
             // 3. Ignored Paths
@@ -111,34 +98,15 @@ public partial class SettingsView : UserControl
                 }
             }
 
-            // 4. DLSS Presets
-            var srPresets = LinuxPresetService.Instance.GetDlssSrPresets();
-            DlssPresetComboBox.ItemsSource = srPresets;
-            DlssPresetComboBox.SelectedItem = srPresets.FirstOrDefault(x => x.Name == settings.DlssPreset || x.Value == settings.DlssPreset) ?? srPresets.FirstOrDefault();
-
-            var rrPresets = LinuxPresetService.Instance.GetDlssRrPresets();
-            DlssDPresetComboBox.ItemsSource = rrPresets;
-            DlssDPresetComboBox.SelectedItem = rrPresets.FirstOrDefault(x => x.Name == settings.DlssDPreset || x.Value == settings.DlssDPreset) ?? rrPresets.FirstOrDefault();
-
-            var fgPresets = LinuxPresetService.Instance.GetDlssFgPresets();
-            DlssGPresetComboBox.ItemsSource = fgPresets;
-            DlssGPresetComboBox.SelectedItem = fgPresets.FirstOrDefault(x => x.Name == settings.DlssGPreset || x.Value == settings.DlssGPreset) ?? fgPresets.FirstOrDefault();
-
-            // 5. Developer Options
-            SelectComboBoxItemByTag(IndicatorComboBox, settings.IndicatorOption.ToString());
-            EnableLoggingToFileCheckBox.IsChecked = settings.EnableLoggingToFile;
-            VerboseLoggingCheckBox.IsChecked = settings.VerboseLogging;
-            EnableLoggingToConsoleCheckBox.IsChecked = settings.EnableLoggingToConsole;
-
-            // 6. Toggles
+            // 4. Toggles
             AllowUntrustedToggle.IsChecked = settings.AllowUntrusted;
             AllowDebugDllsToggle.IsChecked = settings.AllowDebugDlls;
             OnlyShowDownloadedDllsToggle.IsChecked = settings.OnlyShowDownloadedDlls;
 
-            // 7. Logging Level
+            // 5. Logging Level
             SelectComboBoxItemByTag(LoggingLevelComboBox, settings.LoggingLevel.ToString());
 
-            // 8. Log File Path
+            // 6. Log File Path
             var logDir = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
                 ".config",
@@ -149,13 +117,13 @@ public partial class SettingsView : UserControl
             var logPath = Path.Combine(logDir, $"dlss_swapper_{DateTime.Now:yyyyMMdd}.log");
             CurrentLogFileTextBlock.Text = logPath;
 
-            // 9. Language Selection
+            // 7. Language Selection
             var languages = LinuxLanguageService.Instance.GetAvailableLanguages();
             LanguageComboBox.ItemsSource = languages.Select(x => x.Value).ToList();
             var currentLangPair = languages.FirstOrDefault(x => x.Key == settings.Language);
             LanguageComboBox.SelectedItem = currentLangPair.Value ?? languages[7].Value; // Default en-US
 
-            // 10. About metadata
+            // 8. About metadata
             VersionTextBlock.Text = "1.2.5";
             BuildDateTextBlock.Text = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         }
@@ -240,8 +208,6 @@ public partial class SettingsView : UserControl
         var settings = LinuxSettingsService.Instance.Settings;
         settings.EnableSteam = SteamToggle.IsChecked == true;
         settings.EnableHeroic = HeroicToggle.IsChecked == true;
-        settings.EnableGog = GogToggle.IsChecked == true;
-        settings.EnableEpic = EpicToggle.IsChecked == true;
         settings.EnableManuallyAdded = ManuallyAddedToggle.IsChecked == true;
         Save();
     }
@@ -278,61 +244,6 @@ public partial class SettingsView : UserControl
             LinuxSettingsService.Instance.Settings.IgnoredPaths = IgnoredPaths.ToList();
             Save();
         }
-    }
-
-    private void OnDlssPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-        if (DlssPresetComboBox.SelectedItem is DLSS_Swapper.Core.Models.DlssPresetItem item)
-        {
-            LinuxSettingsService.Instance.Settings.DlssPreset = item.Name;
-            Save();
-        }
-    }
-
-    private void OnDlssDPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-        if (DlssDPresetComboBox.SelectedItem is DLSS_Swapper.Core.Models.DlssPresetItem item)
-        {
-            LinuxSettingsService.Instance.Settings.DlssDPreset = item.Name;
-            Save();
-        }
-    }
-
-    private void OnDlssGPresetSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-        if (DlssGPresetComboBox.SelectedItem is DLSS_Swapper.Core.Models.DlssPresetItem item)
-        {
-            LinuxSettingsService.Instance.Settings.DlssGPreset = item.Name;
-            Save();
-        }
-    }
-
-    private void OnDlssPresetInfoClick(object? sender, RoutedEventArgs e)
-    {
-        OpenUrl("https://github.com/beeradmoore/dlss-swapper/wiki/DLSS-Presets");
-    }
-
-    private void OnIndicatorSelectionChanged(object? sender, SelectionChangedEventArgs e)
-    {
-        if (_isInitializing) return;
-        if (IndicatorComboBox.SelectedItem is ComboBoxItem item && int.TryParse(item.Tag?.ToString(), out var option))
-        {
-            LinuxSettingsService.Instance.Settings.IndicatorOption = option;
-            Save();
-        }
-    }
-
-    private void OnDlssLoggingChanged(object? sender, RoutedEventArgs e)
-    {
-        if (_isInitializing) return;
-        var settings = LinuxSettingsService.Instance.Settings;
-        settings.EnableLoggingToFile = EnableLoggingToFileCheckBox.IsChecked == true;
-        settings.VerboseLogging = VerboseLoggingCheckBox.IsChecked == true;
-        settings.EnableLoggingToConsole = EnableLoggingToConsoleCheckBox.IsChecked == true;
-        Save();
     }
 
     private void OnAllowUntrustedChanged(object? sender, RoutedEventArgs e)

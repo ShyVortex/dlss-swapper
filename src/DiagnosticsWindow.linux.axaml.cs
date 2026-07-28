@@ -84,14 +84,6 @@ public partial class DiagnosticsWindow : Window
             sb.AppendLine("Games: Discovered");
 
             sb.AppendLine();
-            sb.AppendLine("GOG Galaxy");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"Status: {(settings.EnableGog ? "Enabled" : "Disabled")}");
-
-            sb.AppendLine();
-            sb.AppendLine("Epic Games Store");
-            sb.AppendLine(CultureInfo.InvariantCulture, $"Status: {(settings.EnableEpic ? "Enabled" : "Disabled")}");
-
-            sb.AppendLine();
             sb.AppendLine("Manually Added Games");
             sb.AppendLine(CultureInfo.InvariantCulture, $"Status: {(settings.EnableManuallyAdded ? "Enabled" : "Disabled")}");
         }

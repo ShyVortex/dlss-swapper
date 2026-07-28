@@ -2,8 +2,64 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              x:Class="DLSS_Swapper.Avalonia.App"
              RequestedThemeVariant="Dark">
+    <Application.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.ThemeDictionaries>
+                <ResourceDictionary x:Key="Dark">
+                    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#202020"/>
+                    <SolidColorBrush x:Key="AppNavBackgroundBrush" Color="#181818"/>
+                    <SolidColorBrush x:Key="AppNavBorderBrush" Color="#262626"/>
+                    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#282828"/>
+                    <SolidColorBrush x:Key="AppHeaderBackgroundBrush" Color="#181818"/>
+                    <SolidColorBrush x:Key="AppForegroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="AppSecondaryForegroundBrush" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="AppMutedForegroundBrush" Color="#888888"/>
+                    <SolidColorBrush x:Key="AppBorderBrush" Color="#383838"/>
+                    <SolidColorBrush x:Key="AppInputBackgroundBrush" Color="#252525"/>
+                    <SolidColorBrush x:Key="AppInputBorderBrush" Color="#3A3A3A"/>
+                    <SolidColorBrush x:Key="AppButtonBackgroundBrush" Color="#2B2B2B"/>
+                </ResourceDictionary>
+                <ResourceDictionary x:Key="Light">
+                    <SolidColorBrush x:Key="AppWindowBackgroundBrush" Color="#F3F3F3"/>
+                    <SolidColorBrush x:Key="AppNavBackgroundBrush" Color="#E8E8E8"/>
+                    <SolidColorBrush x:Key="AppNavBorderBrush" Color="#D0D0D0"/>
+                    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="AppHeaderBackgroundBrush" Color="#E8E8E8"/>
+                    <SolidColorBrush x:Key="AppForegroundBrush" Color="#1A1A1A"/>
+                    <SolidColorBrush x:Key="AppSecondaryForegroundBrush" Color="#444444"/>
+                    <SolidColorBrush x:Key="AppMutedForegroundBrush" Color="#666666"/>
+                    <SolidColorBrush x:Key="AppBorderBrush" Color="#D0D0D0"/>
+                    <SolidColorBrush x:Key="AppInputBackgroundBrush" Color="#FFFFFF"/>
+                    <SolidColorBrush x:Key="AppInputBorderBrush" Color="#CCCCCC"/>
+                    <SolidColorBrush x:Key="AppButtonBackgroundBrush" Color="#E5E5E5"/>
+                </ResourceDictionary>
+            </ResourceDictionary.ThemeDictionaries>
+
+            <SolidColorBrush x:Key="AppAccentBrush" Color="#E85A24"/>
+            <SolidColorBrush x:Key="AppAccentHoverBrush" Color="#FF7A44"/>
+        </ResourceDictionary>
+    </Application.Resources>
+
     <Application.Styles>
         <FluentTheme />
         <StyleInclude Source="avares://Avalonia.Controls.DataGrid/Themes/Fluent.xaml"/>
+
+        <!-- Global Theme Overrides for Windows -->
+        <Style Selector="Window">
+            <Setter Property="Background" Value="{DynamicResource AppWindowBackgroundBrush}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AppForegroundBrush}"/>
+        </Style>
+
+        <!-- Hover accent parity styles -->
+        <Style Selector="Button.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource AppAccentHoverBrush}"/>
+        </Style>
+        <Style Selector="ToggleSwitch:pointerover /template/ Border#SwitchKnobBounds">
+            <Setter Property="Background" Value="{DynamicResource AppAccentHoverBrush}"/>
+        </Style>
+        <Style Selector="CheckBox:checked:pointerover /template/ Border#NormalRectangle">
+            <Setter Property="Background" Value="{DynamicResource AppAccentHoverBrush}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource AppAccentHoverBrush}"/>
+        </Style>
     </Application.Styles>
 </Application>
