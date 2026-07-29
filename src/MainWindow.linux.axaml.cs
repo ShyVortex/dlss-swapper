@@ -55,7 +55,7 @@ public partial class MainWindow : Window
 
     private async Task<System.Collections.Generic.List<NvidiaModelRowItem>> OpenNvidiaImportDialogAsync(bool isDriverImport)
     {
-        var win = new ImportNvidiaWindow(isDriverImport);
+        var win = new NGXModelImporter(isDriverImport);
         await win.ShowDialog(this);
         return win.SelectedItems;
     }
@@ -374,7 +374,7 @@ public partial class MainWindow : Window
         if (DataContext is MainWindowViewModel vm)
         {
             var gridVm = vm.GameGridViewModel;
-            var filterWin = new FilterWindow(gridVm.HideNoSwappableItems, gridVm.ShowHiddenGames, gridVm.GroupByLibrary);
+            var filterWin = new GameFilterControl(gridVm.HideNoSwappableItems, gridVm.ShowHiddenGames, gridVm.GroupByLibrary);
             await filterWin.ShowDialog(this);
 
             if (filterWin.Applied)

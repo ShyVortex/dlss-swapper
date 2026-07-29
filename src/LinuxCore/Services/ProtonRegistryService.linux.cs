@@ -42,9 +42,16 @@ public static class ProtonRegistryService
 
                 if (inSection)
                 {
-                    if (trimmed.StartsWith("\"ShowOnScreenIndicator\"=", StringComparison.OrdinalIgnoreCase))
+                    if (trimmed.StartsWith("\"ShowDlssIndicator\"=", StringComparison.OrdinalIgnoreCase) ||
+                        trimmed.StartsWith("\"ShowOnScreenIndicator\"=", StringComparison.OrdinalIgnoreCase))
                     {
                         options.IndicatorOption = ParseDword(trimmed);
+                    }
+                    else if (trimmed.StartsWith("\"LogLevel\"=", StringComparison.OrdinalIgnoreCase))
+                    {
+                        int lvl = ParseDword(trimmed);
+                        options.EnableLoggingToFile = lvl >= 1;
+                        options.VerboseLogging = lvl >= 2;
                     }
                     else if (trimmed.StartsWith("\"EnableLoggingToFile\"=", StringComparison.OrdinalIgnoreCase))
                     {
@@ -54,7 +61,8 @@ public static class ProtonRegistryService
                     {
                         options.VerboseLogging = ParseDword(trimmed) != 0;
                     }
-                    else if (trimmed.StartsWith("\"EnableLoggingToConsoleWindow\"=", StringComparison.OrdinalIgnoreCase))
+                    else if (trimmed.StartsWith("\"EnableConsoleLogging\"=", StringComparison.OrdinalIgnoreCase) ||
+                             trimmed.StartsWith("\"EnableLoggingToConsoleWindow\"=", StringComparison.OrdinalIgnoreCase))
                     {
                         options.EnableLoggingToConsole = ParseDword(trimmed) != 0;
                     }
@@ -96,11 +104,16 @@ public static class ProtonRegistryService
                 }
             }
 
+            int logLevel = options.VerboseLogging ? 2 : (options.EnableLoggingToFile ? 1 : 0);
+
             var newKeys = new List<string>
             {
+                $"\"ShowDlssIndicator\"=dword:{options.IndicatorOption:x8}",
                 $"\"ShowOnScreenIndicator\"=dword:{options.IndicatorOption:x8}",
+                $"\"LogLevel\"=dword:{logLevel:x8}",
                 $"\"EnableLoggingToFile\"=dword:{(options.EnableLoggingToFile ? 1 : 0):x8}",
                 $"\"VerboseLogging\"=dword:{(options.VerboseLogging ? 1 : 0):x8}",
+                $"\"EnableConsoleLogging\"=dword:{(options.EnableLoggingToConsole ? 1 : 0):x8}",
                 $"\"EnableLoggingToConsoleWindow\"=dword:{(options.EnableLoggingToConsole ? 1 : 0):x8}"
             };
 
@@ -112,9 +125,12 @@ public static class ProtonRegistryService
                 for (int i = sectionStartIndex + 1; i < end; i++)
                 {
                     var l = lines[i].Trim();
-                    if (!l.StartsWith("\"ShowOnScreenIndicator\"=", StringComparison.OrdinalIgnoreCase) &&
+                    if (!l.StartsWith("\"ShowDlssIndicator\"=", StringComparison.OrdinalIgnoreCase) &&
+                        !l.StartsWith("\"ShowOnScreenIndicator\"=", StringComparison.OrdinalIgnoreCase) &&
+                        !l.StartsWith("\"LogLevel\"=", StringComparison.OrdinalIgnoreCase) &&
                         !l.StartsWith("\"EnableLoggingToFile\"=", StringComparison.OrdinalIgnoreCase) &&
                         !l.StartsWith("\"VerboseLogging\"=", StringComparison.OrdinalIgnoreCase) &&
+                        !l.StartsWith("\"EnableConsoleLogging\"=", StringComparison.OrdinalIgnoreCase) &&
                         !l.StartsWith("\"EnableLoggingToConsoleWindow\"=", StringComparison.OrdinalIgnoreCase))
                     {
                         existingNonNgx.Add(lines[i]);

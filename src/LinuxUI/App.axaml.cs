@@ -14,6 +14,9 @@ public partial class App : Application
 
     public override void OnFrameworkInitializationCompleted()
     {
+        Logger.Init();
+        Logger.Info("DLSS Swapper Linux session initialized.");
+
         if (ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             desktop.MainWindow = new MainWindow();

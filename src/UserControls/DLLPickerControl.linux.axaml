@@ -1,7 +1,7 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:DLSS_Swapper.Avalonia.ViewModels"
-        x:Class="DLSS_Swapper.Avalonia.Views.SelectDllVersionWindow"
+        x:Class="DLSS_Swapper.Avalonia.Views.DLLPickerControl"
         x:DataType="vm:SelectDllVersionViewModel"
         Title="{Binding Title}" Width="480" Height="580"
         WindowStartupLocation="CenterOwner"

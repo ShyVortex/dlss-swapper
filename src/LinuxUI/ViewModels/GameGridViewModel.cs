@@ -168,6 +168,14 @@ public partial class GameGridViewModel : ObservableObject
 
         _favouriteIds = _metadataService.LoadFavourites();
         ScanRealGames();
+
+        LinuxSettingsService.Instance.OnSettingsChanged += () =>
+        {
+            global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                FilterGames();
+            });
+        };
     }
 
     partial void OnIsGridViewChanged(bool value)
@@ -239,6 +247,7 @@ public partial class GameGridViewModel : ObservableObject
         _allDiscoveredGames.Clear();
         _favouriteIds = _metadataService.LoadFavourites();
 
+        // 1. Steam Games
         var steamScanner = new LinuxSteamLibraryScanner();
         if (steamScanner.IsLauncherInstalled())
         {
@@ -258,7 +267,7 @@ public partial class GameGridViewModel : ObservableObject
                     XessDx11Version = g.XessDx11Version,
                     XessFgVersion = g.XessFgVersion,
                     XellVersion = g.XellVersion,
-                    LibraryName = g.Launcher,
+                    LibraryName = "Steam",
                     InstallPath = g.InstallPath,
                     CoverImagePath = g.CoverImagePath,
                     CoverColor = GetColorForGame(g.Name)
@@ -267,7 +276,40 @@ public partial class GameGridViewModel : ObservableObject
                 card.OnFavouriteToggled = OnCardFavouriteToggled;
 
                 _allDiscoveredGames.Add(card);
-                _ = card.LoadCoverAsync(); // Asynchronously load poster artwork
+                _ = card.LoadCoverAsync();
+            }
+        }
+
+        // 2. Heroic Games
+        var heroicScanner = new LinuxHeroicLibraryScanner();
+        if (heroicScanner.IsLauncherInstalled())
+        {
+            var heroicGames = heroicScanner.ScanInstalledGames();
+            foreach (var g in heroicGames)
+            {
+                var card = new GameCardItem
+                {
+                    AppId = g.AppId,
+                    Name = g.Name,
+                    DLSSVersion = g.DLSSVersion,
+                    DLSSGVersion = g.DLSSGVersion,
+                    DLSSDVersion = g.DLSSDVersion,
+                    Fsr31Dx12Version = g.Fsr31Dx12Version,
+                    Fsr31VkVersion = g.Fsr31VkVersion,
+                    XessVersion = g.XessVersion,
+                    XessDx11Version = g.XessDx11Version,
+                    XessFgVersion = g.XessFgVersion,
+                    XellVersion = g.XellVersion,
+                    LibraryName = "Heroic",
+                    InstallPath = g.InstallPath,
+                    CoverImagePath = g.CoverImagePath,
+                    CoverColor = GetColorForGame(g.Name)
+                };
+                card.IsFavourite = _favouriteIds.Contains(card.GameId);
+                card.OnFavouriteToggled = OnCardFavouriteToggled;
+
+                _allDiscoveredGames.Add(card);
+                _ = card.LoadCoverAsync();
             }
         }
 
@@ -313,8 +355,22 @@ public partial class GameGridViewModel : ObservableObject
         FavouriteGames.Clear();
         SteamGames.Clear();
 
+        var settings = LinuxSettingsService.Instance.Settings;
         var query = SearchText?.Trim() ?? string.Empty;
         var matches = _allDiscoveredGames.AsEnumerable();
+
+        // Filter by Game Library toggles in Settings
+        matches = matches.Where(g =>
+        {
+            if (string.Equals(g.LibraryName, "Steam", StringComparison.OrdinalIgnoreCase))
+                return settings.EnableSteam;
+            if (string.Equals(g.LibraryName, "Heroic", StringComparison.OrdinalIgnoreCase))
+                return settings.EnableHeroic;
+            if (string.Equals(g.LibraryName, "Manual", StringComparison.OrdinalIgnoreCase) ||
+                string.Equals(g.LibraryName, "Manually Added", StringComparison.OrdinalIgnoreCase))
+                return settings.EnableManuallyAdded;
+            return true;
+        });
 
         if (!string.IsNullOrEmpty(query))
         {

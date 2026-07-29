@@ -107,15 +107,7 @@ public partial class SettingsView : UserControl
             SelectComboBoxItemByTag(LoggingLevelComboBox, settings.LoggingLevel.ToString());
 
             // 6. Log File Path
-            var logDir = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.UserProfile),
-                ".config",
-                "dlss-swapper",
-                "logs"
-            );
-            Directory.CreateDirectory(logDir);
-            var logPath = Path.Combine(logDir, $"dlss_swapper_{DateTime.Now:yyyyMMdd}.log");
-            CurrentLogFileTextBlock.Text = logPath;
+            CurrentLogFileTextBlock.Text = Logger.GetCurrentLogPath();
 
             // 7. Language Selection
             var languages = LinuxLanguageService.Instance.GetAvailableLanguages();
@@ -277,22 +269,24 @@ public partial class SettingsView : UserControl
             {
                 LinuxSettingsService.Instance.Settings.LoggingLevel = level;
                 Save();
+                Logger.ChangeLoggingLevel((LoggingLevel)(int)level);
+                Logger.Info($"Logging level set to {level}");
             }
         }
     }
 
     private void OnOpenLogFileClick(object? sender, RoutedEventArgs e)
     {
-        var logPath = CurrentLogFileTextBlock.Text;
-        if (!string.IsNullOrWhiteSpace(logPath))
+        var logPath = Logger.GetCurrentLogPath();
+        var dir = Logger.LogDirectory;
+        Directory.CreateDirectory(dir);
+
+        if (!File.Exists(logPath))
         {
-            var dir = Path.GetDirectoryName(logPath);
-            if (!string.IsNullOrWhiteSpace(dir))
-            {
-                Directory.CreateDirectory(dir);
-                OpenUrl(File.Exists(logPath) ? logPath : dir);
-            }
+            Logger.Info("Log file initialized by user click.");
         }
+
+        OpenUrl(File.Exists(logPath) ? logPath : dir);
     }
 
     private async void OnOpenTranslationToolboxClick(object? sender, RoutedEventArgs e)
@@ -352,7 +346,7 @@ public partial class SettingsView : UserControl
     private async void OnProxySettingsClick(object? sender, RoutedEventArgs e)
     {
         var window = TopLevel.GetTopLevel(this) as Window;
-        var proxyWin = new ProxySettingsWindow();
+        var proxyWin = new ProxySettingsControl();
         if (window != null)
             await proxyWin.ShowDialog(window);
         else

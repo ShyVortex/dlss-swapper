@@ -18,9 +18,9 @@ public enum LoggingLevel : int
     Error = 50,
 }
 
-internal static class Logger
+public static class Logger
 {
-    public static string LogDirectory => Path.Combine(Storage.GetTemp(), "logs");
+    public static string LogDirectory => Path.Combine(Storage.StoragePath, "logs");
     static string loggingFile => Path.Combine(LogDirectory, "dlss_swapper_.log");
 #if DEBUG
     static LoggingLevelSwitch levelSwitch = new LoggingLevelSwitch(LogEventLevel.Verbose);
@@ -28,7 +28,7 @@ internal static class Logger
     static LoggingLevelSwitch levelSwitch = new LoggingLevelSwitch(LogEventLevel.Fatal);
 #endif
 
-    internal static void Init()
+    public static void Init()
     {
         if (Directory.Exists(LogDirectory) == false)
         {
@@ -37,11 +37,22 @@ internal static class Logger
 
         Log.Logger = new LoggerConfiguration()
             .MinimumLevel.ControlledBy(levelSwitch)
-            .WriteTo.Debug(formatProvider: CultureInfo.InvariantCulture)
             .WriteTo.File(loggingFile, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7, formatProvider: CultureInfo.InvariantCulture)
             .CreateLogger();
 
-        ChangeLoggingLevel(Settings.Instance.LoggingLevel);
+        if (OperatingSystem.IsLinux())
+        {
+            var linuxLevel = DLSS_Swapper.Core.Services.LinuxSettingsService.Instance.Settings.LoggingLevel;
+            ChangeLoggingLevel((LoggingLevel)(int)linuxLevel);
+        }
+#if !LINUX_CORE
+        else
+        {
+            ChangeLoggingLevel(Settings.Instance.LoggingLevel);
+        }
+#endif
+
+        Info("DLSS Swapper logger initialized.");
     }
 
     public static string GetCurrentLogPath()
@@ -54,7 +65,7 @@ internal static class Logger
     public static void ChangeLoggingLevel(LoggingLevel loggingLevel)
     {
         // Off is secretly fatal as I don't know how to turn off logging :|
-        levelSwitch.MinimumLevel = Settings.Instance.LoggingLevel switch
+        levelSwitch.MinimumLevel = loggingLevel switch
         {
             LoggingLevel.Verbose => LogEventLevel.Verbose,
             LoggingLevel.Debug => LogEventLevel.Debug,

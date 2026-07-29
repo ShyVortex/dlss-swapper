@@ -5,9 +5,9 @@ using DLSS_Swapper.Helpers;
 
 namespace DLSS_Swapper.Avalonia.Views;
 
-public partial class ProxySettingsWindow : Window
+public partial class ProxySettingsControl : Window
 {
-    public ProxySettingsWindow()
+    public ProxySettingsControl()
     {
         InitializeComponent();
         UpdateTranslations();

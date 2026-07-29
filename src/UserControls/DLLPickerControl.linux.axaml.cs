@@ -6,9 +6,9 @@ using DLSS_Swapper.Helpers;
 
 namespace DLSS_Swapper.Avalonia.Views;
 
-public partial class SelectDllVersionWindow : Window
+public partial class DLLPickerControl : Window
 {
-    public SelectDllVersionWindow()
+    public DLLPickerControl()
     {
         InitializeComponent();
         UpdateTranslations();

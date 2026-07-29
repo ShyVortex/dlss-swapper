@@ -12,14 +12,14 @@ public enum LinuxAppTheme
     Dark
 }
 
-public enum LinuxLoggingLevel
+public enum LinuxLoggingLevel : int
 {
-    Off,
-    Verbose,
-    Debug,
-    Info,
-    Warning,
-    Error
+    Off = 0,
+    Verbose = 10,
+    Debug = 20,
+    Info = 30,
+    Warning = 40,
+    Error = 50
 }
 
 public class LinuxSettingsData

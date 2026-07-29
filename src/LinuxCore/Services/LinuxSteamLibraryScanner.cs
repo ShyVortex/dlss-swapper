@@ -223,6 +223,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
             }
         }
 
+        DLSS_Swapper.Logger.Info($"Scanned {games.Count} installed Steam games.");
         return games;
     }
 

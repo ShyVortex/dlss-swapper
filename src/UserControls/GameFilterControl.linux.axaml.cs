@@ -5,7 +5,7 @@ using DLSS_Swapper.Helpers;
 
 namespace DLSS_Swapper.Avalonia.Views;
 
-public partial class FilterWindow : Window
+public partial class GameFilterControl : Window
 {
     public bool Applied { get; private set; }
 
@@ -13,14 +13,14 @@ public partial class FilterWindow : Window
     public bool ShowHiddenGames => ShowHiddenCheckBox.IsChecked == true;
     public bool GroupByLibrary => GroupLibraryCheckBox.IsChecked == true;
 
-    public FilterWindow()
+    public GameFilterControl()
     {
         InitializeComponent();
         UpdateTranslations();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
     }
 
-    public FilterWindow(bool hideNoSwappable, bool showHidden, bool groupByLibrary) : this()
+    public GameFilterControl(bool hideNoSwappable, bool showHidden, bool groupByLibrary) : this()
     {
         HideNoSwappableCheckBox.IsChecked = hideNoSwappable;
         ShowHiddenCheckBox.IsChecked = showHidden;

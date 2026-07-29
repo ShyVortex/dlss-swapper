@@ -29,17 +29,17 @@ public class NvidiaModelRowItem
     public string CategoryKey { get; set; } = "dlss";
 }
 
-public partial class ImportNvidiaWindow : Window
+public partial class NGXModelImporter : Window
 {
     private readonly bool _isDriverImport;
     public ObservableCollection<NvidiaModelRowItem> Items { get; } = new();
     public List<NvidiaModelRowItem> SelectedItems { get; private set; } = new();
 
-    public ImportNvidiaWindow() : this(true)
+    public NGXModelImporter() : this(true)
     {
     }
 
-    public ImportNvidiaWindow(bool isDriverImport)
+    public NGXModelImporter(bool isDriverImport)
     {
         _isDriverImport = isDriverImport;
         InitializeComponent();

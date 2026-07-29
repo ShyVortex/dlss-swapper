@@ -232,7 +232,7 @@ public partial class GameDetailsWindow : Window
         var storageService = new LibraryStorageService();
         var vm = new SelectDllVersionViewModel(categoryType, targetDllPath, currentVersion, storageService);
 
-        var dialog = new SelectDllVersionWindow
+        var dialog = new DLLPickerControl
         {
             DataContext = vm
         };

@@ -13,17 +13,26 @@ namespace DLSS_Swapper;
 static class Storage
 {
     static string? _storagePath;
-#if   PORTABLE && DEBUG
-    //public static string StoragePath => _storagePath ??= Path.Combine(AppContext.BaseDirectory, "StoredData", "DEBUG", Guid.NewGuid().ToString());
-    public static string StoragePath => _storagePath ??= Path.Combine(AppContext.BaseDirectory, "StoredData", "DEBUG");
-#elif PORTABLE && !DEBUG
-    public static string StoragePath => _storagePath ??= Path.Combine(AppContext.BaseDirectory, "StoredData");
-#elif !PORTABLE && DEBUG
-    //public static string StoragePath => _storagePath ??= Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), "DLSS Swapper", "DEBUG", Guid.NewGuid().ToString());
-    public static string StoragePath => _storagePath ??= Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), "DLSS Swapper", "DEBUG");
-#elif !PORTABLE && !DEBUG
-    public static string StoragePath => _storagePath  ??= Path.Combine(Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%"), "DLSS Swapper");
-#endif
+
+    public static string StoragePath
+    {
+        get
+        {
+            if (_storagePath == null)
+            {
+                if (OperatingSystem.IsLinux())
+                {
+                    _storagePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "dlss-swapper");
+                }
+                else
+                {
+                    var localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                    _storagePath = Path.Combine(string.IsNullOrEmpty(localAppData) ? Environment.ExpandEnvironmentVariables("%LOCALAPPDATA%") : localAppData, "DLSS Swapper");
+                }
+            }
+            return _storagePath;
+        }
+    }
 
 
     static Storage()
@@ -142,6 +151,7 @@ static class Storage
         }
     }
 
+#if !LINUX_CORE
     /// <summary>
     /// Saves the current settings object to settings.json in the apps dynamic json folder.
     /// </summary>
@@ -187,7 +197,9 @@ static class Storage
         catch (Exception err)
         {
             Logger.Error(err);
-            return null;
         }
+
+        return null;
     }
+#endif
 }

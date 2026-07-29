@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="DLSS_Swapper.Avalonia.Views.ImportNvidiaWindow"
+        x:Class="DLSS_Swapper.Avalonia.Views.NGXModelImporter"
         Title="Import from NVIDIA" Width="720" Height="520"
         WindowStartupLocation="CenterOwner"
         Background="#202020">

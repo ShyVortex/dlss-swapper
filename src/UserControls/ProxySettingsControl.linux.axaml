@@ -1,6 +1,6 @@
 <Window xmlns="https://github.com/avaloniaui"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        x:Class="DLSS_Swapper.Avalonia.Views.ProxySettingsWindow"
+        x:Class="DLSS_Swapper.Avalonia.Views.ProxySettingsControl"
         Title="Proxy Settings"
         Width="460" SizeToContent="Height"
         WindowStartupLocation="CenterOwner"
