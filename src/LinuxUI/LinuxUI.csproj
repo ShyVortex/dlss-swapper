@@ -7,7 +7,7 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>DLSS_Swapper.LinuxUI</RootNamespace>
-    <AssemblyName>LinuxUI</AssemblyName>
+    <AssemblyName>DLSS Swapper</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
@@ -25,9 +25,9 @@
 
   <ItemGroup>
     <AvaloniaResource Include="..\Assets\icon_256.png" Link="Assets\icon_256.png" />
-    <AvaloniaXaml Include="..\**\*.linux.axaml" Link="%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\**\*.linux.axaml.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
-    <Compile Include="..\**\*.linux.cs" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <AvaloniaXaml Include="..\**\*.linux.axaml" Exclude="..\LinuxCore\**" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\**\*.linux.axaml.cs" Exclude="..\LinuxCore\**" Link="%(RecursiveDir)%(Filename)%(Extension)" />
+    <Compile Include="..\**\*.linux.cs" Exclude="..\LinuxCore\**" Link="%(RecursiveDir)%(Filename)%(Extension)" />
     <Content Include="..\Assets\**\*">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>

@@ -19,5 +19,10 @@ package/NSIS/FileList.nsh
 docs/_site/
 docs/.sass-cache/
 src/DLSS Swapper.net8.csproj
+package/linux/**/build_root/
+package/linux/**/dist/
+package/linux/**/appimagetool
+package/linux/**/AppDir/
+package/linux/**/repo/
 .agents/
 screenshots/

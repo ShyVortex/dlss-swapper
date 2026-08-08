@@ -47,7 +47,6 @@ public partial class AcknowledgementsPage : Window
         var assemblies = new[] { typeof(LinuxSettingsService).Assembly, Assembly.GetExecutingAssembly() };
         var dict = new Dictionary<string, (string? Notes, string? License)>(StringComparer.OrdinalIgnoreCase);
 
-        const string prefix = "Acknowledgements.";
         var regex = new Regex(@"^(?:DLSS_Swapper\.|DLSS_Swapper\.Core\.)?Acknowledgements\.(?<name>[^.]+)\.(?<file>license\.txt|notes\.md)$", RegexOptions.IgnoreCase);
 
         foreach (var asm in assemblies)

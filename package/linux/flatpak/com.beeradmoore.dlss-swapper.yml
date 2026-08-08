@@ -1,0 +1,30 @@
+app-id: com.beeradmoore.dlss-swapper
+runtime: org.freedesktop.Platform
+runtime-version: '24.08'
+sdk: org.freedesktop.Sdk
+command: dlss-swapper-gui
+
+finish-args:
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --share=ipc
+  - --share=network
+  - --filesystem=host
+  - --filesystem=xdg-config/dlss-swapper:create
+  - --filesystem=xdg-data/dlss-swapper:create
+
+modules:
+  - name: dlss-swapper
+    buildsystem: simple
+    build-commands:
+      - install -d /app/bin /app/lib/dlss-swapper /app/share/applications /app/share/icons/hicolor/256x256/apps /app/share/metainfo
+      - cp -a usr/lib/dlss-swapper/* /app/lib/dlss-swapper/
+      - cat usr/bin/dlss-swapper-gui | sed 's|/usr/lib/dlss-swapper|/app/lib/dlss-swapper|g' > /app/bin/dlss-swapper-gui
+      - chmod +x /app/bin/dlss-swapper-gui
+      - cp -a usr/share/applications/com.beeradmoore.dlss-swapper.desktop /app/share/applications/
+      - cp -a usr/share/icons/hicolor/256x256/apps/com.beeradmoore.dlss-swapper.png /app/share/icons/hicolor/256x256/apps/
+      - cp -a usr/share/metainfo/com.beeradmoore.dlss-swapper.metainfo.xml /app/share/metainfo/
+    sources:
+      - type: dir
+        path: build_root

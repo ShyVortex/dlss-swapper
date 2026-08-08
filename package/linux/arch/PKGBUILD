@@ -1,0 +1,24 @@
+# Maintainer: beeradmoore <https://github.com/beeradmoore/dlss-swapper>
+pkgname=dlss-swapper
+pkgver=1.2.5
+pkgrel=1
+pkgdesc="Download, install, and swap DLSS, FSR, and XeSS versions in games"
+arch=('x86_64')
+url="https://github.com/beeradmoore/dlss-swapper"
+license=('GPL-3.0-or-later')
+depends=('icu' 'openssl' 'zlib' 'glibc')
+options=('!strip')
+
+package() {
+    install -d "${pkgdir}/usr/lib/dlss-swapper"
+    install -d "${pkgdir}/usr/bin"
+    install -d "${pkgdir}/usr/share/applications"
+    install -d "${pkgdir}/usr/share/icons/hicolor/256x256/apps"
+    install -d "${pkgdir}/usr/share/metainfo"
+
+    cp -a "${srcdir}/build_root/usr/lib/dlss-swapper/"* "${pkgdir}/usr/lib/dlss-swapper/"
+    install -m755 "${srcdir}/build_root/usr/bin/dlss-swapper-gui" "${pkgdir}/usr/bin/dlss-swapper-gui"
+    install -m644 "${srcdir}/build_root/usr/share/applications/com.beeradmoore.dlss-swapper.desktop" "${pkgdir}/usr/share/applications/"
+    install -m644 "${srcdir}/build_root/usr/share/icons/hicolor/256x256/apps/com.beeradmoore.dlss-swapper.png" "${pkgdir}/usr/share/icons/hicolor/256x256/apps/"
+    install -m644 "${srcdir}/build_root/usr/share/metainfo/com.beeradmoore.dlss-swapper.metainfo.xml" "${pkgdir}/usr/share/metainfo/"
+}
