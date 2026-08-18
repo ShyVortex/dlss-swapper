@@ -43,7 +43,6 @@
 
   <!-- Conditional XAML / AXAML Page & AvaloniaResource Inclusions -->
   <ItemGroup Condition="'$(TargetFramework)' == 'net10.0-windows10.0.26100.0'">
-    <Page Include="**\*.windows.xaml" />
     <Compile Remove="**\*.linux.cs" />
     <Compile Remove="**\*.linux.axaml.cs" />
     <Compile Remove="LinuxCore\**" />
