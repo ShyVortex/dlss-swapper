@@ -24,5 +24,7 @@ package/linux/**/dist/
 package/linux/**/appimagetool
 package/linux/**/AppDir/
 package/linux/**/repo/
+package/linux/**/flatpak_build/
+.flatpak-builder/
 .agents/
 screenshots/
