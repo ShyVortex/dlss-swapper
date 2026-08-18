@@ -24,6 +24,7 @@
   <url type="bugtracker">https://github.com/beeradmoore/dlss-swapper/issues</url>
   <content_rating type="oars-1.1"/>
   <releases>
+    <release version="1.2.6" date="2026-08-18"/>
     <release version="1.2.5" date="2026-08-08"/>
   </releases>
 </component>

@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 BUILD_DIR="${SCRIPT_DIR}/build_root"
 DIST_DIR="${SCRIPT_DIR}/dist"
-VERSION="1.2.5"
+VERSION="1.2.6"
 
 echo "=== Building Arch Linux package (.pkg.tar.zst) for DLSS Swapper v${VERSION} ==="
 

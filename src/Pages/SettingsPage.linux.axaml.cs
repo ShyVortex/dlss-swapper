@@ -116,7 +116,7 @@ public partial class SettingsView : UserControl
             LanguageComboBox.SelectedItem = currentLangPair.Value ?? languages[7].Value; // Default en-US
 
             // 8. About metadata
-            VersionTextBlock.Text = "1.2.5";
+            VersionTextBlock.Text = DLSS_Swapper.LinuxCore.Helpers.AppVersionHelper.GetVersionString();
             BuildDateTextBlock.Text = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         }
         catch

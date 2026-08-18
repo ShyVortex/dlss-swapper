@@ -36,7 +36,7 @@ public partial class NetworkTesterWindow : Window
 
     private string GetAppVersion()
     {
-        return Assembly.GetExecutingAssembly().GetName().Version?.ToString(3) ?? "1.2.5";
+        return DLSS_Swapper.LinuxCore.Helpers.AppVersionHelper.GetVersionString();
     }
 
     private void UpdateTranslations()
@@ -63,7 +63,7 @@ public partial class NetworkTesterWindow : Window
         _tests.Add((7, "NetworkTesterPage_DiagnosticsTest7Title", "Downloading game cover from DLSS Swapper file server", async ct => await TestUrlAsync("https://dlss-swapper.beeradmoore.com/manifest.json", ct)));
         _tests.Add((8, "NetworkTesterPage_DiagnosticsTest8Title", "Downloading game cover from alternative DLSS Swapper file server", async ct => await TestUrlAsync("https://raw.githubusercontent.com/beeradmoore/dlss-swapper/main/Assets/static_manifest.json", ct)));
         _tests.Add((9, "NetworkTesterPage_DnsLookupTitle", "DNS lookup of DLSS Swapper file server", TestDnsLookupAsync));
-        _tests.Add((10, "NetworkTesterPage_DiagnosticsTest10Title", "Downloading DLSS Swapper DLL within DLSS Swapper with custom user agent", async ct => await TestUrlAsync("https://raw.githubusercontent.com/beeradmoore/dlss-swapper/main/Assets/static_manifest.json", ct, customUserAgent: "Mozilla/5.0 (X11; Linux x86_64) DLSS-Swapper/1.2.5")));
+        _tests.Add((10, "NetworkTesterPage_DiagnosticsTest10Title", "Downloading DLSS Swapper DLL within DLSS Swapper with custom user agent", async ct => await TestUrlAsync("https://raw.githubusercontent.com/beeradmoore/dlss-swapper/main/Assets/static_manifest.json", ct, customUserAgent: DLSS_Swapper.LinuxCore.Helpers.AppVersionHelper.GetUserAgent())));
         _tests.Add((11, "NetworkTesterPage_DiagnosticsTest11Title", "Downloading DLSS DLL from UploadThing mirror", async ct => await TestUrlAsync("https://uploadthing.com", ct)));
     }
 

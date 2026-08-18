@@ -4,7 +4,7 @@
 %define _check_files %{nil}
 
 Name:           dlss-swapper
-Version:        1.2.5
+Version:        1.2.6
 Release:        1%{?dist}
 Summary:        Download, install, and swap DLSS, FSR, and XeSS versions in games
 License:        GPLv3+
@@ -37,5 +37,7 @@ cp -a %{_sourcedir}/build_root/usr/share/metainfo/* %{buildroot}/usr/share/metai
 /usr/share/metainfo/com.beeradmoore.dlss-swapper.metainfo.xml
 
 %changelog
+* Tue Aug 18 2026 beeradmoore <https://github.com/beeradmoore/dlss-swapper> - 1.2.6-1
+- Release version 1.2.6 with dynamic versioning and cross-platform packaging.
 * Sat Aug 08 2026 beeradmoore <https://github.com/beeradmoore/dlss-swapper> - 1.2.5-1
 - Release version 1.2.5 with cross-platform Linux support.

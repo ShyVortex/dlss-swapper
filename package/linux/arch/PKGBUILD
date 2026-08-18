@@ -1,6 +1,6 @@
 # Maintainer: beeradmoore <https://github.com/beeradmoore/dlss-swapper>
 pkgname=dlss-swapper
-pkgver=1.2.5
+pkgver=1.2.6
 pkgrel=1
 pkgdesc="Download, install, and swap DLSS, FSR, and XeSS versions in games"
 arch=('x86_64')

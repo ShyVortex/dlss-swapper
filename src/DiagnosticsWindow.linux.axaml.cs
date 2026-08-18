@@ -35,7 +35,7 @@ public partial class DiagnosticsWindow : Window
         sb.AppendLine("```");
         try
         {
-            var appVersion = "1.2.5";
+            var appVersion = DLSS_Swapper.LinuxCore.Helpers.AppVersionHelper.GetVersionString();
             sb.AppendLine(CultureInfo.InvariantCulture, $"DLSS Swapper: {appVersion}");
             sb.AppendLine("Portable: false");
             sb.AppendLine();

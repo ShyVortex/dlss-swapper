@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 APPDIR="${SCRIPT_DIR}/AppDir"
 DIST_DIR="${SCRIPT_DIR}/dist"
-VERSION="1.2.5"
+VERSION="1.2.6"
 
 echo "=== Building AppImage for DLSS Swapper v${VERSION} ==="
 
