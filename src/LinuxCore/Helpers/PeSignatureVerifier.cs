@@ -3,7 +3,7 @@ using System.IO;
 using System.Security.Cryptography.Pkcs;
 using System.Security.Cryptography.X509Certificates;
 
-namespace DLSS_Swapper.Helpers;
+namespace DLSS_Swapper.LinuxCore.Helpers;
 
 public static class PeSignatureVerifier
 {

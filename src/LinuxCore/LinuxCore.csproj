@@ -25,6 +25,7 @@
     <PackageReference Include="sqlite-net-e" Version="1.11.0" />
     <PackageReference Include="ValveKeyValue" Version="0.70.0.499" />
     <PackageReference Include="YamlDotNet" Version="18.1.0" />
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.0" />
   </ItemGroup>
 
   <ItemGroup>

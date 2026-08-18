@@ -40,11 +40,13 @@ public static class Logger
             .WriteTo.File(loggingFile, rollingInterval: RollingInterval.Day, retainedFileCountLimit: 7, formatProvider: CultureInfo.InvariantCulture)
             .CreateLogger();
 
+#if !WINDOWS
         if (OperatingSystem.IsLinux())
         {
             var linuxLevel = DLSS_Swapper.Core.Services.LinuxSettingsService.Instance.Settings.LoggingLevel;
             ChangeLoggingLevel((LoggingLevel)(int)linuxLevel);
         }
+#endif
 #if !LINUX_CORE
         else
         {

@@ -34,7 +34,7 @@ public class LanguageManager
         {
             Logger.Error($"Failed to set Thread.CurrentThread to {key}: {err.Message}");
         }
-        ResourceHelper.LoadResource(key);
+        ResourceHelper.SetLanguageKey(key);
         ReloadLanguage();
     }
 
