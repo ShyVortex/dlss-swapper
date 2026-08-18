@@ -107,6 +107,12 @@ jobs:
     - name: Build DLSS Swapper installer
       run: ${{ github.workspace }}\package\build_Installer.cmd
       working-directory: ${{ github.workspace }}\package\
+
+    - name: Verify build outputs
+      shell: pwsh
+      run: |
+        Write-Host "Contents of src/bin:"
+        Get-ChildItem -Path "${{ github.workspace }}\src\bin" -Recurse -File | Select-Object FullName
     
     - name: Upload unsigned artifacts to be signed
       if: ${{ env.SHOULD_SIGN == 'true' }}

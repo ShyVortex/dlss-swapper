@@ -19,7 +19,7 @@ dotnet publish "%csproj_file%" ^
 	--runtime win-x64 ^
     --self-contained ^
     --configuration Release_Portable ^
-    -p:PublishDir=..\src\bin\publish\portable\ || goto :error
+    -p:PublishDir=bin\publish\portable\ || goto :error
 
 REM Everything is fine, go to the end of the file.
 goto :end
