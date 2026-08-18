@@ -39,13 +39,42 @@ cp "${REPO_ROOT}/package/linux/assets/com.beeradmoore.dlss-swapper.desktop" "${B
 cp "${REPO_ROOT}/package/linux/assets/com.beeradmoore.dlss-swapper.png" "${BUILD_DIR}/usr/share/icons/hicolor/256x256/apps/"
 cp "${REPO_ROOT}/package/linux/assets/com.beeradmoore.dlss-swapper.metainfo.xml" "${BUILD_DIR}/usr/share/metainfo/"
 
-echo "4. Building Arch Linux package with makepkg..."
-mkdir -p "${SCRIPT_DIR}/src"
-ln -snf "${BUILD_DIR}" "${SCRIPT_DIR}/src/build_root"
+echo "4. Building Arch Linux package (.pkg.tar.zst)..."
+if command -v makepkg >/dev/null 2>&1; then
+    mkdir -p "${SCRIPT_DIR}/src"
+    ln -snf "${BUILD_DIR}" "${SCRIPT_DIR}/src/build_root"
 
-(cd "${SCRIPT_DIR}" && makepkg -f --nodeps)
+    (cd "${SCRIPT_DIR}" && makepkg -f --nodeps)
 
-mv "${SCRIPT_DIR}"/*.pkg.tar.zst "${DIST_DIR}/"
-rm -rf "${SCRIPT_DIR}/pkg" "${SCRIPT_DIR}/src"
+    mv "${SCRIPT_DIR}"/*.pkg.tar.zst "${DIST_DIR}/"
+    rm -rf "${SCRIPT_DIR}/pkg" "${SCRIPT_DIR}/src"
+else
+    echo "makepkg not found (e.g. on Ubuntu runner). Generating Arch package via .PKGINFO + tar.zst..."
+    PKG_STAGING="${SCRIPT_DIR}/pkg_staging"
+    rm -rf "${PKG_STAGING}"
+    mkdir -p "${PKG_STAGING}"
+    cp -a "${BUILD_DIR}/"* "${PKG_STAGING}/"
+
+    BUILDDATE=$(date +%s)
+    cat << EOF > "${PKG_STAGING}/.PKGINFO"
+pkgname = dlss-swapper
+pkgver = ${VERSION}-1
+pkgdesc = Download, install, and swap DLSS, FSR, and XeSS versions in games
+url = https://github.com/beeradmoore/dlss-swapper
+builddate = ${BUILDDATE}
+packager = beeradmoore <https://github.com/beeradmoore/dlss-swapper>
+size = $(du -sb "${PKG_STAGING}" | cut -f1)
+arch = x86_64
+license = GPL-3.0-or-later
+depend = icu
+depend = openssl
+depend = zlib
+depend = glibc
+EOF
+
+    PKG_OUT="${DIST_DIR}/dlss-swapper-${VERSION}-1-x86_64.pkg.tar.zst"
+    (cd "${PKG_STAGING}" && tar -c --owner=0 --group=0 * .PKGINFO | zstd -T0 -19 -o "${PKG_OUT}")
+    rm -rf "${PKG_STAGING}"
+fi
 
 echo "=== Arch Linux package created successfully: ${DIST_DIR}/dlss-swapper-${VERSION}-1-x86_64.pkg.tar.zst ==="

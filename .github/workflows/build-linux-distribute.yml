@@ -1,4 +1,4 @@
-name: Build and Release DLSS Swapper (Linux)
+name: Build DLSS Swapper (Linux)
 
 on:
   push:

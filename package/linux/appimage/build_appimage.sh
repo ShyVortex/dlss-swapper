@@ -52,6 +52,6 @@ elif [ ! -f "${APPIMAGETOOL}" ]; then
 fi
 
 echo "5. Generating AppImage..."
-ARCH=x86_64 "${APPIMAGETOOL}" "${APPDIR}" "${DIST_DIR}/DLSS_Swapper-${VERSION}-x86_64.AppImage"
+ARCH=x86_64 APPIMAGE_EXTRACT_AND_RUN=1 "${APPIMAGETOOL}" "${APPDIR}" "${DIST_DIR}/DLSS_Swapper-${VERSION}-x86_64.AppImage"
 
 echo "=== AppImage created successfully: ${DIST_DIR}/DLSS_Swapper-${VERSION}-x86_64.AppImage ==="
