@@ -8,7 +8,7 @@ BUILD_DIR="${SCRIPT_DIR}/build_root"
 DIST_DIR="${SCRIPT_DIR}/dist"
 FLATPAK_BUILD_DIR="${SCRIPT_DIR}/flatpak_build"
 REPO_DIR="${SCRIPT_DIR}/repo"
-VERSION="1.2.6"
+VERSION="${VERSION:-$(grep -oPm1 '(?<=<Version>)[^<]+' "${REPO_ROOT}/src/LinuxUI/LinuxUI.csproj" || echo "1.2.6.1")}"
 
 echo "=== Building Flatpak package for DLSS Swapper v${VERSION} ==="
 
@@ -43,7 +43,9 @@ cp "${REPO_ROOT}/package/linux/assets/com.beeradmoore.dlss-swapper.metainfo.xml"
 
 echo "4. Building Flatpak package..."
 if command -v flatpak-builder >/dev/null 2>&1; then
-    flatpak-builder --force-clean --disable-rofiles-fuse --install-deps-from=flathub --repo="${REPO_DIR}" "${FLATPAK_BUILD_DIR}" "${SCRIPT_DIR}/com.beeradmoore.dlss-swapper.yml" || true
+    flatpak-builder --user --force-clean --disable-rofiles-fuse --install-deps-from=flathub --repo="${REPO_DIR}" "${FLATPAK_BUILD_DIR}" "${SCRIPT_DIR}/com.beeradmoore.dlss-swapper.yml" || \
+    flatpak-builder --force-clean --disable-rofiles-fuse --install-deps-from=flathub --repo="${REPO_DIR}" "${FLATPAK_BUILD_DIR}" "${SCRIPT_DIR}/com.beeradmoore.dlss-swapper.yml" || \
+    flatpak-builder --force-clean --disable-rofiles-fuse --repo="${REPO_DIR}" "${FLATPAK_BUILD_DIR}" "${SCRIPT_DIR}/com.beeradmoore.dlss-swapper.yml" || true
     if [ -d "${REPO_DIR}" ]; then
         flatpak build-bundle "${REPO_DIR}" "${DIST_DIR}/com.beeradmoore.dlss-swapper.flatpak" com.beeradmoore.dlss-swapper
         rm -rf "${FLATPAK_BUILD_DIR}" "${REPO_DIR}"

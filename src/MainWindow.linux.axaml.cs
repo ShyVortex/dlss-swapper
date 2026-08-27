@@ -40,9 +40,14 @@ public partial class MainWindow : Window
     private void UpdateTranslations()
     {
         GamesHeaderTitleTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Title", "Games");
+        GamesNavTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Title", "Games");
+        LibraryNavTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_Title", "Library");
+        SettingsNavTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_Title", "Settings");
+
         ToolTip.SetTip(GamesNavButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("Main_Games", "Games"));
         ToolTip.SetTip(LibraryNavButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("Main_Library", "Library"));
         ToolTip.SetTip(SettingsNavButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("Main_Settings", "Settings"));
+        ToolTip.SetTip(PaneToggleButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Navigation", "Toggle Navigation"));
 
         AddGameButtonTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_AddGame", "Add Game");
         RefreshGamesButtonTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Refresh", "Refresh");

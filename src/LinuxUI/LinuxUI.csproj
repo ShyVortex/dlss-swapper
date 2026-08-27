@@ -8,9 +8,9 @@
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <RootNamespace>DLSS_Swapper.LinuxUI</RootNamespace>
     <AssemblyName>DLSS Swapper</AssemblyName>
-    <Version>1.2.6.0</Version>
-    <AssemblyVersion>1.2.6.0</AssemblyVersion>
-    <FileVersion>1.2.6.0</FileVersion>
+    <Version>1.2.6.1</Version>
+    <AssemblyVersion>1.2.6.1</AssemblyVersion>
+    <FileVersion>1.2.6.1</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>

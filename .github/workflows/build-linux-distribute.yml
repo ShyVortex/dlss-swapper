@@ -32,6 +32,8 @@ jobs:
         run: |
           flatpak remote-add --user --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
           flatpak install --user -y flathub org.freedesktop.Platform//24.08 org.freedesktop.Sdk//24.08 || true
+          sudo flatpak remote-add --if-not-exists flathub https://dl.flathub.org/repo/flathub.flatpakrepo || true
+          sudo flatpak install -y flathub org.freedesktop.Platform/x86_64/24.08 org.freedesktop.Sdk/x86_64/24.08 || true
 
       - name: Extract version from csproj
         id: get_version

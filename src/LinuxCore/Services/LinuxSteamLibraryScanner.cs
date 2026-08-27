@@ -229,20 +229,90 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
 
     private string ResolveCoverImage(string steamPath, string appId)
     {
-        // Check local Steam librarycache
-        var localCover = Path.Combine(steamPath, "appcache", "librarycache", $"{appId}_library_600x900.jpg");
-        if (File.Exists(localCover))
+        var candidateRoots = new List<string>();
+        if (!string.IsNullOrEmpty(steamPath) && Directory.Exists(steamPath))
         {
-            return localCover;
+            candidateRoots.Add(steamPath);
+        }
+        foreach (var p in PossibleSteamPaths)
+        {
+            if (Directory.Exists(p) && !candidateRoots.Contains(p))
+            {
+                candidateRoots.Add(p);
+            }
         }
 
-        var localHeader = Path.Combine(steamPath, "appcache", "librarycache", $"{appId}_header.jpg");
-        if (File.Exists(localHeader))
+        foreach (var root in candidateRoots)
         {
-            return localHeader;
+            // 1. Check user custom portrait grid artwork (userdata/{userId}/config/grid/)
+            var userdataPath = Path.Combine(root, "userdata");
+            if (Directory.Exists(userdataPath))
+            {
+                try
+                {
+                    foreach (var userDir in Directory.GetDirectories(userdataPath))
+                    {
+                        var gridPath = Path.Combine(userDir, "config", "grid");
+                        if (!Directory.Exists(gridPath)) continue;
+
+                        var customCandidates = new[]
+                        {
+                            Path.Combine(gridPath, $"{appId}p.png"),
+                            Path.Combine(gridPath, $"{appId}p.jpg"),
+                            Path.Combine(gridPath, $"{appId}_600x900.jpg"),
+                            Path.Combine(gridPath, $"{appId}_600x900.png")
+                        };
+
+                        foreach (var candidate in customCandidates)
+                        {
+                            if (File.Exists(candidate)) return candidate;
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore filesystem errors in userdata
+                }
+            }
+
+            // 2. Check local Steam librarycache for vertical portrait covers (600x900 / capsule)
+            var libraryCachePath = Path.Combine(root, "appcache", "librarycache");
+            if (Directory.Exists(libraryCachePath))
+            {
+                // 2a. Legacy flat file (e.g. {appId}_library_600x900.jpg)
+                var localCover = Path.Combine(libraryCachePath, $"{appId}_library_600x900.jpg");
+                if (File.Exists(localCover)) return localCover;
+
+                // 2b. Modern Steam directory structure (appcache/librarycache/{appId}/...)
+                var appCacheDir = Path.Combine(libraryCachePath, appId);
+                if (Directory.Exists(appCacheDir))
+                {
+                    try
+                    {
+                        // Direct file inside folder (e.g. 1174180/library_600x900.jpg)
+                        var direct600x900 = Path.Combine(appCacheDir, "library_600x900.jpg");
+                        if (File.Exists(direct600x900)) return direct600x900;
+
+                        // Recursive search for 600x900
+                        var direct600x900Files = Directory.GetFiles(appCacheDir, "library_600x900.jpg", SearchOption.AllDirectories);
+                        if (direct600x900Files.Length > 0) return direct600x900Files[0];
+
+                        // Steam vertical capsule cover (e.g. {appId}/{hash}/library_capsule.jpg)
+                        var capsuleFiles = Directory.GetFiles(appCacheDir, "library_capsule.jpg", SearchOption.AllDirectories);
+                        if (capsuleFiles.Length > 0) return capsuleFiles[0];
+
+                        var any600x900 = Directory.GetFiles(appCacheDir, "*600x900*.jpg", SearchOption.AllDirectories);
+                        if (any600x900.Length > 0) return any600x900[0];
+                    }
+                    catch
+                    {
+                        // Ignore directory search errors
+                    }
+                }
+            }
         }
 
-        // Steam CDN online image fallback
+        // 3. Steam CDN online portrait image fallback (shared CDN 600x900 capsule)
         return $"https://shared.cloudflare.steamstatic.com/store_item_assets/steam/apps/{appId}/library_600x900.jpg";
     }
 

@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 BUILD_DIR="${SCRIPT_DIR}/build_root"
 DIST_DIR="${SCRIPT_DIR}/dist"
-VERSION="1.2.6"
+VERSION="${VERSION:-$(grep -oPm1 '(?<=<Version>)[^<]+' "${REPO_ROOT}/src/LinuxUI/LinuxUI.csproj" || echo "1.2.6.1")}"
 PKG_NAME="dlss-swapper_${VERSION}_amd64"
 
 echo "=== Building Debian package for DLSS Swapper v${VERSION} ==="

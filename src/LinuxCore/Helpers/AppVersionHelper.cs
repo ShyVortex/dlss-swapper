@@ -15,28 +15,28 @@ public static class AppVersionHelper
             {
                 _cachedVersion = Assembly.GetEntryAssembly()?.GetName().Version
                                  ?? Assembly.GetExecutingAssembly().GetName().Version
-                                 ?? new Version(1, 2, 6, 0);
+                                 ?? new Version(1, 2, 6, 1);
             }
             return _cachedVersion;
         }
     }
 
-    public static string GetVersionString(int fieldCount = 3)
+    public static string GetVersionString()
     {
-        var ver = Version;
-        if (fieldCount == 3)
+        var version = Version;
+        if (version.Build <= 0 && version.Revision <= 0)
         {
-            return $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}";
+            return $"{version.Major}.{version.Minor}";
         }
-        else if (fieldCount == 2)
+        else if (version.Revision <= 0)
         {
-            return $"{ver.Major}.{ver.Minor}";
+            return $"{version.Major}.{version.Minor}.{version.Build}";
         }
-        return $"{ver.Major}.{ver.Minor}.{Math.Max(0, ver.Build)}.{Math.Max(0, ver.Revision)}";
+        return $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}";
     }
 
     public static string GetUserAgent()
     {
-        return $"Mozilla/5.0 (X11; Linux x86_64) DLSS-Swapper/{GetVersionString(3)}";
+        return $"Mozilla/5.0 (X11; Linux x86_64) DLSS-Swapper/{GetVersionString()}";
     }
 }

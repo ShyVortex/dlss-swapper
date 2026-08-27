@@ -7,46 +7,94 @@
         Title="DLSS Swapper" Width="1200" Height="780"
         Background="{DynamicResource AppWindowBackgroundBrush}">
 
-    <Grid ColumnDefinitions="56,*" PointerPressed="OnWindowPointerPressed" Background="Transparent">
-        <!-- Left Navigation Rail -->
-        <Border Grid.Column="0" Background="{DynamicResource AppNavBackgroundBrush}" BorderBrush="{DynamicResource AppNavBorderBrush}" BorderThickness="0,0,1,0">
-            <Grid RowDefinitions="Auto,*,Auto" Margin="0,10">
-                <!-- Application Logo -->
-                <Panel Grid.Row="0" Width="32" Height="32" HorizontalAlignment="Center" Margin="0,5,0,15">
-                    <Image Source="/Assets/icon_256.png" Width="28" Height="28"/>
-                </Panel>
+    <Window.Styles>
+        <Style Selector="Button.navBtn">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="HorizontalAlignment" Value="Stretch"/>
+            <Setter Property="VerticalAlignment" Value="Stretch"/>
+            <Setter Property="Padding" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="CornerRadius" Value="4"/>
+        </Style>
+        <Style Selector="Button.navBtn:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#14FFFFFF"/>
+        </Style>
+        <Style Selector="Button.navBtn:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#24FFFFFF"/>
+        </Style>
+    </Window.Styles>
 
-                <!-- Navigation Icons -->
-                <StackPanel Grid.Row="1" Spacing="6" HorizontalAlignment="Stretch">
-                    <!-- Games Nav Button (Active when IsGamesPageVisible == True) -->
-                    <Grid Height="40">
-                        <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsGamesPageVisible}"/>
-                        <Button x:Name="GamesNavButton" Command="{Binding NavigateToGamesCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" ToolTip.Tip="Games">
-                            <PathIcon Data="M21,6H3A2,2 0 0,0 1,8V16A2,2 0 0,0 3,18H21A2,2 0 0,0 23,16V8A2,2 0 0,0 21,6M6,14H4V12H6V14M6,11H4V9H6V11M13,13H11V15H9V13H7V11H9V9H11V11H13V13M19,11A1,1 0 0,1 18,12A1,1 0 0,1 17,11A1,1 0 0,1 18,10A1,1 0 0,1 19,11M17,14A1,1 0 0,1 16,15A1,1 0 0,1 15,14A1,1 0 0,1 16,13A1,1 0 0,1 17,14Z" Foreground="{DynamicResource AppSecondaryForegroundBrush}" Width="20" Height="20"/>
+    <SplitView IsPaneOpen="{Binding IsPaneOpen, Mode=TwoWay}"
+               DisplayMode="CompactOverlay"
+               CompactPaneLength="48"
+               OpenPaneLength="260"
+               PaneBackground="{DynamicResource AppNavBackgroundBrush}">
+
+        <!-- Expandable / Collapsible Navigation Sidebar Pane -->
+        <SplitView.Pane>
+            <Border BorderBrush="{DynamicResource AppNavBorderBrush}" BorderThickness="0,0,1,0" Background="{DynamicResource AppNavBackgroundBrush}">
+                <Grid RowDefinitions="Auto,*,Auto" Margin="4,8,4,8">
+                    <!-- Hamburger Toggle Button -->
+                    <Grid Grid.Row="0" Height="40" Margin="0,0,0,8">
+                        <Button x:Name="PaneToggleButton"
+                                Command="{Binding TogglePaneCommand}"
+                                Classes="navBtn"
+                                Width="40" Height="36"
+                                HorizontalAlignment="Left"
+                                ToolTip.Tip="Toggle Navigation">
+                            <PathIcon Data="M3 6h18v2H3V6zm0 5h18v2H3v-2zm0 5h18v2H3v-2z"
+                                      Foreground="{DynamicResource AppSecondaryForegroundBrush}"
+                                      Width="16" Height="16"
+                                      HorizontalAlignment="Center" VerticalAlignment="Center"/>
                         </Button>
                     </Grid>
 
-                    <!-- Library Nav Button (Active when IsLibraryPageVisible == True) -->
-                    <Grid Height="40">
-                        <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsLibraryPageVisible}"/>
-                        <Button x:Name="LibraryNavButton" Command="{Binding NavigateToLibraryCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" ToolTip.Tip="Library">
-                            <PathIcon Data="M4 4h3.5v16H4V4zm5.5 0h3.5v16h-3.5V4zm5.5 0h3.5v16h-3.5V4z" Foreground="{DynamicResource AppSecondaryForegroundBrush}" Width="20" Height="20"/>
+                    <!-- Navigation Items -->
+                    <StackPanel Grid.Row="1" Spacing="4" HorizontalAlignment="Stretch">
+                        <!-- Games Nav Button -->
+                        <Grid Height="40">
+                            <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsGamesPageVisible}"/>
+                            <Border Background="#14FFFFFF" CornerRadius="4" Margin="2,0" IsVisible="{Binding IsGamesPageVisible}"/>
+                            <Button x:Name="GamesNavButton" Command="{Binding NavigateToGamesCommand}" Classes="navBtn" ToolTip.Tip="Games">
+                                <Grid ColumnDefinitions="40,*" VerticalAlignment="Center">
+                                    <PathIcon Grid.Column="0" Data="M21,6H3A2,2 0 0,0 1,8V16A2,2 0 0,0 3,18H21A2,2 0 0,0 23,16V8A2,2 0 0,0 21,6M6,14H4V12H6V14M6,11H4V9H6V11M13,13H11V15H9V13H7V11H9V9H11V11H13V13M19,11A1,1 0 0,1 18,12A1,1 0 0,1 17,11A1,1 0 0,1 18,10A1,1 0 0,1 19,11M17,14A1,1 0 0,1 16,15A1,1 0 0,1 15,14A1,1 0 0,1 16,13A1,1 0 0,1 17,14Z" Foreground="{DynamicResource AppSecondaryForegroundBrush}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="GamesNavTextBlock" Grid.Column="1" Text="Games" FontSize="14" Foreground="{DynamicResource AppForegroundBrush}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </Grid>
+                            </Button>
+                        </Grid>
+
+                        <!-- Library Nav Button -->
+                        <Grid Height="40">
+                            <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsLibraryPageVisible}"/>
+                            <Border Background="#14FFFFFF" CornerRadius="4" Margin="2,0" IsVisible="{Binding IsLibraryPageVisible}"/>
+                            <Button x:Name="LibraryNavButton" Command="{Binding NavigateToLibraryCommand}" Classes="navBtn" ToolTip.Tip="Library">
+                                <Grid ColumnDefinitions="40,*" VerticalAlignment="Center">
+                                    <PathIcon Grid.Column="0" Data="M4 4h3.5v16H4V4zm5.5 0h3.5v16h-3.5V4zm5.5 0h3.5v16h-3.5V4z" Foreground="{DynamicResource AppSecondaryForegroundBrush}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    <TextBlock x:Name="LibraryNavTextBlock" Grid.Column="1" Text="Library" FontSize="14" Foreground="{DynamicResource AppForegroundBrush}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                                </Grid>
+                            </Button>
+                        </Grid>
+                    </StackPanel>
+
+                    <!-- Settings Nav Button (Pinned to Bottom) -->
+                    <Grid Grid.Row="2" Height="40">
+                        <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsSettingsPageVisible}"/>
+                        <Border Background="#14FFFFFF" CornerRadius="4" Margin="2,0" IsVisible="{Binding IsSettingsPageVisible}"/>
+                        <Button x:Name="SettingsNavButton" Command="{Binding NavigateToSettingsCommand}" Classes="navBtn" ToolTip.Tip="Settings">
+                            <Grid ColumnDefinitions="40,*" VerticalAlignment="Center">
+                                <PathIcon Grid.Column="0" Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 c-0.12,0.21-0.08,0.47,0.12,0.61l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12c0,0.31,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" Foreground="{DynamicResource AppSecondaryForegroundBrush}" Width="18" Height="18" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="SettingsNavTextBlock" Grid.Column="1" Text="Settings" FontSize="14" Foreground="{DynamicResource AppForegroundBrush}" VerticalAlignment="Center" Margin="6,0,0,0"/>
+                            </Grid>
                         </Button>
                     </Grid>
-                </StackPanel>
-
-                <!-- Settings Nav Button (Pinned to Bottom) -->
-                <Grid Grid.Row="2" Height="40">
-                    <Border Width="3" Height="20" Background="{DynamicResource AppAccentBrush}" HorizontalAlignment="Left" CornerRadius="0,2,2,0" IsVisible="{Binding IsSettingsPageVisible}"/>
-                    <Button x:Name="SettingsNavButton" Command="{Binding NavigateToSettingsCommand}" Background="Transparent" BorderThickness="0" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Cursor="Hand" ToolTip.Tip="Settings">
-                        <PathIcon Data="M19.14,12.94c0.04-0.3,0.06-0.61,0.06-0.94c0-0.32-0.02-0.64-0.07-0.94l2.03-1.58c0.18-0.14,0.23-0.41,0.12-0.61 l-1.92-3.32c-0.12-0.22-0.37-0.29-0.59-0.22l-2.39,0.96c-0.5-0.38-1.03-0.7-1.62-0.94L14.4,2.81c-0.04-0.24-0.24-0.41-0.48-0.41 h-3.84c-0.24,0-0.43,0.17-0.47,0.41L9.25,5.35C8.66,5.59,8.12,5.92,7.63,6.29L5.24,5.33c-0.22-0.08-0.47,0-0.59,0.22L2.74,8.87 c-0.12,0.21-0.08,0.47,0.12,0.61l2.03,1.58C4.84,11.36,4.8,11.69,4.8,12c0,0.31,0.02,0.64,0.07,0.94l-2.03,1.58 c-0.18,0.14-0.23,0.41-0.12,0.61l1.92,3.32c0.12,0.22,0.37,0.29,0.59,0.22l2.39-0.96c0.5,0.38,1.03,0.7,1.62,0.94l0.36,2.54 c0.05,0.24,0.24,0.41,0.48,0.41h3.84c0.24,0,0.44-0.17,0.47-0.41l0.36-2.54c0.59-0.24,1.13-0.56,1.62-0.94l2.39,0.96 c0.22,0.08,0.47,0,0.59-0.22l1.92-3.32c0.12-0.22,0.07-0.47-0.12-0.61L19.14,12.94z M12,15.6c-1.98,0-3.6-1.62-3.6-3.6 s1.62-3.6,3.6-3.6s3.6,1.62,3.6,3.6S13.98,15.6,12,15.6z" Foreground="{DynamicResource AppSecondaryForegroundBrush}" Width="20" Height="20"/>
-                    </Button>
                 </Grid>
-            </Grid>
-        </Border>
+            </Border>
+        </SplitView.Pane>
 
         <!-- Main Content Area -->
-        <Panel Grid.Column="1">
+        <SplitView.Content>
+            <Panel PointerPressed="OnWindowPointerPressed" Background="Transparent">
             <!-- 0. Games Page View -->
             <Grid RowDefinitions="Auto,*" IsVisible="{Binding IsGamesPageVisible}">
                 <!-- Header Control Bar -->
@@ -134,6 +182,7 @@
             <Panel IsVisible="{Binding IsSettingsPageVisible}">
                 <views:SettingsView/>
             </Panel>
-        </Panel>
-    </Grid>
+            </Panel>
+        </SplitView.Content>
+    </SplitView>
 </Window>

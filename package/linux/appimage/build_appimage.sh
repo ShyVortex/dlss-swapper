@@ -6,7 +6,7 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/../../.." && pwd)"
 
 APPDIR="${SCRIPT_DIR}/AppDir"
 DIST_DIR="${SCRIPT_DIR}/dist"
-VERSION="1.2.6"
+VERSION="${VERSION:-$(grep -oPm1 '(?<=<Version>)[^<]+' "${REPO_ROOT}/src/LinuxUI/LinuxUI.csproj" || echo "1.2.6.1")}"
 
 echo "=== Building AppImage for DLSS Swapper v${VERSION} ==="
 

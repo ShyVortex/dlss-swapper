@@ -20,6 +20,15 @@ public partial class MainWindowViewModel : ObservableObject
     [ObservableProperty]
     private bool _isSettingsPageVisible = false;
 
+    [ObservableProperty]
+    private bool _isPaneOpen = false;
+
+    [RelayCommand]
+    private void TogglePane()
+    {
+        IsPaneOpen = !IsPaneOpen;
+    }
+
     [RelayCommand]
     private void NavigateToGames()
     {
