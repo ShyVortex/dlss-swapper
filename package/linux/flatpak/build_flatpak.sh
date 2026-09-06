@@ -8,7 +8,7 @@ BUILD_DIR="${SCRIPT_DIR}/build_root"
 DIST_DIR="${SCRIPT_DIR}/dist"
 FLATPAK_BUILD_DIR="${SCRIPT_DIR}/flatpak_build"
 REPO_DIR="${SCRIPT_DIR}/repo"
-VERSION="${VERSION:-$(grep -oPm1 '(?<=<Version>)[^<]+' "${REPO_ROOT}/src/LinuxUI/LinuxUI.csproj" || echo "1.2.6.1")}"
+VERSION="${VERSION:-$(grep -oPm1 '(?<=<Version>)[^<]+' "${REPO_ROOT}/src/LinuxUI/LinuxUI.csproj")}"
 
 echo "=== Building Flatpak package for DLSS Swapper v${VERSION} ==="
 

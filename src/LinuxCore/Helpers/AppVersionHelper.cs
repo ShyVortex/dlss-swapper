@@ -15,7 +15,7 @@ public static class AppVersionHelper
             {
                 _cachedVersion = Assembly.GetEntryAssembly()?.GetName().Version
                                  ?? Assembly.GetExecutingAssembly().GetName().Version
-                                 ?? new Version(1, 2, 6, 1);
+                                 ?? new Version(1, 2, 6, 2);
             }
             return _cachedVersion;
         }

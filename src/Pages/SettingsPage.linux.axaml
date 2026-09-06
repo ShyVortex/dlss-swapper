@@ -125,7 +125,7 @@
                 <StackPanel Spacing="8" Margin="0,0,0,30">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Version:" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}"/>
-                        <TextBlock x:Name="VersionTextBlock" Text="1.2.5" Foreground="{DynamicResource AppAccentBrush}" Cursor="Hand"/>
+                        <TextBlock x:Name="VersionTextBlock" Text="1.2.5" Foreground="{DynamicResource AppAccentBrush}" Cursor="Hand" PointerPressed="OnVersionPointerPressed"/>
                     </StackPanel>
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <TextBlock Text="Build date:" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}"/>

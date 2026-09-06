@@ -14,8 +14,10 @@ using Avalonia.Layout;
 using Avalonia.Media;
 using Avalonia.Platform.Storage;
 using Avalonia.Styling;
+using Avalonia.Threading;
 using DLSS_Swapper.Core.Services;
 using DLSS_Swapper.Helpers;
+using DLSS_Swapper.LinuxCore.Helpers;
 using DLSS_Swapper.LinuxUI.Services;
 
 namespace DLSS_Swapper.Avalonia.Views;
@@ -317,24 +319,43 @@ public partial class SettingsView : UserControl
     {
         UpdateProgressBar.IsVisible = true;
         var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_SettingsCheckForUpdates", "Check for Updates");
+        string message;
         try
         {
             using var client = new HttpClient();
-            client.DefaultRequestHeaders.Add("User-Agent", "DLSS-Swapper-Linux");
+            client.Timeout = TimeSpan.FromSeconds(10);
+            client.DefaultRequestHeaders.Add("User-Agent", AppVersionHelper.GetUserAgent());
             var response = await client.GetStringAsync("https://api.github.com/repos/beeradmoore/dlss-swapper/releases/latest");
             using var doc = JsonDocument.Parse(response);
-            var tagName = doc.RootElement.GetProperty("tag_name").GetString();
-            UpdateProgressBar.IsVisible = false;
+            var tagName = doc.RootElement.GetProperty("tag_name").GetString() ?? string.Empty;
 
-            var noUpdatesText = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_NoNewUpdatesAvailable", "No new updates available");
-            await ShowDialogAsync(title, $"{noUpdatesText} ({tagName}).");
+            var cleanTag = tagName.TrimStart('v', 'V');
+            if (Version.TryParse(cleanTag, out var latestVer) && latestVer > AppVersionHelper.Version)
+            {
+                var updateAvailableText = DLSS_Swapper.Helpers.ResourceHelper.GetString("GitHubUpdater_UpdateAvailable", "Update Available");
+                message = $"{updateAvailableText}: {tagName}";
+            }
+            else
+            {
+                message = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_NoNewUpdatesAvailable", "No new updates available");
+            }
         }
-        catch
+        catch (Exception ex)
+        {
+            Debug.WriteLine($"[SettingsPage] Update check failed: {ex}");
+            message = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_NoNewUpdatesAvailable", "No new updates available");
+        }
+
+        await Dispatcher.UIThread.InvokeAsync(async () =>
         {
             UpdateProgressBar.IsVisible = false;
-            var noUpdatesText = DLSS_Swapper.Helpers.ResourceHelper.GetString("SettingsPage_NoNewUpdatesAvailable", "No new updates available");
-            await ShowDialogAsync(title, noUpdatesText);
-        }
+            await ShowDialogAsync(title, message);
+        });
+    }
+
+    private void OnVersionPointerPressed(object? sender, PointerPressedEventArgs e)
+    {
+        OpenUrl("https://github.com/beeradmoore/dlss-swapper/releases");
     }
 
     private void OnGitHubLinkClick(object? sender, RoutedEventArgs e) => OpenUrl("https://github.com/beeradmoore/dlss-swapper");
