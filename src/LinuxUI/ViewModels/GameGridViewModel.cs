@@ -26,6 +26,7 @@ public partial class GameCardItem : ObservableObject
     [ObservableProperty] private bool _isFavourite;
 
     public Action<GameCardItem>? OnFavouriteToggled { get; set; }
+    public Action<GameCardItem>? OnManualGameRemoved { get; set; }
 
     partial void OnIsFavouriteChanged(bool value)
     {
@@ -53,6 +54,8 @@ public partial class GameCardItem : ObservableObject
     public bool HasXeLL => XellVersion != "N/A" && !string.IsNullOrEmpty(XellVersion);
 
     public bool HasAnySwappableItem => HasDLSS || HasDLSSG || HasDLSSD || HasFsr31Dx12 || HasFsr31Vk || HasXeSS || HasXeSSDx11 || HasXeSSFg || HasXeLL;
+
+    public bool IsManualGame => string.Equals(LibraryName, "Manually Added", StringComparison.OrdinalIgnoreCase) || string.Equals(LibraryName, "Manual", StringComparison.OrdinalIgnoreCase);
 
     public List<DLSS_Swapper.Core.Models.DlssPresetItem> SrPresetOptions { get; } = DLSS_Swapper.Core.Models.DlssPresetItem.GetSrPresetOptions();
     public List<DLSS_Swapper.Core.Models.DlssPresetItem> RrPresetOptions { get; } = DLSS_Swapper.Core.Models.DlssPresetItem.GetRrPresetOptions();
@@ -251,32 +254,87 @@ public partial class GameGridViewModel : ObservableObject
         IsGridView = false;
     }
 
-    public void AddManualGameFolder(string folderPath)
+    private GameCardItem CreateManualGameCard(string folderPath, string? customName, string? coverPath, LinuxSteamLibraryScanner scanner)
     {
-        if (string.IsNullOrEmpty(folderPath)) return;
-        var folderName = Path.GetFileName(folderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var folderName = !string.IsNullOrEmpty(customName) ? customName : Path.GetFileName(folderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
         if (string.IsNullOrEmpty(folderName)) folderName = folderPath;
 
-        var dlssVer = "N/A";
-        try
+        var cover = coverPath;
+        if (string.IsNullOrEmpty(cover))
         {
-            var files = Directory.GetFiles(folderPath, "nvngx_dlss.dll", SearchOption.AllDirectories);
-            if (files.Length > 0) dlssVer = "v3.7.10";
+            var candidates = new[] { "cover.jpg", "cover.png", "library_600x900.jpg", "poster.jpg", "poster.png", "boxart.jpg", "boxart.png" };
+            foreach (var cand in candidates)
+            {
+                var p = Path.Combine(folderPath, cand);
+                if (File.Exists(p))
+                {
+                    cover = p;
+                    break;
+                }
+            }
         }
-        catch { }
 
         var card = new GameCardItem
         {
+            AppId = $"manual_{folderName.Replace(" ", "_")}",
             Name = folderName,
-            DLSSVersion = dlssVer,
-            LibraryName = "Manual",
+            DLSSVersion = scanner.ScanDllVersion(folderPath, "nvngx_dlss.dll"),
+            DLSSGVersion = scanner.ScanDllVersion(folderPath, "nvngx_dlssg.dll"),
+            DLSSDVersion = scanner.ScanDllVersion(folderPath, "nvngx_dlssd.dll"),
+            Fsr31Dx12Version = scanner.ScanDllVersion(folderPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll"),
+            Fsr31VkVersion = scanner.ScanDllVersion(folderPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll"),
+            XessVersion = scanner.ScanDllVersion(folderPath, "libxess.dll"),
+            XessDx11Version = scanner.ScanDllVersion(folderPath, "libxess_dx11.dll"),
+            XessFgVersion = scanner.ScanDllVersion(folderPath, "libxess_fg.dll"),
+            XellVersion = scanner.ScanDllVersion(folderPath, "libxell.dll"),
+            LibraryName = "Manually Added",
             InstallPath = folderPath,
+            CoverImagePath = cover ?? string.Empty,
             CoverColor = GetColorForGame(folderName)
         };
         card.IsFavourite = _favouriteIds.Contains(card.GameId);
         card.OnFavouriteToggled = OnCardFavouriteToggled;
+        card.OnManualGameRemoved = OnCardManualGameRemoved;
+        _ = card.LoadCoverAsync();
+        return card;
+    }
+
+    private void OnCardManualGameRemoved(GameCardItem card)
+    {
+        RemoveManualGame(card);
+    }
+
+    public void AddManualGameFolder(string folderPath)
+    {
+        if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath)) return;
+
+        var canonicalPath = Path.GetFullPath(folderPath);
+
+        // Check if already in active game list
+        if (_allDiscoveredGames.Any(x => string.Equals(x.InstallPath, canonicalPath, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        var steamScanner = new LinuxSteamLibraryScanner();
+        var card = CreateManualGameCard(canonicalPath, null, null, steamScanner);
+
+        _metadataService.AddManualGame(new ManualGameRecord
+        {
+            Name = card.Name,
+            InstallPath = card.InstallPath,
+            CoverImagePath = card.CoverImagePath
+        });
 
         _allDiscoveredGames.Add(card);
+        FilterGames();
+    }
+
+    public void RemoveManualGame(GameCardItem card)
+    {
+        if (card == null || string.IsNullOrEmpty(card.InstallPath)) return;
+        _metadataService.RemoveManualGame(card.InstallPath);
+        _allDiscoveredGames.RemoveAll(x => string.Equals(x.InstallPath, card.InstallPath, StringComparison.OrdinalIgnoreCase) || x == card);
         FilterGames();
     }
 
@@ -349,6 +407,20 @@ public partial class GameGridViewModel : ObservableObject
                 _allDiscoveredGames.Add(card);
                 _ = card.LoadCoverAsync();
             }
+        }
+
+        // 3. Manually Added Games
+        var manualRecords = _metadataService.LoadManualGames();
+        foreach (var record in manualRecords)
+        {
+            if (string.IsNullOrEmpty(record.InstallPath) || !Directory.Exists(record.InstallPath)) continue;
+
+            // Avoid adding if already added
+            if (_allDiscoveredGames.Any(x => string.Equals(x.InstallPath, record.InstallPath, StringComparison.OrdinalIgnoreCase)))
+                continue;
+
+            var card = CreateManualGameCard(record.InstallPath, record.Name, record.CoverImagePath, steamScanner);
+            _allDiscoveredGames.Add(card);
         }
 
         FilterGames();

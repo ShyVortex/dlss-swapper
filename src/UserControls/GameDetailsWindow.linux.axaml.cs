@@ -1,10 +1,14 @@
 using System;
 using System.IO;
+using System.Threading.Tasks;
 using Avalonia;
 using Avalonia.Controls;
+using Avalonia.Input;
 using Avalonia.Interactivity;
 using Avalonia.Layout;
 using Avalonia.Media;
+using Avalonia.Platform.Storage;
+using DLSS_Swapper.Avalonia.Helpers;
 using DLSS_Swapper.Avalonia.ViewModels;
 using DLSS_Swapper.Core.Services;
 
@@ -54,6 +58,7 @@ public partial class GameDetailsWindow : Window
         ToolTip.SetTip(HistoryButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_History", "History"));
         ToolTip.SetTip(FavouriteButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_Favorited", "Favorited"));
         ToolTip.SetTip(RefreshButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Refresh", "Refresh"));
+        ToolTip.SetTip(DeleteGameButton, DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Remove", "Remove"));
         CloseButton.Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Close", "Close");
         RefreshLoadingOverlayTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ReloadingGame", "Refreshing game details...");
     }
@@ -61,6 +66,168 @@ public partial class GameDetailsWindow : Window
     private void OnCloseClick(object? sender, RoutedEventArgs e)
     {
         Close();
+    }
+
+    private async void OnAddCustomCoverClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame == null) return;
+
+        var storage = StorageProvider;
+        if (storage != null)
+        {
+            var result = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
+            {
+                Title = "Select Cover Image",
+                AllowMultiple = false,
+                FileTypeFilter = new[]
+                {
+                    new FilePickerFileType("Images")
+                    {
+                        Patterns = new[] { "*.png", "*.jpg", "*.jpeg", "*.webp", "*.bmp" }
+                    }
+                }
+            });
+
+            if (result.Count > 0)
+            {
+                var filePath = result[0].Path.LocalPath;
+                SelectedGame.CoverImagePath = filePath;
+                SelectedGame.CoverBitmap = await ImageHelper.LoadBitmapAsync(filePath);
+
+                if (SelectedGame.IsManualGame)
+                {
+                    var metaService = new GameMetadataStorageService();
+                    metaService.AddManualGame(new ManualGameRecord
+                    {
+                        Name = SelectedGame.Name,
+                        InstallPath = SelectedGame.InstallPath,
+                        CoverImagePath = filePath
+                    });
+                }
+            }
+        }
+    }
+
+    private async void OnDeleteGameClick(object? sender, RoutedEventArgs e)
+    {
+        if (SelectedGame == null || !SelectedGame.IsManualGame) return;
+
+        var removeLabel = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Remove", "Remove");
+        var cancelLabel = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Cancel", "Cancel");
+        var title = $"{removeLabel} {SelectedGame.Name}?";
+        var message = DLSS_Swapper.Helpers.ResourceHelper.GetFormattedResourceTemplate("GamePage_ManuallyAdded_RemoveGameTemplate", SelectedGame.Name);
+        if (string.IsNullOrEmpty(message) || message == "LangResourceError")
+        {
+            message = $"Are you sure you want to remove {SelectedGame.Name} from DLSS Swapper?";
+        }
+
+        var confirmed = await ShowConfirmDialogAsync(title, message, removeLabel, cancelLabel);
+        if (!confirmed) return;
+
+        SelectedGame.OnManualGameRemoved?.Invoke(SelectedGame);
+
+        var metaService = new GameMetadataStorageService();
+        metaService.RemoveManualGame(SelectedGame.InstallPath);
+
+        Close();
+    }
+
+    private async Task<bool> ShowConfirmDialogAsync(string title, string message, string primaryButtonText, string cancelButtonText)
+    {
+        var result = false;
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 440,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Background = Brush.Parse("#242424")
+        };
+
+        var border = new Border
+        {
+            Padding = new Thickness(24),
+            Background = Brush.Parse("#242424"),
+            CornerRadius = new CornerRadius(8),
+            BorderBrush = Brush.Parse("#383838"),
+            BorderThickness = new Thickness(1)
+        };
+
+        var stack = new StackPanel { Spacing = 20 };
+        var titleText = new TextBlock
+        {
+            Text = title,
+            FontSize = 18,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White,
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        var msgText = new TextBlock
+        {
+            Text = message,
+            FontSize = 14,
+            Foreground = Brush.Parse("#DDDDDD"),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Right
+        };
+
+        var confirmBtn = new Button
+        {
+            Content = primaryButtonText,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Width = 110,
+            Height = 36,
+            Background = Brush.Parse("#E85A24"),
+            Foreground = Brushes.White,
+            FontWeight = FontWeight.SemiBold,
+            CornerRadius = new CornerRadius(4),
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        confirmBtn.Click += (s, e) =>
+        {
+            result = true;
+            dialog.Close();
+        };
+
+        var cancelBtn = new Button
+        {
+            Content = cancelButtonText,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Width = 110,
+            Height = 36,
+            Background = Brush.Parse("#383838"),
+            Foreground = Brushes.White,
+            FontWeight = FontWeight.SemiBold,
+            CornerRadius = new CornerRadius(4),
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        cancelBtn.Click += (s, e) =>
+        {
+            result = false;
+            dialog.Close();
+        };
+
+        buttonPanel.Children.Add(confirmBtn);
+        buttonPanel.Children.Add(cancelBtn);
+
+        stack.Children.Add(titleText);
+        stack.Children.Add(msgText);
+        stack.Children.Add(buttonPanel);
+        border.Child = stack;
+        dialog.Content = border;
+
+        await dialog.ShowDialog(this);
+        return result;
     }
 
     private async void OnNotesClick(object? sender, RoutedEventArgs e)

@@ -116,4 +116,63 @@ public class GameMetadataStorageService
         {
         }
     }
+
+    private static string ManualGamesFilePath => Path.Combine(StorageFolder, "manual_games.json");
+
+    public List<ManualGameRecord> LoadManualGames()
+    {
+        try
+        {
+            if (File.Exists(ManualGamesFilePath))
+            {
+                var json = File.ReadAllText(ManualGamesFilePath);
+                var list = JsonSerializer.Deserialize<List<ManualGameRecord>>(json);
+                if (list != null)
+                {
+                    return list;
+                }
+            }
+        }
+        catch
+        {
+        }
+        return new List<ManualGameRecord>();
+    }
+
+    public void SaveManualGames(IEnumerable<ManualGameRecord> games)
+    {
+        try
+        {
+            var list = new List<ManualGameRecord>(games);
+            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(ManualGamesFilePath, json);
+        }
+        catch
+        {
+        }
+    }
+
+    public void AddManualGame(ManualGameRecord game)
+    {
+        if (string.IsNullOrEmpty(game.InstallPath)) return;
+        var list = LoadManualGames();
+        list.RemoveAll(x => string.Equals(x.InstallPath, game.InstallPath, StringComparison.OrdinalIgnoreCase));
+        list.Add(game);
+        SaveManualGames(list);
+    }
+
+    public void RemoveManualGame(string installPath)
+    {
+        if (string.IsNullOrEmpty(installPath)) return;
+        var list = LoadManualGames();
+        list.RemoveAll(x => string.Equals(x.InstallPath, installPath, StringComparison.OrdinalIgnoreCase));
+        SaveManualGames(list);
+    }
+}
+
+public class ManualGameRecord
+{
+    public string Name { get; set; } = string.Empty;
+    public string InstallPath { get; set; } = string.Empty;
+    public string? CoverImagePath { get; set; }
 }
