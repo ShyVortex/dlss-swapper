@@ -215,6 +215,10 @@ public partial class LibraryViewModel : ObservableObject
         if (success)
         {
             card.IsDownloaded = false;
+            if (card.Record.IsImported)
+            {
+                await LoadManifestAndRecordsAsync();
+            }
         }
         else if (ShowMessageDialogAsync != null)
         {
@@ -350,19 +354,23 @@ public partial class LibraryViewModel : ObservableObject
         var files = await OpenFilePickerAsync();
         if (files == null || files.Count == 0) return;
 
+        bool anyImported = false;
         foreach (var file in files)
         {
             if (File.Exists(file))
             {
-                var ext = Path.GetExtension(file).ToLowerInvariant();
-                if (ext == ".dll" || ext == ".zip")
+                var result = await _storageService.ImportLocalFileAsync(file, SelectedCategory?.Key);
+                if (result.Success)
                 {
-                    _storageService.ImportLocalFile(file, SelectedCategory?.Key ?? "dlss");
+                    anyImported = true;
                 }
             }
         }
 
-        UpdateVisibleRecords();
+        if (anyImported)
+        {
+            await LoadManifestAndRecordsAsync();
+        }
     }
 
     public Func<bool, Task<List<NvidiaModelRowItem>>>? OpenNvidiaImportDialogAsync { get; set; }
@@ -374,15 +382,23 @@ public partial class LibraryViewModel : ObservableObject
         var selected = await OpenNvidiaImportDialogAsync(true);
         if (selected == null || selected.Count == 0) return;
 
+        bool anyImported = false;
         foreach (var item in selected)
         {
             if (File.Exists(item.LocalFilePath))
             {
-                _storageService.ImportLocalFile(item.LocalFilePath, item.CategoryKey);
+                var result = await _storageService.ImportLocalFileAsync(item.LocalFilePath, item.CategoryKey);
+                if (result.Success)
+                {
+                    anyImported = true;
+                }
             }
         }
 
-        UpdateVisibleRecords();
+        if (anyImported)
+        {
+            await LoadManifestAndRecordsAsync();
+        }
     }
 
     [RelayCommand]
@@ -392,21 +408,32 @@ public partial class LibraryViewModel : ObservableObject
         var selected = await OpenNvidiaImportDialogAsync(false);
         if (selected == null || selected.Count == 0) return;
 
+        bool anyImported = false;
         foreach (var item in selected)
         {
             if (!string.IsNullOrEmpty(item.DownloadUrl))
             {
-                var record = new DllRecordModel
+                try
                 {
-                    Version = item.VersionDisplay,
-                    DownloadUrl = item.DownloadUrl,
-                    ZipFileSize = 1000000
-                };
-                await _storageService.DownloadAndExtractAsync(item.CategoryKey, record);
+                    using var client = new System.Net.Http.HttpClient();
+                    var tempZip = Path.Combine(Path.GetTempPath(), $"ngx_download_{Guid.NewGuid():N}.bin");
+                    var bytes = await client.GetByteArrayAsync(item.DownloadUrl);
+                    await File.WriteAllBytesAsync(tempZip, bytes);
+
+                    var result = await _storageService.ImportLocalFileAsync(tempZip, item.CategoryKey);
+                    if (File.Exists(tempZip)) File.Delete(tempZip);
+                    if (result.Success) anyImported = true;
+                }
+                catch
+                {
+                }
             }
         }
 
-        UpdateVisibleRecords();
+        if (anyImported)
+        {
+            await LoadManifestAndRecordsAsync();
+        }
     }
 
     [RelayCommand]

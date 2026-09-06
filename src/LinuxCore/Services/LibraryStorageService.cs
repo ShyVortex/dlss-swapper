@@ -111,32 +111,155 @@ public class LibraryStorageService
         return File.Exists(dllPath);
     }
 
-    public bool ImportLocalFile(string filePath, string type)
+    public static string DetectCategoryFromFilename(string filename, string? fallbackCategory = null)
+    {
+        var lower = filename.ToLowerInvariant();
+        if (lower.Contains("nvngx_dlssg")) return "dlss_g";
+        if (lower.Contains("nvngx_dlssd") || lower.Contains("nvngx_dlssnr")) return "dlss_d";
+        if (lower.Contains("nvngx_dlss")) return "dlss";
+        if (lower.Contains("amd_fidelityfx_vk") || lower.Contains("ffx_fsr31_vk")) return "fsr_31_vk";
+        if (lower.Contains("amd_fidelityfx_dx12") || lower.Contains("ffx_fsr31") || lower.Contains("ffx_fsr3") || lower.Contains("ffx_fsr2")) return "fsr_31_dx12";
+        if (lower.Contains("libxess_dx11")) return "xess_dx11";
+        if (lower.Contains("libxess_fg")) return "xess_fg";
+        if (lower.Contains("libxell")) return "xell";
+        if (lower.Contains("libxess")) return "xess";
+
+        return !string.IsNullOrWhiteSpace(fallbackCategory) ? fallbackCategory.ToLowerInvariant() : "dlss";
+    }
+
+    public static string ComputeFileMd5(string filePath)
+    {
+        using var md5 = MD5.Create();
+        using var stream = File.OpenRead(filePath);
+        var hash = md5.ComputeHash(stream);
+        return Convert.ToHexString(hash);
+    }
+
+    public static DllRecordModel CreateRecordFromDll(string filePath, string category)
+    {
+        var version = DLSS_Swapper.Core.Helpers.PeVersionReader.GetFileVersion(filePath);
+        var versionStr = version != null
+            ? $"{version.Major}.{version.Minor}.{version.Build}.{version.Revision}"
+            : "1.0.0.0";
+        ulong versionNum = version != null
+            ? (((ulong)version.Major << 48) | ((ulong)version.Minor << 32) | ((ulong)version.Build << 16) | (ulong)version.Revision)
+            : 0;
+
+        var fileInfo = new FileInfo(filePath);
+        var md5 = ComputeFileMd5(filePath);
+
+        return new DllRecordModel
+        {
+            Version = versionStr,
+            VersionNumber = versionNum,
+            Md5Hash = md5,
+            FileSize = fileInfo.Length,
+            IsImported = true
+        };
+    }
+
+    private bool ProcessAndStoreDllFile(string sourceDllPath, string category, ManifestModel importedManifest)
     {
         try
         {
-            if (!File.Exists(filePath)) return false;
-            var ext = Path.GetExtension(filePath).ToLowerInvariant();
-            var recordType = type.ToLowerInvariant();
-            var importedFolder = Path.Combine(DllsFolder, recordType, $"imported_{Guid.NewGuid():N}");
-            Directory.CreateDirectory(importedFolder);
+            if (!File.Exists(sourceDllPath)) return false;
+            var record = CreateRecordFromDll(sourceDllPath, category);
+            var targetFolder = GetExpectedRecordFolder(category, record);
+            Directory.CreateDirectory(targetFolder);
 
-            if (ext == ".zip")
-            {
-                ZipFile.ExtractToDirectory(filePath, importedFolder, true);
-            }
-            else if (ext == ".dll")
-            {
-                var targetDllName = GetDllFilenameForType(recordType);
-                File.Copy(filePath, Path.Combine(importedFolder, targetDllName), true);
-            }
+            var targetFileName = GetDllFilenameForType(category);
+            var targetFilePath = Path.Combine(targetFolder, targetFileName);
 
+            File.Copy(sourceDllPath, targetFilePath, true);
+
+            var list = importedManifest.GetRecordsForCategory(category);
+            if (!list.Any(r => string.Equals(r.Md5Hash, record.Md5Hash, StringComparison.OrdinalIgnoreCase)))
+            {
+                list.Add(record);
+            }
             return true;
         }
         catch
         {
             return false;
         }
+    }
+
+    public async Task<(bool Success, int ImportedCount, string ErrorMessage)> ImportLocalFileAsync(string filePath, string? categoryHint = null)
+    {
+        return await Task.Run(async () =>
+        {
+            try
+            {
+                if (!File.Exists(filePath))
+                    return (false, 0, "File not found.");
+
+                var ext = Path.GetExtension(filePath).ToLowerInvariant();
+                var importedManifest = await LoadImportedManifestAsync();
+                int importedCount = 0;
+
+                if (ext == ".zip")
+                {
+                    var tempDir = Path.Combine(Path.GetTempPath(), "dlss_swapper_import_" + Guid.NewGuid().ToString("N"));
+                    try
+                    {
+                        Directory.CreateDirectory(tempDir);
+                        ZipFile.ExtractToDirectory(filePath, tempDir, true);
+
+                        var dllFiles = Directory.GetFiles(tempDir, "*.dll", SearchOption.AllDirectories);
+                        if (dllFiles.Length == 0)
+                        {
+                            return (false, 0, "No DLL files found in ZIP archive.");
+                        }
+
+                        foreach (var dll in dllFiles)
+                        {
+                            var category = DetectCategoryFromFilename(Path.GetFileName(dll), categoryHint);
+                            if (ProcessAndStoreDllFile(dll, category, importedManifest))
+                            {
+                                importedCount++;
+                            }
+                        }
+                    }
+                    finally
+                    {
+                        if (Directory.Exists(tempDir))
+                        {
+                            try { Directory.Delete(tempDir, true); } catch { }
+                        }
+                    }
+                }
+                else if (ext == ".dll")
+                {
+                    var category = DetectCategoryFromFilename(Path.GetFileName(filePath), categoryHint);
+                    if (ProcessAndStoreDllFile(filePath, category, importedManifest))
+                    {
+                        importedCount++;
+                    }
+                }
+                else
+                {
+                    return (false, 0, "Unsupported file format. Please select a .dll or .zip file.");
+                }
+
+                if (importedCount > 0)
+                {
+                    await SaveImportedManifestAsync(importedManifest);
+                    return (true, importedCount, string.Empty);
+                }
+
+                return (false, 0, "Could not import any valid DLLs.");
+            }
+            catch (Exception ex)
+            {
+                return (false, 0, ex.Message);
+            }
+        });
+    }
+
+    public bool ImportLocalFile(string filePath, string type)
+    {
+        return Task.Run(() => ImportLocalFileAsync(filePath, type)).GetAwaiter().GetResult().Success;
     }
 
     public bool DeleteRecord(string type, DllRecordModel record)
@@ -147,13 +270,25 @@ public class LibraryStorageService
             if (Directory.Exists(folder))
             {
                 Directory.Delete(folder, true);
-                return true;
             }
+
+            _ = Task.Run(async () =>
+            {
+                var importedManifest = await LoadImportedManifestAsync();
+                var list = importedManifest.GetRecordsForCategory(type);
+                int removed = list.RemoveAll(r => string.Equals(r.Md5Hash, record.Md5Hash, StringComparison.OrdinalIgnoreCase));
+                if (removed > 0)
+                {
+                    await SaveImportedManifestAsync(importedManifest);
+                }
+            });
+
+            return true;
         }
         catch
         {
+            return false;
         }
-        return false;
     }
 
     public async Task<bool> DownloadAndExtractAsync(string type, DllRecordModel record, Action<double>? progressCallback = null)
@@ -224,11 +359,99 @@ public class LibraryStorageService
         }
     }
 
+    public static string ImportedManifestPath => Path.Combine(StorageFolder, "json", "imported_manifest.json");
+
+    public async Task<ManifestModel> LoadImportedManifestAsync()
+    {
+        if (File.Exists(ImportedManifestPath))
+        {
+            try
+            {
+                using var stream = File.OpenRead(ImportedManifestPath);
+                var imported = await JsonSerializer.DeserializeAsync<ManifestModel>(stream);
+                if (imported != null) return imported;
+            }
+            catch
+            {
+            }
+        }
+        return new ManifestModel();
+    }
+
+    public async Task SaveImportedManifestAsync(ManifestModel importedManifest)
+    {
+        try
+        {
+            var jsonDir = Path.Combine(StorageFolder, "json");
+            Directory.CreateDirectory(jsonDir);
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            using var stream = File.Create(ImportedManifestPath);
+            await JsonSerializer.SerializeAsync(stream, importedManifest, options);
+        }
+        catch
+        {
+        }
+    }
+
+    public async Task ScanAndIndexExistingImportedFilesAsync(ManifestModel importedManifest)
+    {
+        if (!Directory.Exists(DllsFolder)) return;
+
+        bool changed = false;
+        var categoryDirs = Directory.GetDirectories(DllsFolder);
+        foreach (var catDir in categoryDirs)
+        {
+            var categoryName = Path.GetFileName(catDir).ToLowerInvariant();
+            var subDirs = Directory.GetDirectories(catDir);
+            foreach (var subDir in subDirs)
+            {
+                var dirName = Path.GetFileName(subDir);
+                // 1. Convert legacy / unindexed imported_* folders
+                if (dirName.StartsWith("imported_", StringComparison.OrdinalIgnoreCase))
+                {
+                    var dllFiles = Directory.GetFiles(subDir, "*.dll", SearchOption.AllDirectories);
+                    foreach (var dll in dllFiles)
+                    {
+                        var cat = DetectCategoryFromFilename(Path.GetFileName(dll), categoryName);
+                        if (ProcessAndStoreDllFile(dll, cat, importedManifest))
+                        {
+                            changed = true;
+                        }
+                    }
+                    try { Directory.Delete(subDir, true); } catch { }
+                }
+                // 2. Discover any valid {category}_v*_* folders not yet in imported manifest
+                else if (dirName.Contains("_v"))
+                {
+                    var dllFiles = Directory.GetFiles(subDir, "*.dll", SearchOption.TopDirectoryOnly);
+                    foreach (var dll in dllFiles)
+                    {
+                        var cat = DetectCategoryFromFilename(Path.GetFileName(dll), categoryName);
+                        var list = importedManifest.GetRecordsForCategory(cat);
+                        var md5 = ComputeFileMd5(dll);
+                        if (!list.Any(r => string.Equals(r.Md5Hash, md5, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            var record = CreateRecordFromDll(dll, cat);
+                            list.Add(record);
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+
+        if (changed)
+        {
+            await SaveImportedManifestAsync(importedManifest);
+        }
+    }
+
     public async Task<ManifestModel?> LoadManifestAsync()
     {
         var jsonDir = Path.Combine(StorageFolder, "json");
         Directory.CreateDirectory(jsonDir);
         var cachedManifestPath = Path.Combine(jsonDir, "manifest.json");
+        ManifestModel? manifest = null;
 
         // 1. Try to download latest manifest online
         try
@@ -239,8 +462,7 @@ public class LibraryStorageService
                 var contentBytes = await response.Content.ReadAsByteArrayAsync();
                 await File.WriteAllBytesAsync(cachedManifestPath, contentBytes);
                 using var onlineStream = new MemoryStream(contentBytes);
-                var onlineManifest = await JsonSerializer.DeserializeAsync<ManifestModel>(onlineStream);
-                if (onlineManifest != null) return onlineManifest;
+                manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(onlineStream);
             }
         }
         catch
@@ -248,13 +470,12 @@ public class LibraryStorageService
         }
 
         // 2. Check for cached manifest.json on disk
-        if (File.Exists(cachedManifestPath))
+        if (manifest == null && File.Exists(cachedManifestPath))
         {
             try
             {
                 using var stream = File.OpenRead(cachedManifestPath);
-                var cached = await JsonSerializer.DeserializeAsync<ManifestModel>(stream);
-                if (cached != null) return cached;
+                manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(stream);
             }
             catch
             {
@@ -262,27 +483,37 @@ public class LibraryStorageService
         }
 
         // 3. Fallback to embedded static_manifest.json asset across assemblies
-        try
+        if (manifest == null)
         {
-            var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly(), typeof(LibraryStorageService).Assembly };
-            foreach (var asm in assemblies.Where(a => a != null))
+            try
             {
-                var resourceName = asm!.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("static_manifest.json", StringComparison.OrdinalIgnoreCase));
-                if (resourceName != null)
+                var assemblies = new[] { Assembly.GetExecutingAssembly(), Assembly.GetEntryAssembly(), typeof(LibraryStorageService).Assembly };
+                foreach (var asm in assemblies.Where(a => a != null))
                 {
-                    using var resourceStream = asm.GetManifestResourceStream(resourceName);
-                    if (resourceStream != null)
+                    var resourceName = asm!.GetManifestResourceNames().FirstOrDefault(n => n.EndsWith("static_manifest.json", StringComparison.OrdinalIgnoreCase));
+                    if (resourceName != null)
                     {
-                        var staticManifest = await JsonSerializer.DeserializeAsync<ManifestModel>(resourceStream);
-                        if (staticManifest != null) return staticManifest;
+                        using var resourceStream = asm.GetManifestResourceStream(resourceName);
+                        if (resourceStream != null)
+                        {
+                            manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(resourceStream);
+                            if (manifest != null) break;
+                        }
                     }
                 }
             }
-        }
-        catch
-        {
+            catch
+            {
+            }
         }
 
-        return new ManifestModel();
+        manifest ??= new ManifestModel();
+
+        // 4. Merge imported manifest
+        var importedManifest = await LoadImportedManifestAsync();
+        await ScanAndIndexExistingImportedFilesAsync(importedManifest);
+        manifest.Merge(importedManifest);
+
+        return manifest;
     }
 }

@@ -49,6 +49,32 @@ public class ManifestModel
             _ => new()
         };
     }
+
+    public void Merge(ManifestModel? other)
+    {
+        if (other == null) return;
+        MergeCategory(Dlss, other.Dlss);
+        MergeCategory(DlssG, other.DlssG);
+        MergeCategory(DlssD, other.DlssD);
+        MergeCategory(Fsr31Dx12, other.Fsr31Dx12);
+        MergeCategory(Fsr31Vk, other.Fsr31Vk);
+        MergeCategory(Xess, other.Xess);
+        MergeCategory(XessDx11, other.XessDx11);
+        MergeCategory(XessFg, other.XessFg);
+        MergeCategory(Xell, other.Xell);
+    }
+
+    private static void MergeCategory(List<DllRecordModel> target, List<DllRecordModel>? source)
+    {
+        if (source == null) return;
+        foreach (var item in source)
+        {
+            if (!target.Any(t => string.Equals(t.Md5Hash, item.Md5Hash, StringComparison.OrdinalIgnoreCase)))
+            {
+                target.Add(item);
+            }
+        }
+    }
 }
 
 public class DllRecordModel
@@ -80,12 +106,16 @@ public class DllRecordModel
     [JsonPropertyName("is_dev_file")]
     public bool IsDevFile { get; set; }
 
+    [JsonPropertyName("is_imported")]
+    public bool IsImported { get; set; }
+
     [JsonPropertyName("file_size")]
     public long FileSize { get; set; }
 
     [JsonPropertyName("zip_file_size")]
     public long ZipFileSize { get; set; }
 
+    [JsonIgnore]
     public string DisplayVersion
     {
         get
@@ -103,5 +133,20 @@ public class DllRecordModel
         }
     }
 
-    public string DisplayName => IsDevFile ? $"{DisplayVersion} (Debug)" : DisplayVersion;
+    [JsonIgnore]
+    public string DisplayName
+    {
+        get
+        {
+            var devString = IsDevFile ? " (Debug)" : string.Empty;
+            if (IsImported || !string.IsNullOrEmpty(AdditionalLabel))
+            {
+                var label = !string.IsNullOrEmpty(AdditionalLabel)
+                    ? AdditionalLabel
+                    : DLSS_Swapper.Helpers.ResourceHelper.GetString("DllRecord_Imported", "Imported");
+                return $"{DisplayVersion}{devString} ({label})";
+            }
+            return $"{DisplayVersion}{devString}";
+        }
+    }
 }
