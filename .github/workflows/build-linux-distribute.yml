@@ -38,11 +38,9 @@ jobs:
       - name: Extract version from csproj
         id: get_version
         run: |
-          VERSION=$(grep -oPm1 "(?<=<Version>)[^<]+" src/LinuxUI/LinuxUI.csproj || echo "1.2.6.0")
-          SHORT_VERSION=$(echo $VERSION | cut -d. -f1,2,3)
+          VERSION=$(grep -oPm1 "(?<=<Version>)[^<]+" src/LinuxUI/LinuxUI.csproj)
           echo "VERSION=$VERSION" >> $GITHUB_ENV
-          echo "SHORT_VERSION=$SHORT_VERSION" >> $GITHUB_ENV
-          echo "Extracted Version: $VERSION (Short: $SHORT_VERSION)"
+          echo "Extracted Version: $VERSION"
 
       - name: Build all Linux packages (.deb, .rpm, .pkg.tar.zst, .AppImage, .flatpak)
         run: |
@@ -60,7 +58,7 @@ jobs:
       - name: Upload Linux Build Artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: DLSS-Swapper-Linux-${{ env.SHORT_VERSION }}
+          name: DLSS-Swapper-Linux-${{ env.VERSION }}
           path: dist_all/*
           if-no-files-found: error
 
