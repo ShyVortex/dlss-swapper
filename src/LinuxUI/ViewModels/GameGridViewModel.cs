@@ -156,6 +156,7 @@ public partial class GameGridViewModel : ObservableObject
     private bool _isGridView = true;
 
     public ObservableCollection<GameCardItem> FavouriteGames { get; } = new();
+    public ObservableCollection<GameLibraryGroupViewModel> LibraryGroups { get; } = new();
     public ObservableCollection<GameCardItem> SteamGames { get; } = new();
 
     public GameGridViewModel()
@@ -353,6 +354,7 @@ public partial class GameGridViewModel : ObservableObject
     private void FilterGames()
     {
         FavouriteGames.Clear();
+        LibraryGroups.Clear();
         SteamGames.Clear();
 
         var settings = LinuxSettingsService.Instance.Settings;
@@ -382,7 +384,9 @@ public partial class GameGridViewModel : ObservableObject
             matches = matches.Where(g => g.HasAnySwappableItem);
         }
 
-        foreach (var g in matches)
+        var matchList = matches.ToList();
+
+        foreach (var g in matchList)
         {
             if (g.IsFavourite)
             {
@@ -391,8 +395,65 @@ public partial class GameGridViewModel : ObservableObject
             SteamGames.Add(g);
         }
 
+        if (GroupByLibrary)
+        {
+            // Defined order of known launchers
+            var knownLibraries = new[] { "Steam", "Heroic", "Manually Added" };
+
+            foreach (var libName in knownLibraries)
+            {
+                var groupGames = matchList.Where(g =>
+                    string.Equals(g.LibraryName, libName, StringComparison.OrdinalIgnoreCase) ||
+                    (libName == "Manually Added" && string.Equals(g.LibraryName, "Manual", StringComparison.OrdinalIgnoreCase))
+                ).ToList();
+
+                if (groupGames.Count > 0)
+                {
+                    var group = new GameLibraryGroupViewModel(libName, libName, showHeader: true);
+                    foreach (var game in groupGames)
+                    {
+                        group.Games.Add(game);
+                    }
+                    LibraryGroups.Add(group);
+                }
+            }
+
+            // Next add any other libraries (e.g. Lutris, Ubisoft, GOG, Epic if added in future)
+            var otherLibraries = matchList
+                .Select(g => g.LibraryName)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .Where(name => !knownLibraries.Any(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase)) &&
+                               !string.Equals(name, "Manual", StringComparison.OrdinalIgnoreCase));
+
+            foreach (var libName in otherLibraries)
+            {
+                var groupGames = matchList.Where(g => string.Equals(g.LibraryName, libName, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (groupGames.Count > 0)
+                {
+                    var group = new GameLibraryGroupViewModel(libName, libName, showHeader: true);
+                    foreach (var game in groupGames)
+                    {
+                        group.Games.Add(game);
+                    }
+                    LibraryGroups.Add(group);
+                }
+            }
+        }
+        else
+        {
+            if (matchList.Count > 0)
+            {
+                var group = new GameLibraryGroupViewModel(string.Empty, "All", showHeader: false);
+                foreach (var game in matchList)
+                {
+                    group.Games.Add(game);
+                }
+                LibraryGroups.Add(group);
+            }
+        }
+
         HasFavourites = FavouriteGames.Count > 0;
-        HasGames = SteamGames.Count > 0 || HasFavourites;
+        HasGames = LibraryGroups.Any(g => g.HasGames) || HasFavourites;
     }
 
     private string GetColorForGame(string name)
