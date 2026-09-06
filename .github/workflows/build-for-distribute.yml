@@ -10,6 +10,8 @@ on:
 jobs:
   build:
     runs-on: windows-2025
+    permissions:
+      contents: write
     env:
       SHOULD_SIGN: ${{ startsWith(github.ref, 'refs/tags/') && secrets.SIGNPATH_API_TOKEN != '' }}
 
@@ -205,4 +207,28 @@ jobs:
         name: DLSS.Swapper-${{ env.VERSION }}-installer
         path: ${{ github.workspace }}\package\Output\DLSS.Swapper-${{ env.VERSION }}-installer.exe
         if-no-files-found: error
+
+    - name: Collect Windows release packages
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: pwsh
+      run: |
+        New-Item -ItemType Directory -Force -Path "${{ github.workspace }}\dist_windows"
+        Copy-Item -Path "${{ github.workspace }}\package\Output\DLSS.Swapper-${{ env.VERSION }}-portable.zip" -Destination "${{ github.workspace }}\dist_windows\"
+        if ("${{ env.SHOULD_SIGN }}" -eq "true") {
+          Copy-Item -Path "${{ github.workspace }}\src\bin\signed_installer\DLSS.Swapper-${{ env.VERSION }}-installer.exe" -Destination "${{ github.workspace }}\dist_windows\"
+        } else {
+          Copy-Item -Path "${{ github.workspace }}\package\Output\DLSS.Swapper-${{ env.VERSION }}-installer.exe" -Destination "${{ github.workspace }}\dist_windows\"
+        }
+        Write-Host "=== Windows Release Packages ==="
+        Get-ChildItem -Path "${{ github.workspace }}\dist_windows"
+
+    - name: Publish Windows Packages to GitHub Release
+      if: startsWith(github.ref, 'refs/tags/')
+      uses: softprops/action-gh-release@v2
+      with:
+        files: dist_windows/*
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+
 

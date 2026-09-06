@@ -25,6 +25,7 @@ public partial class MainWindow : Window
         vm.LibraryViewModel.OpenFilePickerAsync = OpenLibraryFilePickerAsync;
         vm.LibraryViewModel.SaveFilePickerAsync = SaveLibraryFilePickerAsync;
         vm.LibraryViewModel.ShowMessageDialogAsync = ShowMessageDialogAsync;
+        vm.LibraryViewModel.ShowConfirmDialogAsync = ShowConfirmDialogAsync;
         vm.LibraryViewModel.ExportWithProgressAsync = ExportWithProgressAsync;
         vm.LibraryViewModel.DownloadBatchWithProgressAsync = DownloadBatchWithProgressAsync;
         vm.LibraryViewModel.OpenNvidiaImportDialogAsync = OpenNvidiaImportDialogAsync;
@@ -169,6 +170,105 @@ public partial class MainWindow : Window
         dialog.Content = border;
 
         await dialog.ShowDialog(this);
+    }
+
+    private async Task<bool> ShowConfirmDialogAsync(string title, string message, string primaryButtonText, string cancelButtonText)
+    {
+        var result = false;
+        var dialog = new Window
+        {
+            Title = title,
+            Width = 440,
+            SizeToContent = SizeToContent.Height,
+            WindowStartupLocation = WindowStartupLocation.CenterOwner,
+            CanResize = false,
+            Background = Brush.Parse("#242424")
+        };
+
+        var border = new Border
+        {
+            Padding = new Thickness(24),
+            Background = Brush.Parse("#242424"),
+            CornerRadius = new CornerRadius(8),
+            BorderBrush = Brush.Parse("#383838"),
+            BorderThickness = new Thickness(1)
+        };
+
+        var stack = new StackPanel { Spacing = 20 };
+        var titleText = new TextBlock
+        {
+            Text = title,
+            FontSize = 20,
+            FontWeight = FontWeight.Bold,
+            Foreground = Brushes.White
+        };
+
+        var msgText = new TextBlock
+        {
+            Text = message,
+            FontSize = 14,
+            Foreground = Brush.Parse("#DDDDDD"),
+            TextWrapping = TextWrapping.Wrap
+        };
+
+        var buttonPanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 12,
+            HorizontalAlignment = HorizontalAlignment.Center
+        };
+
+        var confirmBtn = new Button
+        {
+            Content = primaryButtonText,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Width = 110,
+            Height = 36,
+            Background = LinuxUI.Services.LinuxAccentColorService.Instance.CurrentAccentBrush,
+            Foreground = Brushes.Black,
+            FontWeight = FontWeight.SemiBold,
+            CornerRadius = new CornerRadius(4),
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        confirmBtn.Click += (s, e) =>
+        {
+            result = true;
+            dialog.Close();
+        };
+
+        var cancelBtn = new Button
+        {
+            Content = cancelButtonText,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            HorizontalContentAlignment = HorizontalAlignment.Center,
+            VerticalContentAlignment = VerticalAlignment.Center,
+            Width = 110,
+            Height = 36,
+            Background = Brush.Parse("#383838"),
+            Foreground = Brushes.White,
+            FontWeight = FontWeight.SemiBold,
+            CornerRadius = new CornerRadius(4),
+            Cursor = new Cursor(StandardCursorType.Hand)
+        };
+        cancelBtn.Click += (s, e) =>
+        {
+            result = false;
+            dialog.Close();
+        };
+
+        buttonPanel.Children.Add(confirmBtn);
+        buttonPanel.Children.Add(cancelBtn);
+
+        stack.Children.Add(titleText);
+        stack.Children.Add(msgText);
+        stack.Children.Add(buttonPanel);
+        border.Child = stack;
+        dialog.Content = border;
+
+        await dialog.ShowDialog(this);
+        return result;
     }
 
     private async Task<(bool Success, int ExportedCount, string ErrorMessage)> ExportWithProgressAsync(string zipPath)

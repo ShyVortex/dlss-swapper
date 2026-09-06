@@ -186,15 +186,42 @@ public partial class LibraryViewModel : ObservableObject
         card.HasError = !success;
     }
 
+    public Func<string, string, string, string, Task<bool>>? ShowConfirmDialogAsync { get; set; }
+
     [RelayCommand]
-    public void DeleteRecord(DllRecordCardItem card)
+    public async Task DeleteRecordAsync(DllRecordCardItem card)
     {
         if (card == null || !card.IsDownloaded) return;
+
+        var assetTypeName = Categories.FirstOrDefault(c => c.Key == card.CategoryKey)?.Name ?? "DLSS";
+        var versionText = !string.IsNullOrEmpty(card.Record.Version) ? card.Record.Version : card.VersionText;
+        if (!string.IsNullOrEmpty(versionText))
+        {
+            versionText = versionText.TrimStart('v', 'V');
+        }
+        var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_DeleteDll", "Delete DLL");
+        var template = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_DeleteDllVersionTemplate", "Delete {0} v{1}?");
+        var message = string.Format(System.Globalization.CultureInfo.InvariantCulture, template, assetTypeName, versionText);
+        var deleteBtnText = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Delete", "Delete");
+        var cancelBtnText = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Cancel", "Cancel");
+
+        if (ShowConfirmDialogAsync != null)
+        {
+            var confirmed = await ShowConfirmDialogAsync(title, message, deleteBtnText, cancelBtnText);
+            if (!confirmed) return;
+        }
 
         var success = _storageService.DeleteRecord(card.CategoryKey, card.Record);
         if (success)
         {
             card.IsDownloaded = false;
+        }
+        else if (ShowMessageDialogAsync != null)
+        {
+            var errTitle = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Error", "Error");
+            var errTemplate = DLSS_Swapper.Helpers.ResourceHelper.GetString("LibraryPage_UnableToDeleteRecord", "Unable to delete {0}");
+            var errMsg = string.Format(System.Globalization.CultureInfo.InvariantCulture, errTemplate, assetTypeName);
+            await ShowMessageDialogAsync(errTitle, errMsg);
         }
     }
 
