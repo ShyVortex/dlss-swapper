@@ -66,6 +66,29 @@ public partial class GameCardItem : ObservableObject
     private readonly LinuxPresetService _presetService = new LinuxPresetService();
 
     public bool IsSteamRunning => _presetService.IsSteamRunning();
+    public bool IsHeroicRunning => _presetService.IsHeroicRunning();
+
+    public bool IsLauncherRunning
+    {
+        get
+        {
+            if (string.Equals(LibraryName, "Heroic", StringComparison.OrdinalIgnoreCase))
+                return IsHeroicRunning;
+            if (string.Equals(LibraryName, "Steam", StringComparison.OrdinalIgnoreCase))
+                return IsSteamRunning;
+            return false;
+        }
+    }
+
+    public string LauncherRunningWarning
+    {
+        get
+        {
+            if (string.Equals(LibraryName, "Heroic", StringComparison.OrdinalIgnoreCase))
+                return "Heroic Games Launcher is currently running. Close Heroic before changing presets to ensure launch options persist.";
+            return "Steam is currently running. Close Steam before changing presets to ensure launch options persist.";
+        }
+    }
 
     public void LoadPresets()
     {
@@ -74,7 +97,9 @@ public partial class GameCardItem : ObservableObject
         _isInitializingPresets = true;
         try
         {
-            var state = _presetService.ReadGamePresets(AppId);
+            var state = string.Equals(LibraryName, "Heroic", StringComparison.OrdinalIgnoreCase)
+                ? _presetService.ReadHeroicGamePresets(AppId)
+                : _presetService.ReadGamePresets(AppId);
 
             SelectedDlssPresetOption = (!string.IsNullOrEmpty(state.SrPresetValue))
                 ? (SrPresetOptions.FirstOrDefault(x => x.EnvironmentValue == state.SrPresetValue) ?? SrPresetOptions[0])
@@ -114,12 +139,24 @@ public partial class GameCardItem : ObservableObject
     {
         if (_isInitializingPresets || string.IsNullOrEmpty(AppId)) return;
 
-        _presetService.SaveGamePresets(
-            AppId,
-            SelectedDlssPresetOption?.EnvironmentValue,
-            SelectedDlssRrPresetOption?.EnvironmentValue,
-            SelectedDlssFgPresetOption?.EnvironmentValue
-        );
+        if (string.Equals(LibraryName, "Heroic", StringComparison.OrdinalIgnoreCase))
+        {
+            _presetService.SaveHeroicGamePresets(
+                AppId,
+                SelectedDlssPresetOption?.EnvironmentValue,
+                SelectedDlssRrPresetOption?.EnvironmentValue,
+                SelectedDlssFgPresetOption?.EnvironmentValue
+            );
+        }
+        else
+        {
+            _presetService.SaveGamePresets(
+                AppId,
+                SelectedDlssPresetOption?.EnvironmentValue,
+                SelectedDlssRrPresetOption?.EnvironmentValue,
+                SelectedDlssFgPresetOption?.EnvironmentValue
+            );
+        }
     }
 
     [ObservableProperty]

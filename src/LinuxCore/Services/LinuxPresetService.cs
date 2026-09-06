@@ -1,5 +1,9 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using DLSS_Swapper.Core.Models;
 
@@ -287,6 +291,261 @@ public class LinuxPresetService
         }
 
         return null;
+    }
+
+    public bool IsHeroicRunning()
+    {
+        try
+        {
+            var processes = System.Diagnostics.Process.GetProcesses();
+            return processes.Any(p =>
+            {
+                try
+                {
+                    var name = p.ProcessName.ToLowerInvariant();
+                    return name == "heroic" || name == "heroicgameslauncher" || name.Contains("heroicgameslauncher.hgl");
+                }
+                catch
+                {
+                    return false;
+                }
+            });
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    public PresetSelectionState ReadHeroicGamePresets(string appId)
+    {
+        var result = new PresetSelectionState();
+        if (string.IsNullOrEmpty(appId)) return result;
+
+        var configPath = FindHeroicGameConfigPath(appId);
+        if (string.IsNullOrEmpty(configPath) || !File.Exists(configPath)) return result;
+
+        try
+        {
+            var jsonText = File.ReadAllText(configPath);
+            var root = JsonNode.Parse(jsonText);
+            if (root is null) return result;
+
+            JsonObject? gameObj = null;
+            if (root is JsonObject rootObj)
+            {
+                if (rootObj.TryGetPropertyValue(appId, out var subNode) && subNode is JsonObject subObj)
+                {
+                    gameObj = subObj;
+                }
+                else
+                {
+                    gameObj = rootObj;
+                }
+            }
+
+            if (gameObj is null) return result;
+
+            JsonArray? envArray = null;
+            if (gameObj.TryGetPropertyValue("enviromentOptions", out var envNode1) && envNode1 is JsonArray arr1)
+            {
+                envArray = arr1;
+            }
+            else if (gameObj.TryGetPropertyValue("environmentOptions", out var envNode2) && envNode2 is JsonArray arr2)
+            {
+                envArray = arr2;
+            }
+
+            if (envArray is not null)
+            {
+                foreach (var item in envArray)
+                {
+                    if (item is JsonObject obj &&
+                        obj.TryGetPropertyValue("key", out var keyNode) &&
+                        obj.TryGetPropertyValue("value", out var valNode))
+                    {
+                        var key = keyNode?.ToString();
+                        var val = valNode?.ToString();
+                        if (string.IsNullOrEmpty(key) || string.IsNullOrEmpty(val)) continue;
+
+                        if (string.Equals(key, ENV_SR_KEY1, StringComparison.OrdinalIgnoreCase) ||
+                            string.Equals(key, ENV_SR_KEY2, StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.SrPresetValue = val;
+                        }
+                        else if (string.Equals(key, ENV_RR_KEY1, StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(key, ENV_RR_KEY2, StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.RrPresetValue = val;
+                        }
+                        else if (string.Equals(key, ENV_FG_KEY1, StringComparison.OrdinalIgnoreCase) ||
+                                 string.Equals(key, ENV_FG_KEY2, StringComparison.OrdinalIgnoreCase))
+                        {
+                            result.FgPresetValue = val;
+                        }
+                    }
+                }
+            }
+        }
+        catch
+        {
+            // Fall back to default
+        }
+
+        return result;
+    }
+
+    public bool SaveHeroicGamePresets(string appId, string? srValue, string? rrValue, string? fgValue)
+    {
+        if (string.IsNullOrEmpty(appId)) return false;
+
+        var configPath = FindOrCreateHeroicGameConfigPath(appId);
+        if (string.IsNullOrEmpty(configPath)) return false;
+
+        try
+        {
+            JsonNode? root = null;
+            if (File.Exists(configPath))
+            {
+                try
+                {
+                    var jsonText = File.ReadAllText(configPath);
+                    root = JsonNode.Parse(jsonText);
+                }
+                catch { }
+            }
+
+            if (root is null || root is not JsonObject)
+            {
+                root = new JsonObject
+                {
+                    [appId] = new JsonObject(),
+                    ["version"] = "v0",
+                    ["explicit"] = true
+                };
+            }
+
+            var rootObj = (JsonObject)root;
+            JsonObject gameObj;
+
+            if (rootObj.TryGetPropertyValue(appId, out var subNode) && subNode is JsonObject subObj)
+            {
+                gameObj = subObj;
+            }
+            else
+            {
+                gameObj = new JsonObject();
+                rootObj[appId] = gameObj;
+            }
+
+            string envKeyName = "enviromentOptions";
+            JsonArray? envArray = null;
+            if (gameObj.TryGetPropertyValue("enviromentOptions", out var envNode1) && envNode1 is JsonArray arr1)
+            {
+                envArray = arr1;
+                envKeyName = "enviromentOptions";
+            }
+            else if (gameObj.TryGetPropertyValue("environmentOptions", out var envNode2) && envNode2 is JsonArray arr2)
+            {
+                envArray = arr2;
+                envKeyName = "environmentOptions";
+            }
+            else
+            {
+                envArray = new JsonArray();
+                gameObj[envKeyName] = envArray;
+            }
+
+            var keysToRemove = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ENV_SR_KEY1, ENV_SR_KEY2,
+                ENV_RR_KEY1, ENV_RR_KEY2,
+                ENV_FG_KEY1, ENV_FG_KEY2
+            };
+
+            for (int i = envArray.Count - 1; i >= 0; i--)
+            {
+                if (envArray[i] is JsonObject itemObj &&
+                    itemObj.TryGetPropertyValue("key", out var kNode) &&
+                    kNode is not null &&
+                    keysToRemove.Contains(kNode.ToString()))
+                {
+                    envArray.RemoveAt(i);
+                }
+            }
+
+            if (!string.IsNullOrEmpty(srValue) && srValue != "0")
+            {
+                envArray.Add(new JsonObject { ["key"] = ENV_SR_KEY1, ["value"] = srValue });
+                envArray.Add(new JsonObject { ["key"] = ENV_SR_KEY2, ["value"] = srValue });
+            }
+
+            if (!string.IsNullOrEmpty(rrValue) && rrValue != "0")
+            {
+                envArray.Add(new JsonObject { ["key"] = ENV_RR_KEY1, ["value"] = rrValue });
+                envArray.Add(new JsonObject { ["key"] = ENV_RR_KEY2, ["value"] = rrValue });
+            }
+
+            if (!string.IsNullOrEmpty(fgValue) && fgValue != "0")
+            {
+                envArray.Add(new JsonObject { ["key"] = ENV_FG_KEY1, ["value"] = fgValue });
+                envArray.Add(new JsonObject { ["key"] = ENV_FG_KEY2, ["value"] = fgValue });
+            }
+
+            var dir = Path.GetDirectoryName(configPath);
+            if (!string.IsNullOrEmpty(dir) && !Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+
+            var options = new JsonSerializerOptions { WriteIndented = true };
+            File.WriteAllText(configPath, root.ToJsonString(options));
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static readonly string[] PossibleHeroicGamesConfigDirs = new[]
+    {
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".config", "heroic", "GamesConfig"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".var", "app", "com.heroicgameslauncher.hgl", "config", "heroic", "GamesConfig"),
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "snap", "heroic", "current", ".config", "heroic", "GamesConfig")
+    };
+
+    private string? FindHeroicGameConfigPath(string appId)
+    {
+        foreach (var dir in PossibleHeroicGamesConfigDirs)
+        {
+            if (Directory.Exists(dir))
+            {
+                var targetFile = Path.Combine(dir, $"{appId}.json");
+                if (File.Exists(targetFile)) return targetFile;
+            }
+        }
+        return null;
+    }
+
+    private string? FindOrCreateHeroicGameConfigPath(string appId)
+    {
+        var existing = FindHeroicGameConfigPath(appId);
+        if (!string.IsNullOrEmpty(existing)) return existing;
+
+        foreach (var dir in PossibleHeroicGamesConfigDirs)
+        {
+            var parentDir = Path.GetDirectoryName(dir);
+            if (parentDir != null && Directory.Exists(parentDir))
+            {
+                if (!Directory.Exists(dir)) Directory.CreateDirectory(dir);
+                return Path.Combine(dir, $"{appId}.json");
+            }
+        }
+
+        var defaultDir = PossibleHeroicGamesConfigDirs[0];
+        if (!Directory.Exists(defaultDir)) Directory.CreateDirectory(defaultDir);
+        return Path.Combine(defaultDir, $"{appId}.json");
     }
 }
 

@@ -41,11 +41,11 @@
                 <!-- Right Panel: Game Metadata Fields and Library Version Options -->
                 <ScrollViewer Grid.Column="1" VerticalScrollBarVisibility="Auto" Padding="0,0,50,0">
                     <StackPanel Spacing="16" x:CompileBindings="False" Margin="0,0,10,0">
-                        <!-- Steam Running Warning Banner -->
-                        <Border IsVisible="{Binding IsSteamRunning}" Background="#3D2B00" BorderBrush="#855B00" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,10,0">
+                        <!-- Launcher Running Warning Banner -->
+                        <Border IsVisible="{Binding IsLauncherRunning}" Background="#3D2B00" BorderBrush="#855B00" BorderThickness="1" CornerRadius="6" Padding="10" Margin="0,0,10,0">
                             <Grid ColumnDefinitions="Auto,*">
                                 <TextBlock Grid.Column="0" Text="⚠️" Foreground="#FFCC00" VerticalAlignment="Center" Margin="0,0,8,0"/>
-                                <TextBlock x:Name="SteamRunningWarningTextBlock" Grid.Column="1" Text="Steam is currently running. Close Steam before changing presets to ensure launch options persist." Foreground="#FFD666" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="LauncherRunningWarningTextBlock" Grid.Column="1" Text="{Binding LauncherRunningWarning}" Foreground="#FFD666" FontSize="11" TextWrapping="Wrap" VerticalAlignment="Center"/>
                             </Grid>
                         </Border>
 
