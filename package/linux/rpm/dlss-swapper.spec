@@ -4,7 +4,7 @@
 %define _check_files %{nil}
 
 Name:           dlss-swapper
-Version:        1.2.6
+Version:        1.2.6.2
 Release:        1%{?dist}
 Summary:        Download, install, and swap DLSS, FSR, and XeSS versions in games
 License:        GPLv3+
