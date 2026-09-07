@@ -45,6 +45,7 @@ public class DlssPresetItem
             new DlssPresetItem("Default", "0"),
             new DlssPresetItem("Preset D", "4"),
             new DlssPresetItem("Preset E", "5"),
+            new DlssPresetItem("Preset F", "6"),
             new DlssPresetItem("NVIDIA recommended", "16777215", "16777215")
         };
     }
