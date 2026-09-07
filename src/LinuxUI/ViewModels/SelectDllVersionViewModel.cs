@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
@@ -155,7 +156,23 @@ public partial class SelectDllVersionViewModel : ObservableObject
         var manifest = await _storageService.LoadManifestAsync();
         if (manifest == null) return;
 
-        var records = manifest.GetRecordsForCategory(_categoryType)
+        var rawRecords = manifest.GetRecordsForCategory(_categoryType);
+
+        // Prevent DLSS 1.0 showing up with DLSS 2/3 and vice versa (matching Windows DLSS Swapper behavior)
+        if (_categoryType.Equals("dlss", StringComparison.OrdinalIgnoreCase))
+        {
+            bool currentIsV1 = CurrentVersionText.StartsWith("v1.", StringComparison.OrdinalIgnoreCase) || CurrentVersionText.StartsWith("1.", StringComparison.OrdinalIgnoreCase);
+            if (currentIsV1)
+            {
+                rawRecords = rawRecords.Where(r => r.Version.StartsWith("1.")).ToList();
+            }
+            else
+            {
+                rawRecords = rawRecords.Where(r => !r.Version.StartsWith("1.")).ToList();
+            }
+        }
+
+        var records = rawRecords
             .OrderByDescending(r => r.VersionNumber)
             .ThenByDescending(r => r.Version);
 
@@ -165,8 +182,15 @@ public partial class SelectDllVersionViewModel : ObservableObject
         bool allowDebug = settings.AllowDebugDlls;
         bool onlyDownloaded = settings.OnlyShowDownloadedDlls;
 
+        var seenMd5s = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
         foreach (var record in records)
         {
+            if (!string.IsNullOrEmpty(record.Md5Hash) && !seenMd5s.Add(record.Md5Hash))
+            {
+                continue;
+            }
+
             bool isDownloaded = _storageService.IsDownloaded(_categoryType, record);
             bool isDebug = record.IsDevFile || (record.Version != null && record.Version.Contains("debug", StringComparison.OrdinalIgnoreCase)) || (record.AdditionalLabel != null && record.AdditionalLabel.Contains("debug", StringComparison.OrdinalIgnoreCase));
 

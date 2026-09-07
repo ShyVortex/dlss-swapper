@@ -116,15 +116,22 @@ public class LibraryStorageService
         var lower = filename.ToLowerInvariant();
         if (lower.Contains("nvngx_dlssg")) return "dlss_g";
         if (lower.Contains("nvngx_dlssd") || lower.Contains("nvngx_dlssnr")) return "dlss_d";
-        if (lower.Contains("nvngx_dlss")) return "dlss";
+        if (lower.Contains("nvngx_dlss") && !lower.Contains("dlssg") && !lower.Contains("dlssd")) return "dlss";
         if (lower.Contains("amd_fidelityfx_vk") || lower.Contains("ffx_fsr31_vk")) return "fsr_31_vk";
         if (lower.Contains("amd_fidelityfx_dx12") || lower.Contains("ffx_fsr31") || lower.Contains("ffx_fsr3") || lower.Contains("ffx_fsr2")) return "fsr_31_dx12";
         if (lower.Contains("libxess_dx11")) return "xess_dx11";
         if (lower.Contains("libxess_fg")) return "xess_fg";
         if (lower.Contains("libxell")) return "xell";
-        if (lower.Contains("libxess")) return "xess";
+        if (lower.Contains("libxess") && !lower.Contains("dx11") && !lower.Contains("fg")) return "xess";
 
-        return !string.IsNullOrWhiteSpace(fallbackCategory) ? fallbackCategory.ToLowerInvariant() : "dlss";
+        if (!string.IsNullOrWhiteSpace(fallbackCategory))
+        {
+            var fb = fallbackCategory.ToLowerInvariant();
+            if (fb is "dlss" or "dlss_g" or "dlss_d" or "fsr_31_dx12" or "fsr_31_vk" or "xess" or "xess_dx11" or "xess_fg" or "xell")
+                return fb;
+        }
+
+        return "dlss";
     }
 
     public static string ComputeFileMd5(string filePath)
@@ -393,50 +400,51 @@ public class LibraryStorageService
         }
     }
 
-    public async Task ScanAndIndexExistingImportedFilesAsync(ManifestModel importedManifest)
+    public async Task CleanAndMergeImportedManifestAsync(ManifestModel mainManifest, ManifestModel importedManifest)
     {
-        if (!Directory.Exists(DllsFolder)) return;
-
+        var categories = new[] { "dlss", "dlss_g", "dlss_d", "fsr_31_dx12", "fsr_31_vk", "xess", "xess_dx11", "xess_fg", "xell" };
         bool changed = false;
-        var categoryDirs = Directory.GetDirectories(DllsFolder);
-        foreach (var catDir in categoryDirs)
+
+        foreach (var category in categories)
         {
-            var categoryName = Path.GetFileName(catDir).ToLowerInvariant();
-            var subDirs = Directory.GetDirectories(catDir);
-            foreach (var subDir in subDirs)
+            var importedList = importedManifest.GetRecordsForCategory(category);
+            var mainList = mainManifest.GetRecordsForCategory(category);
+            var toRemove = new List<DllRecordModel>();
+
+            foreach (var item in importedList)
             {
-                var dirName = Path.GetFileName(subDir);
-                // 1. Convert legacy / unindexed imported_* folders
-                if (dirName.StartsWith("imported_", StringComparison.OrdinalIgnoreCase))
+                // 1. If file does not exist on disk, remove it from imported manifest
+                if (!IsDownloaded(category, item))
                 {
-                    var dllFiles = Directory.GetFiles(subDir, "*.dll", SearchOption.AllDirectories);
-                    foreach (var dll in dllFiles)
-                    {
-                        var cat = DetectCategoryFromFilename(Path.GetFileName(dll), categoryName);
-                        if (ProcessAndStoreDllFile(dll, cat, importedManifest))
-                        {
-                            changed = true;
-                        }
-                    }
-                    try { Directory.Delete(subDir, true); } catch { }
+                    toRemove.Add(item);
+                    continue;
                 }
-                // 2. Discover any valid {category}_v*_* folders not yet in imported manifest
-                else if (dirName.Contains("_v"))
+
+                // 2. If item is already part of the official manifest for this category, remove it from imported manifest
+                if (mainList.Any(m => string.Equals(m.Md5Hash, item.Md5Hash, StringComparison.OrdinalIgnoreCase)))
                 {
-                    var dllFiles = Directory.GetFiles(subDir, "*.dll", SearchOption.TopDirectoryOnly);
-                    foreach (var dll in dllFiles)
+                    toRemove.Add(item);
+                    continue;
+                }
+
+                // 3. If the actual DLL in its folder belongs to a different category, remove it
+                var expectedDll = GetExpectedDllPath(category, item);
+                if (File.Exists(expectedDll))
+                {
+                    var actualFilename = Path.GetFileName(expectedDll);
+                    var detectedCat = DetectCategoryFromFilename(actualFilename, category);
+                    if (!string.Equals(detectedCat, category, StringComparison.OrdinalIgnoreCase))
                     {
-                        var cat = DetectCategoryFromFilename(Path.GetFileName(dll), categoryName);
-                        var list = importedManifest.GetRecordsForCategory(cat);
-                        var md5 = ComputeFileMd5(dll);
-                        if (!list.Any(r => string.Equals(r.Md5Hash, md5, StringComparison.OrdinalIgnoreCase)))
-                        {
-                            var record = CreateRecordFromDll(dll, cat);
-                            list.Add(record);
-                            changed = true;
-                        }
+                        toRemove.Add(item);
+                        continue;
                     }
                 }
+            }
+
+            if (toRemove.Count > 0)
+            {
+                importedList.RemoveAll(r => toRemove.Contains(r));
+                changed = true;
             }
         }
 
@@ -444,6 +452,8 @@ public class LibraryStorageService
         {
             await SaveImportedManifestAsync(importedManifest);
         }
+
+        mainManifest.Merge(importedManifest);
     }
 
     public async Task<ManifestModel?> LoadManifestAsync()
@@ -509,10 +519,9 @@ public class LibraryStorageService
 
         manifest ??= new ManifestModel();
 
-        // 4. Merge imported manifest
+        // 4. Merge imported manifest cleanly without duplicates
         var importedManifest = await LoadImportedManifestAsync();
-        await ScanAndIndexExistingImportedFilesAsync(importedManifest);
-        manifest.Merge(importedManifest);
+        await CleanAndMergeImportedManifestAsync(manifest, importedManifest);
 
         return manifest;
     }

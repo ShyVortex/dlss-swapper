@@ -140,7 +140,6 @@ public partial class LibraryViewModel : ObservableObject
 
         var settings = LinuxSettingsService.Instance.Settings;
         bool allowDebug = settings.AllowDebugDlls;
-        bool onlyDownloaded = settings.OnlyShowDownloadedDlls;
 
         foreach (var r in sortedRecords)
         {
@@ -148,11 +147,6 @@ public partial class LibraryViewModel : ObservableObject
             bool isDebug = r.IsDevFile || (r.Version != null && r.Version.Contains("debug", StringComparison.OrdinalIgnoreCase)) || (r.AdditionalLabel != null && r.AdditionalLabel.Contains("debug", StringComparison.OrdinalIgnoreCase));
 
             if (!allowDebug && isDebug && !isDownloaded)
-            {
-                continue;
-            }
-
-            if (onlyDownloaded && !isDownloaded)
             {
                 continue;
             }

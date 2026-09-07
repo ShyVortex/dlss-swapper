@@ -97,14 +97,14 @@ public partial class NGXModelImporter : Window
     {
         await Task.Run(() =>
         {
-            // Parse standard Linux driver paths and Proton/Wine caches
+            // Parse standard Linux system driver paths and Wine/Proton system cache
             var searchPaths = new[]
             {
                 "/usr/lib/x86_64-linux-gnu",
                 "/usr/lib64",
                 "/usr/lib",
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".local/share/Steam"),
-                Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".var/app/com.valvesoftware.Steam")
+                "/usr/share/nvidia",
+                "/opt/nvidia"
             };
 
             var foundFiles = new List<string>();
