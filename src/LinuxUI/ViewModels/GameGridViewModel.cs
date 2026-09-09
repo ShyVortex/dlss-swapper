@@ -216,7 +216,8 @@ public partial class GameGridViewModel : ObservableObject
         _groupByLibrary = settings.GroupByLibrary;
 
         _favouriteIds = _metadataService.LoadFavourites();
-        _ = ScanRealGamesAsync();
+        LoadFromCacheImmediately();
+        _ = ScanRealGamesAsync(isManualRefresh: false);
 
         LinuxSettingsService.Instance.OnSettingsChanged += () =>
         {
@@ -225,6 +226,57 @@ public partial class GameGridViewModel : ObservableObject
                 FilterGames();
             });
         };
+    }
+
+    private void LoadFromCacheImmediately()
+    {
+        try
+        {
+            var cachedEntries = _metadataService.LoadScannedGamesCache();
+            if (cachedEntries != null && cachedEntries.Count > 0)
+            {
+                var cards = new List<GameCardItem>();
+                foreach (var entry in cachedEntries)
+                {
+                    if (string.IsNullOrEmpty(entry.InstallPath) || !Directory.Exists(entry.InstallPath))
+                        continue;
+
+                    var card = new GameCardItem
+                    {
+                        AppId = entry.Id,
+                        Name = entry.Title,
+                        LibraryName = entry.Launcher,
+                        InstallPath = entry.InstallPath,
+                        CoverImagePath = entry.CoverImagePath ?? string.Empty,
+                        CoverColor = !string.IsNullOrEmpty(entry.CoverColorHex) ? entry.CoverColorHex : GetColorForGame(entry.Title),
+                        DLSSVersion = entry.DllMap.GetValueOrDefault("dlss", "N/A"),
+                        DLSSGVersion = entry.DllMap.GetValueOrDefault("dlss_g", "N/A"),
+                        DLSSDVersion = entry.DllMap.GetValueOrDefault("dlss_d", "N/A"),
+                        Fsr31Dx12Version = entry.DllMap.GetValueOrDefault("fsr_31_dx12", "N/A"),
+                        Fsr31VkVersion = entry.DllMap.GetValueOrDefault("fsr_31_vk", "N/A"),
+                        XessVersion = entry.DllMap.GetValueOrDefault("xess", "N/A"),
+                        XessDx11Version = entry.DllMap.GetValueOrDefault("xess_dx11", "N/A"),
+                        XessFgVersion = entry.DllMap.GetValueOrDefault("xess_fg", "N/A"),
+                        XellVersion = entry.DllMap.GetValueOrDefault("xell", "N/A")
+                    };
+                    card.IsFavourite = _favouriteIds.Contains(card.GameId);
+                    card.OnFavouriteToggled = OnCardFavouriteToggled;
+                    card.OnManualGameRemoved = OnCardManualGameRemoved;
+                    cards.Add(card);
+                }
+
+                _allDiscoveredGames.Clear();
+                _allDiscoveredGames.AddRange(cards);
+                foreach (var card in _allDiscoveredGames)
+                {
+                    _ = card.LoadCoverAsync();
+                }
+                FilterGames();
+            }
+        }
+        catch
+        {
+        }
     }
 
     partial void OnIsGridViewChanged(bool value)
@@ -348,21 +400,29 @@ public partial class GameGridViewModel : ObservableObject
         FilterGames();
     }
 
-    public async Task ScanRealGamesAsync()
+    public async Task ScanRealGamesAsync(bool isManualRefresh = false)
     {
-        IsLoading = true;
+        if (isManualRefresh || _allDiscoveredGames.Count == 0)
+        {
+            IsLoading = true;
+        }
+
         try
         {
             var discoveredData = await Task.Run(() =>
             {
                 var cards = new List<GameCardItem>();
+                var cacheEntriesToSave = new List<ScannedGameCacheEntry>();
                 var favIds = _metadataService.LoadFavourites();
+                var existingCache = _metadataService.LoadScannedGamesCache()
+                    .ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
+
                 var steamScanner = new LinuxSteamLibraryScanner();
 
                 // 1. Steam Games
                 if (steamScanner.IsLauncherInstalled())
                 {
-                    var realGames = steamScanner.ScanInstalledGames();
+                    var realGames = steamScanner.ScanInstalledGames(existingCache, forceRescan: isManualRefresh);
                     foreach (var g in realGames)
                     {
                         var card = new GameCardItem
@@ -386,6 +446,31 @@ public partial class GameGridViewModel : ObservableObject
                         card.IsFavourite = favIds.Contains(card.GameId);
                         card.OnFavouriteToggled = OnCardFavouriteToggled;
                         cards.Add(card);
+
+                        cacheEntriesToSave.Add(new ScannedGameCacheEntry
+                        {
+                            Id = g.AppId,
+                            Title = g.Name,
+                            Launcher = "Steam",
+                            InstallPath = g.InstallPath,
+                            ManifestPath = g.ManifestPath,
+                            ManifestLastWriteTimeUtcTicks = g.ManifestLastWriteTimeUtcTicks,
+                            CoverImagePath = g.CoverImagePath,
+                            CoverColorHex = card.CoverColor,
+                            IsManualGame = false,
+                            DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                            {
+                                ["dlss"] = g.DLSSVersion,
+                                ["dlss_g"] = g.DLSSGVersion,
+                                ["dlss_d"] = g.DLSSDVersion,
+                                ["fsr_31_dx12"] = g.Fsr31Dx12Version,
+                                ["fsr_31_vk"] = g.Fsr31VkVersion,
+                                ["xess"] = g.XessVersion,
+                                ["xess_dx11"] = g.XessDx11Version,
+                                ["xess_fg"] = g.XessFgVersion,
+                                ["xell"] = g.XellVersion
+                            }
+                        });
                     }
                 }
 
@@ -393,7 +478,7 @@ public partial class GameGridViewModel : ObservableObject
                 var heroicScanner = new LinuxHeroicLibraryScanner();
                 if (heroicScanner.IsLauncherInstalled())
                 {
-                    var heroicGames = heroicScanner.ScanInstalledGames();
+                    var heroicGames = heroicScanner.ScanInstalledGames(existingCache, forceRescan: isManualRefresh);
                     foreach (var g in heroicGames)
                     {
                         var card = new GameCardItem
@@ -417,6 +502,31 @@ public partial class GameGridViewModel : ObservableObject
                         card.IsFavourite = favIds.Contains(card.GameId);
                         card.OnFavouriteToggled = OnCardFavouriteToggled;
                         cards.Add(card);
+
+                        cacheEntriesToSave.Add(new ScannedGameCacheEntry
+                        {
+                            Id = g.AppId,
+                            Title = g.Name,
+                            Launcher = "Heroic",
+                            InstallPath = g.InstallPath,
+                            ManifestPath = g.ManifestPath,
+                            ManifestLastWriteTimeUtcTicks = g.ManifestLastWriteTimeUtcTicks,
+                            CoverImagePath = g.CoverImagePath,
+                            CoverColorHex = card.CoverColor,
+                            IsManualGame = false,
+                            DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                            {
+                                ["dlss"] = g.DLSSVersion,
+                                ["dlss_g"] = g.DLSSGVersion,
+                                ["dlss_d"] = g.DLSSDVersion,
+                                ["fsr_31_dx12"] = g.Fsr31Dx12Version,
+                                ["fsr_31_vk"] = g.Fsr31VkVersion,
+                                ["xess"] = g.XessVersion,
+                                ["xess_dx11"] = g.XessDx11Version,
+                                ["xess_fg"] = g.XessFgVersion,
+                                ["xell"] = g.XellVersion
+                            }
+                        });
                     }
                 }
 
@@ -429,12 +539,65 @@ public partial class GameGridViewModel : ObservableObject
                     if (cards.Any(x => string.Equals(x.InstallPath, record.InstallPath, StringComparison.OrdinalIgnoreCase)))
                         continue;
 
-                    var card = CreateManualGameCard(record.InstallPath, record.Name, record.CoverImagePath, steamScanner);
+                    var manualAppId = $"manual_{record.Name.Replace(" ", "_")}";
+                    GameCardItem card;
+
+                    if (!isManualRefresh && existingCache.TryGetValue(manualAppId, out var cachedManual) && Directory.Exists(record.InstallPath))
+                    {
+                        card = new GameCardItem
+                        {
+                            AppId = manualAppId,
+                            Name = record.Name,
+                            DLSSVersion = cachedManual.DllMap.GetValueOrDefault("dlss", "N/A"),
+                            DLSSGVersion = cachedManual.DllMap.GetValueOrDefault("dlss_g", "N/A"),
+                            DLSSDVersion = cachedManual.DllMap.GetValueOrDefault("dlss_d", "N/A"),
+                            Fsr31Dx12Version = cachedManual.DllMap.GetValueOrDefault("fsr_31_dx12", "N/A"),
+                            Fsr31VkVersion = cachedManual.DllMap.GetValueOrDefault("fsr_31_vk", "N/A"),
+                            XessVersion = cachedManual.DllMap.GetValueOrDefault("xess", "N/A"),
+                            XessDx11Version = cachedManual.DllMap.GetValueOrDefault("xess_dx11", "N/A"),
+                            XessFgVersion = cachedManual.DllMap.GetValueOrDefault("xess_fg", "N/A"),
+                            XellVersion = cachedManual.DllMap.GetValueOrDefault("xell", "N/A"),
+                            LibraryName = "Manually Added",
+                            InstallPath = record.InstallPath,
+                            CoverImagePath = !string.IsNullOrEmpty(record.CoverImagePath) ? record.CoverImagePath : (cachedManual.CoverImagePath ?? string.Empty),
+                            CoverColor = GetColorForGame(record.Name)
+                        };
+                    }
+                    else
+                    {
+                        card = CreateManualGameCard(record.InstallPath, record.Name, record.CoverImagePath, steamScanner);
+                    }
+
                     card.IsFavourite = favIds.Contains(card.GameId);
                     card.OnFavouriteToggled = OnCardFavouriteToggled;
+                    card.OnManualGameRemoved = OnCardManualGameRemoved;
                     cards.Add(card);
+
+                    cacheEntriesToSave.Add(new ScannedGameCacheEntry
+                    {
+                        Id = card.AppId,
+                        Title = card.Name,
+                        Launcher = "Manually Added",
+                        InstallPath = card.InstallPath,
+                        CoverImagePath = card.CoverImagePath,
+                        CoverColorHex = card.CoverColor,
+                        IsManualGame = true,
+                        DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+                        {
+                            ["dlss"] = card.DLSSVersion,
+                            ["dlss_g"] = card.DLSSGVersion,
+                            ["dlss_d"] = card.DLSSDVersion,
+                            ["fsr_31_dx12"] = card.Fsr31Dx12Version,
+                            ["fsr_31_vk"] = card.Fsr31VkVersion,
+                            ["xess"] = card.XessVersion,
+                            ["xess_dx11"] = card.XessDx11Version,
+                            ["xess_fg"] = card.XessFgVersion,
+                            ["xell"] = card.XellVersion
+                        }
+                    });
                 }
 
+                _metadataService.SaveScannedGamesCache(cacheEntriesToSave);
                 return (Cards: cards, Favourites: favIds);
             });
 
@@ -461,7 +624,7 @@ public partial class GameGridViewModel : ObservableObject
 
     public void ScanRealGames()
     {
-        _ = ScanRealGamesAsync();
+        _ = ScanRealGamesAsync(isManualRefresh: true);
     }
 
     private void OnCardFavouriteToggled(GameCardItem card)
@@ -628,6 +791,6 @@ public partial class GameGridViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshGamesAsync()
     {
-        await ScanRealGamesAsync();
+        await ScanRealGamesAsync(isManualRefresh: true);
     }
 }

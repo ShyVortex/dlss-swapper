@@ -39,7 +39,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
         return Task.FromResult(discoveredPaths);
     }
 
-    public List<DiscoveredGameInfo> ScanInstalledGames()
+    public List<DiscoveredGameInfo> ScanInstalledGames(Dictionary<string, ScannedGameCacheEntry>? cache = null, bool forceRescan = false)
     {
         var games = new List<DiscoveredGameInfo>();
         var scannedPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -61,6 +61,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             {
                 try
                 {
+                    var gogTicks = File.GetLastWriteTimeUtc(gogInstalledJson).Ticks;
                     var jsonText = File.ReadAllText(gogInstalledJson);
                     using var doc = JsonDocument.Parse(jsonText);
 
@@ -68,21 +69,21 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                     {
                         foreach (var elem in installedArray.EnumerateArray())
                         {
-                            AddHeroicGameFromElement(elem, "GOG", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games);
+                            AddHeroicGameFromElement(elem, "GOG", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, gogInstalledJson, gogTicks, cache, forceRescan);
                         }
                     }
                     else if (doc.RootElement.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var elem in doc.RootElement.EnumerateArray())
                         {
-                            AddHeroicGameFromElement(elem, "GOG", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games);
+                            AddHeroicGameFromElement(elem, "GOG", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, gogInstalledJson, gogTicks, cache, forceRescan);
                         }
                     }
                     else if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
                         foreach (var prop in doc.RootElement.EnumerateObject())
                         {
-                            AddHeroicGameFromElement(prop.Value, "GOG", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, prop.Name);
+                            AddHeroicGameFromElement(prop.Value, "GOG", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, gogInstalledJson, gogTicks, cache, forceRescan, prop.Name);
                         }
                     }
                 }
@@ -108,13 +109,14 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                 {
                     try
                     {
+                        var legTicks = File.GetLastWriteTimeUtc(legInstalledJson).Ticks;
                         var jsonText = File.ReadAllText(legInstalledJson);
                         using var doc = JsonDocument.Parse(jsonText);
                         if (doc.RootElement.ValueKind == JsonValueKind.Object)
                         {
                             foreach (var prop in doc.RootElement.EnumerateObject())
                             {
-                                AddHeroicGameFromElement(prop.Value, "Epic", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, prop.Name);
+                                AddHeroicGameFromElement(prop.Value, "Epic", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, legInstalledJson, legTicks, cache, forceRescan, prop.Name);
                             }
                         }
                     }
@@ -134,20 +136,21 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             {
                 try
                 {
+                    var nileTicks = File.GetLastWriteTimeUtc(nileInstalledJson).Ticks;
                     var jsonText = File.ReadAllText(nileInstalledJson);
                     using var doc = JsonDocument.Parse(jsonText);
                     if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("installed", out var arr) && arr.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var elem in arr.EnumerateArray())
                         {
-                            AddHeroicGameFromElement(elem, "Amazon", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games);
+                            AddHeroicGameFromElement(elem, "Amazon", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, nileInstalledJson, nileTicks, cache, forceRescan);
                         }
                     }
                     else if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
                         foreach (var prop in doc.RootElement.EnumerateObject())
                         {
-                            AddHeroicGameFromElement(prop.Value, "Amazon", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, prop.Name);
+                            AddHeroicGameFromElement(prop.Value, "Amazon", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, nileInstalledJson, nileTicks, cache, forceRescan, prop.Name);
                         }
                     }
                 }
@@ -163,20 +166,21 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             {
                 try
                 {
+                    var sideTicks = File.GetLastWriteTimeUtc(sideloadJson).Ticks;
                     var jsonText = File.ReadAllText(sideloadJson);
                     using var doc = JsonDocument.Parse(jsonText);
                     if (doc.RootElement.ValueKind == JsonValueKind.Object && doc.RootElement.TryGetProperty("installed", out var arr) && arr.ValueKind == JsonValueKind.Array)
                     {
                         foreach (var elem in arr.EnumerateArray())
                         {
-                            AddHeroicGameFromElement(elem, "Sideload", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games);
+                            AddHeroicGameFromElement(elem, "Sideload", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, sideloadJson, sideTicks, cache, forceRescan);
                         }
                     }
                     else if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
                         foreach (var prop in doc.RootElement.EnumerateObject())
                         {
-                            AddHeroicGameFromElement(prop.Value, "Sideload", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, prop.Name);
+                            AddHeroicGameFromElement(prop.Value, "Sideload", metadataMap, activeConfigDirs, steamScanner, scannedPaths, games, sideloadJson, sideTicks, cache, forceRescan, prop.Name);
                         }
                     }
                 }
@@ -198,6 +202,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                         try
                         {
                             var appId = Path.GetFileNameWithoutExtension(cfgFile);
+                            var cfgTicks = File.GetLastWriteTimeUtc(cfgFile).Ticks;
                             var jsonText = File.ReadAllText(cfgFile);
                             using var doc = JsonDocument.Parse(jsonText);
                             var root = doc.RootElement;
@@ -267,7 +272,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
                                     string? coverUrl = metadataMap.TryGetValue(appId, out var m2) ? m2.CoverUrl : null;
                                     var coverImage = ResolveHeroicCoverImage(appId, title, canonical, coverUrl, activeConfigDirs);
-                                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage));
+                                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage, cfgFile, cfgTicks, cache, forceRescan));
                                 }
                             }
                         }
@@ -288,7 +293,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                 {
                     scannedPaths.Add(canonical);
                     var coverImage = ResolveHeroicCoverImage(appId, meta.Title, canonical, meta.CoverUrl, activeConfigDirs);
-                    games.Add(CreateDiscoveredGame(appId, meta.Title, canonical, steamScanner, coverImage));
+                    games.Add(CreateDiscoveredGame(appId, meta.Title, canonical, steamScanner, coverImage, "", 0, cache, forceRescan));
                 }
             }
         }
@@ -313,7 +318,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
         foreach (var prefix in discoveredPrefixes)
         {
-            ScanGamesInWinePrefix(prefix, steamScanner, scannedPaths, activeConfigDirs, games);
+            ScanGamesInWinePrefix(prefix, steamScanner, scannedPaths, activeConfigDirs, games, cache, forceRescan);
         }
 
         // 8. Scan external drives and mount locations for any Heroic game directories
@@ -367,7 +372,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                     string? coverUrl = matchingMeta?.CoverUrl;
 
                     var coverImage = ResolveHeroicCoverImage(appId, title, canonical, coverUrl, activeConfigDirs);
-                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage));
+                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage, "", 0, cache, forceRescan));
                 }
             }
             catch (Exception ex)
@@ -380,7 +385,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
         return games;
     }
 
-    private void ScanGamesInWinePrefix(string prefixDir, LinuxSteamLibraryScanner steamScanner, HashSet<string> scannedPaths, List<string> activeConfigDirs, List<DiscoveredGameInfo> games)
+    private void ScanGamesInWinePrefix(string prefixDir, LinuxSteamLibraryScanner steamScanner, HashSet<string> scannedPaths, List<string> activeConfigDirs, List<DiscoveredGameInfo> games, Dictionary<string, ScannedGameCacheEntry>? cache = null, bool forceRescan = false)
     {
         if (string.IsNullOrEmpty(prefixDir) || !Directory.Exists(prefixDir)) return;
 
@@ -428,7 +433,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                     var title = folderName;
                     var coverImage = ResolveHeroicCoverImage(appId, title, canonical, null, activeConfigDirs);
 
-                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage));
+                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage, "", 0, cache, forceRescan));
                 }
             }
             catch { }
@@ -547,7 +552,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
         return dirs.ToList();
     }
 
-    private void AddHeroicGameFromElement(JsonElement elem, string defaultRunner, Dictionary<string, HeroicGameMetadata> metadataMap, List<string> activeConfigDirs, LinuxSteamLibraryScanner steamScanner, HashSet<string> scannedPaths, List<DiscoveredGameInfo> games, string fallbackAppId = "")
+    private void AddHeroicGameFromElement(JsonElement elem, string defaultRunner, Dictionary<string, HeroicGameMetadata> metadataMap, List<string> activeConfigDirs, LinuxSteamLibraryScanner steamScanner, HashSet<string> scannedPaths, List<DiscoveredGameInfo> games, string manifestPath = "", long manifestTicks = 0, Dictionary<string, ScannedGameCacheEntry>? cache = null, bool forceRescan = false, string fallbackAppId = "")
     {
         string appId = fallbackAppId;
         if (elem.TryGetProperty("appName", out var an)) appId = an.GetString() ?? appId;
@@ -601,7 +606,7 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
         scannedPaths.Add(canonical);
         var coverImage = ResolveHeroicCoverImage(appId, title, canonical, coverUrl, activeConfigDirs);
-        games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage));
+        games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage, manifestPath, manifestTicks, cache, forceRescan));
     }
 
     private void LoadHeroicMetadata(string configDir, Dictionary<string, HeroicGameMetadata> metadataMap)
@@ -810,8 +815,43 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
         return BitConverter.ToString(bytes).Replace("-", "").ToLowerInvariant();
     }
 
-    private DiscoveredGameInfo CreateDiscoveredGame(string appId, string title, string installPath, LinuxSteamLibraryScanner steamScanner, string coverImage)
+    private DiscoveredGameInfo CreateDiscoveredGame(
+        string appId, 
+        string title, 
+        string installPath, 
+        LinuxSteamLibraryScanner steamScanner, 
+        string coverImage, 
+        string manifestPath = "", 
+        long manifestTicks = 0, 
+        Dictionary<string, ScannedGameCacheEntry>? cache = null, 
+        bool forceRescan = false)
     {
+        if (!forceRescan && cache != null && cache.TryGetValue(appId, out var cachedEntry))
+        {
+            if ((manifestTicks == 0 || cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks) && Directory.Exists(installPath))
+            {
+                return new DiscoveredGameInfo
+                {
+                    AppId = appId,
+                    Name = title,
+                    InstallPath = installPath,
+                    Launcher = "Heroic",
+                    DLSSVersion = cachedEntry.DllMap.GetValueOrDefault("dlss", "Not found"),
+                    DLSSGVersion = cachedEntry.DllMap.GetValueOrDefault("dlss_g", "Not found"),
+                    DLSSDVersion = cachedEntry.DllMap.GetValueOrDefault("dlss_d", "Not found"),
+                    Fsr31Dx12Version = cachedEntry.DllMap.GetValueOrDefault("fsr_31_dx12", "Not found"),
+                    Fsr31VkVersion = cachedEntry.DllMap.GetValueOrDefault("fsr_31_vk", "Not found"),
+                    XessVersion = cachedEntry.DllMap.GetValueOrDefault("xess", "Not found"),
+                    XessDx11Version = cachedEntry.DllMap.GetValueOrDefault("xess_dx11", "Not found"),
+                    XessFgVersion = cachedEntry.DllMap.GetValueOrDefault("xess_fg", "Not found"),
+                    XellVersion = cachedEntry.DllMap.GetValueOrDefault("xell", "Not found"),
+                    CoverImagePath = !string.IsNullOrEmpty(cachedEntry.CoverImagePath) && File.Exists(cachedEntry.CoverImagePath) ? cachedEntry.CoverImagePath : coverImage,
+                    ManifestPath = manifestPath,
+                    ManifestLastWriteTimeUtcTicks = manifestTicks
+                };
+            }
+        }
+
         var dlls = steamScanner.ScanAllGameDlls(installPath);
         return new DiscoveredGameInfo
         {
@@ -828,7 +868,9 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             XessDx11Version = dlls.XessDx11Version,
             XessFgVersion = dlls.XessFgVersion,
             XellVersion = dlls.XellVersion,
-            CoverImagePath = coverImage
+            CoverImagePath = coverImage,
+            ManifestPath = manifestPath,
+            ManifestLastWriteTimeUtcTicks = manifestTicks
         };
     }
 }

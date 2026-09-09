@@ -26,6 +26,8 @@ public class DiscoveredGameInfo
     public string XessFgVersion { get; set; } = "Not found";
     public string XellVersion { get; set; } = "Not found";
     public string CoverImagePath { get; set; } = string.Empty;
+    public string ManifestPath { get; set; } = string.Empty;
+    public long ManifestLastWriteTimeUtcTicks { get; set; }
 }
 
 public struct GameDllVersions
@@ -153,7 +155,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         }
     }
 
-    public List<DiscoveredGameInfo> ScanInstalledGames()
+    public List<DiscoveredGameInfo> ScanInstalledGames(Dictionary<string, ScannedGameCacheEntry>? cache = null, bool forceRescan = false)
     {
         var games = new List<DiscoveredGameInfo>();
         var scannedAppIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -179,6 +181,9 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                     {
                         continue; // Skip duplicate AppID
                     }
+
+                    var manifestInfo = new FileInfo(manifestFile);
+                    var manifestTicks = manifestInfo.LastWriteTimeUtc.Ticks;
 
                     var content = File.ReadAllText(manifestFile);
                     var nameMatch = Regex.Match(content, @"""name""\s+""([^""]+)""", RegexOptions.IgnoreCase);
@@ -210,6 +215,34 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                         scannedAppIds.Add(appId);
                         scannedInstallPaths.Add(normalizedFullPath);
 
+                        // Delta cache lookup: If manifest timestamp is unchanged and directory exists, reuse cached DLL info
+                        if (!forceRescan && cache != null && cache.TryGetValue(appId, out var cachedEntry))
+                        {
+                            if (cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks && Directory.Exists(normalizedFullPath))
+                            {
+                                games.Add(new DiscoveredGameInfo
+                                {
+                                    AppId = appId,
+                                    Name = gameName,
+                                    InstallPath = normalizedFullPath,
+                                    Launcher = "Steam",
+                                    DLSSVersion = cachedEntry.DllMap.GetValueOrDefault("dlss", "Not found"),
+                                    DLSSGVersion = cachedEntry.DllMap.GetValueOrDefault("dlss_g", "Not found"),
+                                    DLSSDVersion = cachedEntry.DllMap.GetValueOrDefault("dlss_d", "Not found"),
+                                    Fsr31Dx12Version = cachedEntry.DllMap.GetValueOrDefault("fsr_31_dx12", "Not found"),
+                                    Fsr31VkVersion = cachedEntry.DllMap.GetValueOrDefault("fsr_31_vk", "Not found"),
+                                    XessVersion = cachedEntry.DllMap.GetValueOrDefault("xess", "Not found"),
+                                    XessDx11Version = cachedEntry.DllMap.GetValueOrDefault("xess_dx11", "Not found"),
+                                    XessFgVersion = cachedEntry.DllMap.GetValueOrDefault("xess_fg", "Not found"),
+                                    XellVersion = cachedEntry.DllMap.GetValueOrDefault("xell", "Not found"),
+                                    CoverImagePath = !string.IsNullOrEmpty(cachedEntry.CoverImagePath) && File.Exists(cachedEntry.CoverImagePath) ? cachedEntry.CoverImagePath : ResolveCoverImage(steamPath, appId),
+                                    ManifestPath = manifestFile,
+                                    ManifestLastWriteTimeUtcTicks = manifestTicks
+                                });
+                                continue;
+                            }
+                        }
+
                         var coverImage = ResolveCoverImage(steamPath, appId);
                         var dlls = ScanAllGameDlls(normalizedFullPath);
 
@@ -228,7 +261,9 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                             XessDx11Version = dlls.XessDx11Version,
                             XessFgVersion = dlls.XessFgVersion,
                             XellVersion = dlls.XellVersion,
-                            CoverImagePath = coverImage
+                            CoverImagePath = coverImage,
+                            ManifestPath = manifestFile,
+                            ManifestLastWriteTimeUtcTicks = manifestTicks
                         });
                     }
                 }

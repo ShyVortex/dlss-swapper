@@ -178,6 +178,54 @@ public class GameMetadataStorageService
         list.RemoveAll(x => string.Equals(x.InstallPath, installPath, StringComparison.OrdinalIgnoreCase));
         SaveManualGames(list);
     }
+    private static string ScannedGamesCacheFilePath => Path.Combine(StorageFolder, "games_cache.json");
+
+    public List<ScannedGameCacheEntry> LoadScannedGamesCache()
+    {
+        try
+        {
+            if (File.Exists(ScannedGamesCacheFilePath))
+            {
+                var json = File.ReadAllText(ScannedGamesCacheFilePath);
+                var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(json);
+                if (list != null)
+                {
+                    return list;
+                }
+            }
+        }
+        catch
+        {
+        }
+        return new List<ScannedGameCacheEntry>();
+    }
+
+    public void SaveScannedGamesCache(IEnumerable<ScannedGameCacheEntry> entries)
+    {
+        try
+        {
+            var list = new List<ScannedGameCacheEntry>(entries);
+            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+            File.WriteAllText(ScannedGamesCacheFilePath, json);
+        }
+        catch
+        {
+        }
+    }
+}
+
+public class ScannedGameCacheEntry
+{
+    public string Id { get; set; } = string.Empty;
+    public string Title { get; set; } = string.Empty;
+    public string Launcher { get; set; } = string.Empty;
+    public string InstallPath { get; set; } = string.Empty;
+    public string ManifestPath { get; set; } = string.Empty;
+    public long ManifestLastWriteTimeUtcTicks { get; set; }
+    public string? CoverImagePath { get; set; }
+    public string? CoverColorHex { get; set; }
+    public bool IsManualGame { get; set; }
+    public Dictionary<string, string> DllMap { get; set; } = new(StringComparer.OrdinalIgnoreCase);
 }
 
 public class ManualGameRecord
