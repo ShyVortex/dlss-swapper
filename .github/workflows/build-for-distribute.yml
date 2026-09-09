@@ -3,8 +3,12 @@ name: Build DLSS Swapper
 on:
   push:
     tags:
-      - v1.*
-      - v2.*
+      - 'v*'
+      - '*.*'
+      - '*pre*'
+      - '*beta*'
+      - '*alpha*'
+      - '*rc*'
   workflow_dispatch:
 
 jobs:
@@ -229,6 +233,6 @@ jobs:
         files: dist_windows/*
         generate_release_notes: true
         draft: false
-        prerelease: false
+        prerelease: ${{ contains(github.ref_name, '-') || contains(github.ref_name, 'pre') || contains(github.ref_name, 'alpha') || contains(github.ref_name, 'beta') || contains(github.ref_name, 'rc') }}
 
 
