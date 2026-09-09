@@ -1073,4 +1073,15 @@ Z tohoto důvodu doporučujeme být u multiplayerových her opatrní.</value>
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Překladatelské nástroje</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Nebyly nalezeny žádné hry</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Stáhněte si hry z preferovaného spouštěče (Steam, Heroic atd.)
+nebo klikněte na '+ Přidat hru' pro ruční přidání her.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Skenování knihoven a obnovování her...</value>
+  </data>
 </root>

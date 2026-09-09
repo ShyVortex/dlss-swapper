@@ -1182,4 +1182,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Панель инструментов переводчика</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Игры не найдены</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Загрузите игры из предпочитаемого лаунчера (Steam, Heroic и т.д.)
+или нажмите '+ Добавить игру', чтобы добавить игры вручную.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Сканирование библиотек и обновление игр...</value>
+  </data>
 </root>

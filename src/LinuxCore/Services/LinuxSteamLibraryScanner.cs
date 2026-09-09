@@ -28,6 +28,21 @@ public class DiscoveredGameInfo
     public string CoverImagePath { get; set; } = string.Empty;
 }
 
+public struct GameDllVersions
+{
+    public string DLSSVersion { get; set; } = "Not found";
+    public string DLSSGVersion { get; set; } = "Not found";
+    public string DLSSDVersion { get; set; } = "Not found";
+    public string Fsr31Dx12Version { get; set; } = "Not found";
+    public string Fsr31VkVersion { get; set; } = "Not found";
+    public string XessVersion { get; set; } = "Not found";
+    public string XessDx11Version { get; set; } = "Not found";
+    public string XessFgVersion { get; set; } = "Not found";
+    public string XellVersion { get; set; } = "Not found";
+
+    public GameDllVersions() { }
+}
+
 public class LinuxSteamLibraryScanner : IGameLibraryScanner
 {
     private static readonly string[] PossibleSteamPaths = new[]
@@ -196,6 +211,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                         scannedInstallPaths.Add(normalizedFullPath);
 
                         var coverImage = ResolveCoverImage(steamPath, appId);
+                        var dlls = ScanAllGameDlls(normalizedFullPath);
 
                         games.Add(new DiscoveredGameInfo
                         {
@@ -203,15 +219,15 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                             Name = gameName,
                             InstallPath = normalizedFullPath,
                             Launcher = "Steam",
-                            DLSSVersion = ScanDllVersion(normalizedFullPath, "nvngx_dlss.dll"),
-                            DLSSGVersion = ScanDllVersion(normalizedFullPath, "nvngx_dlssg.dll"),
-                            DLSSDVersion = ScanDllVersion(normalizedFullPath, "nvngx_dlssd.dll"),
-                            Fsr31Dx12Version = ScanDllVersion(normalizedFullPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll"),
-                            Fsr31VkVersion = ScanDllVersion(normalizedFullPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll"),
-                            XessVersion = ScanDllVersion(normalizedFullPath, "libxess.dll"),
-                            XessDx11Version = ScanDllVersion(normalizedFullPath, "libxess_dx11.dll"),
-                            XessFgVersion = ScanDllVersion(normalizedFullPath, "libxess_fg.dll"),
-                            XellVersion = ScanDllVersion(normalizedFullPath, "libxell.dll"),
+                            DLSSVersion = dlls.DLSSVersion,
+                            DLSSGVersion = dlls.DLSSGVersion,
+                            DLSSDVersion = dlls.DLSSDVersion,
+                            Fsr31Dx12Version = dlls.Fsr31Dx12Version,
+                            Fsr31VkVersion = dlls.Fsr31VkVersion,
+                            XessVersion = dlls.XessVersion,
+                            XessDx11Version = dlls.XessDx11Version,
+                            XessFgVersion = dlls.XessFgVersion,
+                            XellVersion = dlls.XellVersion,
                             CoverImagePath = coverImage
                         });
                     }
@@ -376,19 +392,18 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         return "Unknown";
     }
 
-    private bool IsDebugDll(Stream stream, string filePath)
-    {
-        try
-        {
-            // Method 1: MD5 hash match against manifest dev records
-            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
-            {
-                using var md5 = System.Security.Cryptography.MD5.Create();
-                using var fileStream = File.OpenRead(filePath);
-                var hashBytes = md5.ComputeHash(fileStream);
-                var hashHex = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+    private static HashSet<string>? _cachedDevHashes;
+    private static readonly object _hashLock = new();
 
-                var storageService = new LibraryStorageService();
+    private static HashSet<string> GetCachedDevHashes()
+    {
+        if (_cachedDevHashes != null) return _cachedDevHashes;
+        lock (_hashLock)
+        {
+            if (_cachedDevHashes != null) return _cachedDevHashes;
+            var set = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
+            {
                 var manifestPath = Path.Combine(LibraryStorageService.StorageFolder, "json", "manifest.json");
                 if (File.Exists(manifestPath))
                 {
@@ -401,12 +416,38 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                         allRecords.AddRange(manifest.DlssG ?? new());
                         allRecords.AddRange(manifest.DlssD ?? new());
 
-                        var matchedRecord = allRecords.FirstOrDefault(r => string.Equals(r.Md5Hash, hashHex, StringComparison.OrdinalIgnoreCase));
-                        if (matchedRecord != null)
+                        foreach (var r in allRecords)
                         {
-                            return matchedRecord.IsDevFile;
+                            if (r.IsDevFile && !string.IsNullOrEmpty(r.Md5Hash))
+                            {
+                                set.Add(r.Md5Hash);
+                            }
                         }
                     }
+                }
+            }
+            catch { }
+            _cachedDevHashes = set;
+            return _cachedDevHashes;
+        }
+    }
+
+    private bool IsDebugDll(Stream stream, string filePath)
+    {
+        try
+        {
+            // Method 1: MD5 hash match against manifest dev records using cached memory set
+            if (!string.IsNullOrEmpty(filePath) && File.Exists(filePath))
+            {
+                using var md5 = System.Security.Cryptography.MD5.Create();
+                using var fileStream = File.OpenRead(filePath);
+                var hashBytes = md5.ComputeHash(fileStream);
+                var hashHex = BitConverter.ToString(hashBytes).Replace("-", "").ToLowerInvariant();
+
+                var devHashes = GetCachedDevHashes();
+                if (devHashes.Contains(hashHex))
+                {
+                    return true;
                 }
             }
 
@@ -436,24 +477,129 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         return false;
     }
 
+    public GameDllVersions ScanAllGameDlls(string gameDirectory)
+    {
+        var result = new GameDllVersions();
+        if (string.IsNullOrEmpty(gameDirectory) || !Directory.Exists(gameDirectory)) return result;
+
+        try
+        {
+            var foundDllPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+            var excludedFolderNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+            {
+                "content", "paks", "audio", "sound", "sounds", "video", "movies", "textures",
+                "shaders", "saves", "cache", "__pycache__", ".git", "logs", "screenshots", "docs", "manual"
+            };
+
+            var queue = new Queue<(string Dir, int Depth)>();
+            queue.Enqueue((gameDirectory, 0));
+
+            while (queue.Count > 0)
+            {
+                var (currentDir, depth) = queue.Dequeue();
+
+                try
+                {
+                    var files = Directory.GetFiles(currentDir, "*.dll");
+                    foreach (var file in files)
+                    {
+                        var name = Path.GetFileName(file);
+                        if (!foundDllPaths.ContainsKey(name))
+                        {
+                            foundDllPaths[name] = file;
+                        }
+                    }
+
+                    if (depth < 4)
+                    {
+                        foreach (var subDir in Directory.GetDirectories(currentDir))
+                        {
+                            var folderName = Path.GetFileName(subDir);
+                            if (!excludedFolderNames.Contains(folderName) && !folderName.StartsWith("."))
+                            {
+                                queue.Enqueue((subDir, depth + 1));
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // 1. DLSS
+            if (foundDllPaths.TryGetValue("nvngx_dlss.dll", out var dlssPath))
+                result.DLSSVersion = ExtractDllVersionSafe(dlssPath);
+
+            // 2. DLSSG
+            if (foundDllPaths.TryGetValue("nvngx_dlssg.dll", out var dlssgPath))
+                result.DLSSGVersion = ExtractDllVersionSafe(dlssgPath);
+
+            // 3. DLSSD
+            if (foundDllPaths.TryGetValue("nvngx_dlssd.dll", out var dlssdPath))
+                result.DLSSDVersion = ExtractDllVersionSafe(dlssdPath);
+
+            // 4. FSR 3.1 DX12
+            if (foundDllPaths.TryGetValue("amd_fidelityfx_dx12.dll", out var fsr12) ||
+                foundDllPaths.TryGetValue("ffx_fsr31_x64.dll", out fsr12) ||
+                foundDllPaths.TryGetValue("ffx_fsr31_dx12_x64.dll", out fsr12))
+            {
+                result.Fsr31Dx12Version = ExtractDllVersionSafe(fsr12);
+            }
+
+            // 5. FSR 3.1 VK
+            if (foundDllPaths.TryGetValue("amd_fidelityfx_vk.dll", out var fsrVk) ||
+                foundDllPaths.TryGetValue("ffx_fsr31_vk_x64.dll", out fsrVk))
+            {
+                result.Fsr31VkVersion = ExtractDllVersionSafe(fsrVk);
+            }
+
+            // 6. XeSS
+            if (foundDllPaths.TryGetValue("libxess.dll", out var xessPath))
+                result.XessVersion = ExtractDllVersionSafe(xessPath);
+
+            // 7. XeSS DX11
+            if (foundDllPaths.TryGetValue("libxess_dx11.dll", out var xessDx11Path))
+                result.XessDx11Version = ExtractDllVersionSafe(xessDx11Path);
+
+            // 8. XeSS FG
+            if (foundDllPaths.TryGetValue("libxess_fg.dll", out var xessFgPath))
+                result.XessFgVersion = ExtractDllVersionSafe(xessFgPath);
+
+            // 9. XeLL
+            if (foundDllPaths.TryGetValue("libxell.dll", out var xellPath))
+                result.XellVersion = ExtractDllVersionSafe(xellPath);
+        }
+        catch { }
+
+        return result;
+    }
+
+    private string ExtractDllVersionSafe(string filePath)
+    {
+        var ver = ExtractDllVersionFromFile(filePath);
+        if (!string.IsNullOrEmpty(ver) && ver != "Unknown") return ver;
+        return "Installed";
+    }
+
     public string ScanDllVersion(string gameDirectory, params string[] dllFilenames)
     {
         if (string.IsNullOrEmpty(gameDirectory) || !Directory.Exists(gameDirectory)) return "N/A";
 
         try
         {
+            var dlls = ScanAllGameDlls(gameDirectory);
             foreach (var filename in dllFilenames)
             {
-                var files = Directory.GetFiles(gameDirectory, filename, SearchOption.AllDirectories);
-                if (files.Length > 0)
-                {
-                    var ver = ExtractDllVersionFromFile(files[0]);
-                    if (!string.IsNullOrEmpty(ver) && ver != "Unknown")
-                    {
-                        return ver;
-                    }
-                    return "Installed";
-                }
+                var lower = filename.ToLowerInvariant();
+                if (lower.Contains("dlssg")) return dlls.DLSSGVersion;
+                if (lower.Contains("dlssd")) return dlls.DLSSDVersion;
+                if (lower.Contains("dlss")) return dlls.DLSSVersion;
+                if (lower.Contains("fidelityfx_dx12") || lower.Contains("fsr31_x64") || lower.Contains("fsr31_dx12")) return dlls.Fsr31Dx12Version;
+                if (lower.Contains("fidelityfx_vk") || lower.Contains("fsr31_vk")) return dlls.Fsr31VkVersion;
+                if (lower.Contains("xess_dx11")) return dlls.XessDx11Version;
+                if (lower.Contains("xess_fg")) return dlls.XessFgVersion;
+                if (lower.Contains("xess")) return dlls.XessVersion;
+                if (lower.Contains("xell")) return dlls.XellVersion;
             }
         }
         catch

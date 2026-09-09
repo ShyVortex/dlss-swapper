@@ -1073,4 +1073,15 @@ Aus diesem Umstand empfehlen wir besondere Vorsicht im Umgang mit Multiplayer Sp
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Übersetzungs-Toolbox</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Keine Spiele gefunden</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Bitte lade Spiele über deinen bevorzugten Launcher (Steam, Heroic usw.) herunter
+oder klicke auf '+ Spiel hinzufügen', um Spiele manuell hinzuzufügen.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Bibliotheken werden gescannt und Spiele aktualisiert...</value>
+  </data>
 </root>

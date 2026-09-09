@@ -1073,4 +1073,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Інструменти перекладу</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Ігор не знайдено</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Завантажте ігри з бажаного лаунчера (Steam, Heroic тощо)
+або натисніть '+ Додати гру', щоб додати ігри вручну.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Сканування бібліотек та оновлення ігор...</value>
+  </data>
 </root>

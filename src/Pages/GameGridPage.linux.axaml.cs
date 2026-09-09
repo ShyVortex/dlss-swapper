@@ -16,6 +16,9 @@ public partial class GameGridView : UserControl
     private void UpdateTranslations()
     {
         FavouritesHeaderTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Favourites", "Favourites");
+        EmptyStateTitleTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_NoGamesFound", "No games found");
+        EmptyStateDescriptionTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_NoGamesFound_Description", "Please download games from your preferred launcher (Steam, Heroic, etc.)\nor click '+ Add Game' to add games manually.");
+        LoadingOverlayTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ScanningLibraries", "Scanning libraries & refreshing games...");
     }
 
     private void OnCardPointerPressed(object? sender, PointerPressedEventArgs e)

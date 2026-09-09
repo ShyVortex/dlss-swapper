@@ -184,7 +184,101 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             }
         }
 
-        // 5. Check metadata library items marked is_installed or with valid install_path
+        // 5. Scan Heroic GamesConfig/*.json (sideloaded apps, custom launchers, wine-configured games)
+        var discoveredPrefixes = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var configDir in activeConfigDirs)
+        {
+            var gamesConfigDir = Path.Combine(configDir, "GamesConfig");
+            if (Directory.Exists(gamesConfigDir))
+            {
+                try
+                {
+                    foreach (var cfgFile in Directory.GetFiles(gamesConfigDir, "*.json"))
+                    {
+                        try
+                        {
+                            var appId = Path.GetFileNameWithoutExtension(cfgFile);
+                            var jsonText = File.ReadAllText(cfgFile);
+                            using var doc = JsonDocument.Parse(jsonText);
+                            var root = doc.RootElement;
+
+                            var elem = root.TryGetProperty(appId, out var sub) ? sub : root;
+
+                            // Collect winePrefix if present for secondary launcher game scanning
+                            if (elem.TryGetProperty("winePrefix", out var wp))
+                            {
+                                var wpStr = wp.GetString();
+                                if (!string.IsNullOrEmpty(wpStr) && Directory.Exists(wpStr))
+                                {
+                                    discoveredPrefixes.Add(Path.GetFullPath(wpStr));
+                                }
+                            }
+
+                            string title = "";
+                            if (elem.TryGetProperty("title", out var t)) title = t.GetString() ?? "";
+                            else if (elem.TryGetProperty("appName", out var an)) title = an.GetString() ?? "";
+                            else if (elem.TryGetProperty("app_name", out var an2)) title = an2.GetString() ?? "";
+
+                            string installPath = "";
+                            if (elem.TryGetProperty("installPath", out var ip)) installPath = ip.GetString() ?? "";
+                            else if (elem.TryGetProperty("install_path", out var ip2)) installPath = ip2.GetString() ?? "";
+                            else if (elem.TryGetProperty("gameDirectory", out var gd)) installPath = gd.GetString() ?? "";
+
+                            // If installPath is not set, check targetExe or executable
+                            if (string.IsNullOrEmpty(installPath) || !Directory.Exists(installPath))
+                            {
+                                string targetExe = "";
+                                if (elem.TryGetProperty("targetExe", out var te)) targetExe = te.GetString() ?? "";
+                                else if (elem.TryGetProperty("executable", out var ex2)) targetExe = ex2.GetString() ?? "";
+
+                                if (!string.IsNullOrEmpty(targetExe) && File.Exists(targetExe))
+                                {
+                                    installPath = Path.GetDirectoryName(targetExe) ?? "";
+                                }
+                            }
+
+                            // If still empty, check workingDir
+                            if (string.IsNullOrEmpty(installPath) || !Directory.Exists(installPath))
+                            {
+                                if (elem.TryGetProperty("workingDir", out var wd))
+                                {
+                                    var p = wd.GetString();
+                                    if (!string.IsNullOrEmpty(p) && Directory.Exists(p))
+                                    {
+                                        installPath = p;
+                                    }
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(installPath) && Directory.Exists(installPath))
+                            {
+                                var canonical = Path.GetFullPath(installPath);
+                                if (!scannedPaths.Contains(canonical))
+                                {
+                                    scannedPaths.Add(canonical);
+                                    if (string.IsNullOrEmpty(title) && metadataMap.TryGetValue(appId, out var meta))
+                                    {
+                                        title = meta.Title;
+                                    }
+                                    if (string.IsNullOrEmpty(title))
+                                    {
+                                        title = Path.GetFileName(canonical);
+                                    }
+
+                                    string? coverUrl = metadataMap.TryGetValue(appId, out var m2) ? m2.CoverUrl : null;
+                                    var coverImage = ResolveHeroicCoverImage(appId, title, canonical, coverUrl, activeConfigDirs);
+                                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage));
+                                }
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+        }
+
+        // 6. Check metadata library items marked is_installed or with valid install_path
         foreach (var (appId, meta) in metadataMap)
         {
             if (!string.IsNullOrEmpty(meta.InstallPath) && Directory.Exists(meta.InstallPath))
@@ -199,8 +293,30 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             }
         }
 
-        // 6. Scan external drives and mount locations for any Heroic game directories
+        // 7. Scan games installed in Heroic Wine Prefixes (Ubisoft Connect, EA App, Battle.net, GOG Galaxy, etc.)
         var heroicDirectories = DiscoverHeroicGameDirectories();
+        foreach (var heroicDir in heroicDirectories)
+        {
+            var prefixesSubDir = Path.Combine(heroicDir, "Prefixes");
+            if (Directory.Exists(prefixesSubDir))
+            {
+                try
+                {
+                    foreach (var prefixDir in Directory.GetDirectories(prefixesSubDir))
+                    {
+                        discoveredPrefixes.Add(Path.GetFullPath(prefixDir));
+                    }
+                }
+                catch { }
+            }
+        }
+
+        foreach (var prefix in discoveredPrefixes)
+        {
+            ScanGamesInWinePrefix(prefix, steamScanner, scannedPaths, activeConfigDirs, games);
+        }
+
+        // 8. Scan external drives and mount locations for any Heroic game directories
         foreach (var heroicDir in heroicDirectories)
         {
             if (!Directory.Exists(heroicDir)) continue;
@@ -221,20 +337,19 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                         continue;
                     }
 
-                    // Check if folder contains executables or DLLs
+                    // Check if folder contains executables or DLLs (shallow check up to 3 levels)
                     bool containsGameContent = false;
                     try
                     {
-                        containsGameContent = Directory.EnumerateFiles(gameDir, "*.*", SearchOption.AllDirectories)
-                            .Take(200)
+                        containsGameContent = Directory.EnumerateFiles(gameDir, "*.*", SearchOption.TopDirectoryOnly)
+                            .Concat(Directory.Exists(Path.Combine(gameDir, "bin")) ? Directory.EnumerateFiles(Path.Combine(gameDir, "bin"), "*.*", SearchOption.TopDirectoryOnly) : Enumerable.Empty<string>())
+                            .Concat(Directory.Exists(Path.Combine(gameDir, "Binaries", "Win64")) ? Directory.EnumerateFiles(Path.Combine(gameDir, "Binaries", "Win64"), "*.*", SearchOption.TopDirectoryOnly) : Enumerable.Empty<string>())
                             .Any(f => f.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) ||
                                       f.EndsWith(".dll", StringComparison.OrdinalIgnoreCase) ||
-                                      f.EndsWith(".x86_64", StringComparison.OrdinalIgnoreCase) ||
-                                      f.EndsWith(".bin", StringComparison.OrdinalIgnoreCase));
+                                      f.EndsWith(".x86_64", StringComparison.OrdinalIgnoreCase));
                     }
                     catch
                     {
-                        // Ignore permission or file enumeration issues
                     }
 
                     if (!containsGameContent) continue;
@@ -263,6 +378,61 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
         DLSS_Swapper.Logger.Info($"Scanned {games.Count} installed Heroic games.");
         return games;
+    }
+
+    private void ScanGamesInWinePrefix(string prefixDir, LinuxSteamLibraryScanner steamScanner, HashSet<string> scannedPaths, List<string> activeConfigDirs, List<DiscoveredGameInfo> games)
+    {
+        if (string.IsNullOrEmpty(prefixDir) || !Directory.Exists(prefixDir)) return;
+
+        var driveC = Path.Combine(prefixDir, "drive_c");
+        if (!Directory.Exists(driveC)) return;
+
+        var launcherSearchDirs = new[]
+        {
+            // Ubisoft Connect
+            Path.Combine(driveC, "Program Files (x86)", "Ubisoft", "Ubisoft Game Launcher", "games"),
+            Path.Combine(driveC, "Program Files", "Ubisoft", "Ubisoft Game Launcher", "games"),
+            // EA Games / Origin
+            Path.Combine(driveC, "Program Files", "EA Games"),
+            Path.Combine(driveC, "Program Files (x86)", "Origin Games"),
+            Path.Combine(driveC, "Program Files", "Electronic Arts"),
+            // Battle.net
+            Path.Combine(driveC, "Program Files (x86)", "Battle.net", "games"),
+            Path.Combine(driveC, "Program Files", "Battle.net", "games"),
+            // GOG Galaxy
+            Path.Combine(driveC, "Program Files (x86)", "GOG Galaxy", "Games"),
+            Path.Combine(driveC, "Program Files", "GOG Galaxy", "Games"),
+            Path.Combine(driveC, "GOG Games"),
+            // Epic Games
+            Path.Combine(driveC, "Program Files", "Epic Games"),
+            Path.Combine(driveC, "Program Files (x86)", "Epic Games")
+        };
+
+        foreach (var launcherDir in launcherSearchDirs)
+        {
+            if (!Directory.Exists(launcherDir)) continue;
+
+            try
+            {
+                foreach (var gameDir in Directory.GetDirectories(launcherDir))
+                {
+                    var canonical = Path.GetFullPath(gameDir);
+                    if (scannedPaths.Contains(canonical)) continue;
+
+                    var folderName = Path.GetFileName(gameDir);
+                    if (string.IsNullOrEmpty(folderName) || folderName.StartsWith(".")) continue;
+
+                    scannedPaths.Add(canonical);
+
+                    var appId = $"heroic_{folderName.ToLowerInvariant().Replace(" ", "_").Replace(":", "")}";
+                    var title = folderName;
+                    var coverImage = ResolveHeroicCoverImage(appId, title, canonical, null, activeConfigDirs);
+
+                    games.Add(CreateDiscoveredGame(appId, title, canonical, steamScanner, coverImage));
+                }
+            }
+            catch { }
+        }
     }
 
     public List<string> DiscoverHeroicGameDirectories()
@@ -642,21 +812,22 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
     private DiscoveredGameInfo CreateDiscoveredGame(string appId, string title, string installPath, LinuxSteamLibraryScanner steamScanner, string coverImage)
     {
+        var dlls = steamScanner.ScanAllGameDlls(installPath);
         return new DiscoveredGameInfo
         {
             AppId = appId,
             Name = title,
             InstallPath = installPath,
             Launcher = "Heroic",
-            DLSSVersion = steamScanner.ScanDllVersion(installPath, "nvngx_dlss.dll"),
-            DLSSGVersion = steamScanner.ScanDllVersion(installPath, "nvngx_dlssg.dll"),
-            DLSSDVersion = steamScanner.ScanDllVersion(installPath, "nvngx_dlssd.dll"),
-            Fsr31Dx12Version = steamScanner.ScanDllVersion(installPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll"),
-            Fsr31VkVersion = steamScanner.ScanDllVersion(installPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll"),
-            XessVersion = steamScanner.ScanDllVersion(installPath, "libxess.dll"),
-            XessDx11Version = steamScanner.ScanDllVersion(installPath, "libxess_dx11.dll"),
-            XessFgVersion = steamScanner.ScanDllVersion(installPath, "libxess_fg.dll"),
-            XellVersion = steamScanner.ScanDllVersion(installPath, "libxell.dll"),
+            DLSSVersion = dlls.DLSSVersion,
+            DLSSGVersion = dlls.DLSSGVersion,
+            DLSSDVersion = dlls.DLSSDVersion,
+            Fsr31Dx12Version = dlls.Fsr31Dx12Version,
+            Fsr31VkVersion = dlls.Fsr31VkVersion,
+            XessVersion = dlls.XessVersion,
+            XessDx11Version = dlls.XessDx11Version,
+            XessFgVersion = dlls.XessFgVersion,
+            XellVersion = dlls.XellVersion,
             CoverImagePath = coverImage
         };
     }

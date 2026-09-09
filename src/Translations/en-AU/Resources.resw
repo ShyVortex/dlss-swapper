@@ -123,4 +123,15 @@
   <data name="GamePage_Favorited" xml:space="preserve">
     <value>Favourited</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>No games found</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Please download games from your preferred launcher (Steam, Heroic, etc.)
+or click '+ Add Game' to add games manually.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Scanning libraries &amp; refreshing games...</value>
+  </data>
 </root>

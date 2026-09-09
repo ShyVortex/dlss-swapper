@@ -1070,4 +1070,15 @@ Vì lý do này, chúng tôi khuyên nghịch cẩn thận với trò chơi nhi�
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Hộp Công Cụ Dịch</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Không tìm thấy trò chơi nào</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Vui lòng tải trò chơi từ trình khởi chạy ưa thích của bạn (Steam, Heroic, v.v.)
+hoặc nhấp vào '+ Thêm trò chơi' để thêm trò chơi theo cách thủ công.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Đang quét thư viện và làm mới trò chơi...</value>
+  </data>
 </root>

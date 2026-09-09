@@ -1,4 +1,4 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8"?>
 <root>
   <!--
     Microsoft ResX Schema
@@ -447,6 +447,16 @@ If you have checked these and your game is still not showing up there may be a b
   </data>
   <data name="GamesPage_NewDllsFound" xml:space="preserve">
     <value>New DLLs Found</value>
+  </data>
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>No games found</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Please download games from your preferred launcher (Steam, Heroic, etc.)
+or click '+ Add Game' to add games manually.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Scanning libraries &amp; refreshing games...</value>
   </data>
   <data name="GamesPage_ReloadingGame" xml:space="preserve">
     <comment>Used as a loading box title when the user clicks reload game button on a games detail page</comment>

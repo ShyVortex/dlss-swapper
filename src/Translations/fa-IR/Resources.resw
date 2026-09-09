@@ -1182,4 +1182,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>جعبه ابزار ترجمه</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>هیچ بازی پیدا نشد</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>لطفاً بازی‌ها را از لانچر دلخواه خود (Steam، Heroic و غیره) دانلود کنید
+یا برای افزودن دستی روی «+ افزودن بازی» کلیک کنید.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>در حال اسکن کتابخانه‌ها و تازه‌سازی بازی‌ها...</value>
+  </data>
 </root>

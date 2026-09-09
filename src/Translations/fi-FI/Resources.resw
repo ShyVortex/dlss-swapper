@@ -1109,4 +1109,15 @@ Tästä syystä suosittelemme varovaisuutta moninpeleille.</value>
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Käännöstyökalupakki</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Pelejä ei löytynyt</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Lataa pelejä haluamastasi käynnistimestä (Steam, Heroic jne.)
+tai napsauta '+ Lisää peli' lisätäksesi pelejä manuaalisesti.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Tarkistetaan kirjastoja ja päivitetään pelejä...</value>
+  </data>
 </root>

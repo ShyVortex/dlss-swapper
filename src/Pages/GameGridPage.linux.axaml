@@ -162,8 +162,8 @@
                 <!-- Centered Empty State (When HasGames == False and IsNotLoading) -->
                 <StackPanel IsVisible="{Binding !HasGames}" VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="12" Margin="0,80,0,0">
                     <PathIcon Data="M19,3H5C3.89,3 3,3.89 3,5V19A2,2 0 0,0 5,21H19A2,2 0 0,0 21,19V5C21,3.89 20.1,3 19,3M19,19H5V5H19V19M17,14H7V12H17V14Z" Width="48" Height="48" Foreground="{DynamicResource AppMutedForegroundBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="No games found" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}" HorizontalAlignment="Center"/>
-                    <TextBlock Text="Please download games from your preferred launcher (Steam, Heroic, etc.)&#10;or click '+ Add Game' to add games manually." 
+                    <TextBlock x:Name="EmptyStateTitleTextBlock" Text="No games found" FontSize="20" FontWeight="Bold" Foreground="{DynamicResource AppForegroundBrush}" HorizontalAlignment="Center"/>
+                    <TextBlock x:Name="EmptyStateDescriptionTextBlock" Text="Please download games from your preferred launcher (Steam, Heroic, etc.)&#10;or click '+ Add Game' to add games manually." 
                                FontSize="14" Foreground="{DynamicResource AppMutedForegroundBrush}" TextAlignment="Center" HorizontalAlignment="Center"/>
                 </StackPanel>
             </StackPanel>
@@ -173,7 +173,7 @@
         <Border IsVisible="{Binding IsLoading}" Background="#DD151515" CornerRadius="8" Padding="30,24" HorizontalAlignment="Center" VerticalAlignment="Center" ZIndex="10">
             <StackPanel Spacing="12" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <ProgressBar IsIndeterminate="True" Width="180" Height="4" Foreground="{DynamicResource AppAccentBrush}"/>
-                <TextBlock Text="Scanning libraries &amp; refreshing games..." Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
+                <TextBlock x:Name="LoadingOverlayTextBlock" Text="Scanning libraries &amp; refreshing games..." Foreground="White" FontSize="14" FontWeight="SemiBold" HorizontalAlignment="Center"/>
             </StackPanel>
         </Border>
     </Grid>

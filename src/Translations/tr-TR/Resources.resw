@@ -984,4 +984,15 @@ Bu nedenle çok oyunculu oyunlarda dikkatli olmanızı öneririz.</value>
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Çeviri Araç Kutusu</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Oyun bulunamadı</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Lütfen tercih ettiğiniz başlatıcıdan (Steam, Heroic vb.) oyun indirin
+veya manuel olarak oyun eklemek için '+ Oyun Ekle'ye tıklayın.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Kütüphaneler taranıyor ve oyunlar yenileniyor...</value>
+  </data>
 </root>

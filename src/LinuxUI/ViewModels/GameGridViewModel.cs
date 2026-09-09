@@ -43,15 +43,23 @@ public partial class GameCardItem : ObservableObject
     [ObservableProperty] private string _xessFgVersion = "N/A";
     [ObservableProperty] private string _xellVersion = "N/A";
 
-    public bool HasDLSS => DLSSVersion != "N/A" && !string.IsNullOrEmpty(DLSSVersion);
-    public bool HasDLSSG => DLSSGVersion != "N/A" && !string.IsNullOrEmpty(DLSSGVersion);
-    public bool HasDLSSD => DLSSDVersion != "N/A" && !string.IsNullOrEmpty(DLSSDVersion);
-    public bool HasFsr31Dx12 => Fsr31Dx12Version != "N/A" && !string.IsNullOrEmpty(Fsr31Dx12Version);
-    public bool HasFsr31Vk => Fsr31VkVersion != "N/A" && !string.IsNullOrEmpty(Fsr31VkVersion);
-    public bool HasXeSS => XessVersion != "N/A" && !string.IsNullOrEmpty(XessVersion);
-    public bool HasXeSSDx11 => XessDx11Version != "N/A" && !string.IsNullOrEmpty(XessDx11Version);
-    public bool HasXeSSFg => XessFgVersion != "N/A" && !string.IsNullOrEmpty(XessFgVersion);
-    public bool HasXeLL => XellVersion != "N/A" && !string.IsNullOrEmpty(XellVersion);
+    private static bool IsValidDll(string? ver)
+    {
+        return !string.IsNullOrWhiteSpace(ver) &&
+               !string.Equals(ver, "N/A", StringComparison.OrdinalIgnoreCase) &&
+               !string.Equals(ver, "Not found", StringComparison.OrdinalIgnoreCase) &&
+               !string.Equals(ver, "None", StringComparison.OrdinalIgnoreCase);
+    }
+
+    public bool HasDLSS => IsValidDll(DLSSVersion);
+    public bool HasDLSSG => IsValidDll(DLSSGVersion);
+    public bool HasDLSSD => IsValidDll(DLSSDVersion);
+    public bool HasFsr31Dx12 => IsValidDll(Fsr31Dx12Version);
+    public bool HasFsr31Vk => IsValidDll(Fsr31VkVersion);
+    public bool HasXeSS => IsValidDll(XessVersion);
+    public bool HasXeSSDx11 => IsValidDll(XessDx11Version);
+    public bool HasXeSSFg => IsValidDll(XessFgVersion);
+    public bool HasXeLL => IsValidDll(XellVersion);
 
     public bool HasAnySwappableItem => HasDLSS || HasDLSSG || HasDLSSD || HasFsr31Dx12 || HasFsr31Vk || HasXeSS || HasXeSSDx11 || HasXeSSFg || HasXeLL;
 
@@ -208,7 +216,7 @@ public partial class GameGridViewModel : ObservableObject
         _groupByLibrary = settings.GroupByLibrary;
 
         _favouriteIds = _metadataService.LoadFavourites();
-        ScanRealGames();
+        _ = ScanRealGamesAsync();
 
         LinuxSettingsService.Instance.OnSettingsChanged += () =>
         {
@@ -254,18 +262,41 @@ public partial class GameGridViewModel : ObservableObject
         IsGridView = false;
     }
 
-    private GameCardItem CreateManualGameCard(string folderPath, string? customName, string? coverPath, LinuxSteamLibraryScanner scanner)
+    public void AddManualGameFolder(string folderPath)
     {
-        var folderName = !string.IsNullOrEmpty(customName) ? customName : Path.GetFileName(folderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
-        if (string.IsNullOrEmpty(folderName)) folderName = folderPath;
+        if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath)) return;
 
-        var cover = coverPath;
-        if (string.IsNullOrEmpty(cover))
+        // Check if already added
+        if (_allDiscoveredGames.Any(x => string.Equals(x.InstallPath, folderPath, StringComparison.OrdinalIgnoreCase)))
+            return;
+
+        var folderName = Path.GetFileName(folderPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar));
+        var steamScanner = new LinuxSteamLibraryScanner();
+        var card = CreateManualGameCard(folderPath, folderName, null, steamScanner);
+
+        _metadataService.AddManualGame(folderName, folderPath);
+        _allDiscoveredGames.Add(card);
+        FilterGames();
+    }
+
+    private GameCardItem CreateManualGameCard(string folderPath, string folderName, string? savedCoverPath, LinuxSteamLibraryScanner scanner)
+    {
+        string? cover = savedCoverPath;
+        if (string.IsNullOrEmpty(cover) || !File.Exists(cover))
         {
-            var candidates = new[] { "cover.jpg", "cover.png", "library_600x900.jpg", "poster.jpg", "poster.png", "boxart.jpg", "boxart.png" };
-            foreach (var cand in candidates)
+            // Auto-detect standard cover files
+            var candidateCovers = new[]
             {
-                var p = Path.Combine(folderPath, cand);
+                Path.Combine(folderPath, "cover.jpg"),
+                Path.Combine(folderPath, "cover.png"),
+                Path.Combine(folderPath, "poster.jpg"),
+                Path.Combine(folderPath, "poster.png"),
+                Path.Combine(folderPath, "boxart.jpg"),
+                Path.Combine(folderPath, "boxart.png"),
+                Path.Combine(folderPath, "library_600x900.jpg")
+            };
+            foreach (var p in candidateCovers)
+            {
                 if (File.Exists(p))
                 {
                     cover = p;
@@ -274,25 +305,25 @@ public partial class GameGridViewModel : ObservableObject
             }
         }
 
+        var dlls = scanner.ScanAllGameDlls(folderPath);
         var card = new GameCardItem
         {
             AppId = $"manual_{folderName.Replace(" ", "_")}",
             Name = folderName,
-            DLSSVersion = scanner.ScanDllVersion(folderPath, "nvngx_dlss.dll"),
-            DLSSGVersion = scanner.ScanDllVersion(folderPath, "nvngx_dlssg.dll"),
-            DLSSDVersion = scanner.ScanDllVersion(folderPath, "nvngx_dlssd.dll"),
-            Fsr31Dx12Version = scanner.ScanDllVersion(folderPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll"),
-            Fsr31VkVersion = scanner.ScanDllVersion(folderPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll"),
-            XessVersion = scanner.ScanDllVersion(folderPath, "libxess.dll"),
-            XessDx11Version = scanner.ScanDllVersion(folderPath, "libxess_dx11.dll"),
-            XessFgVersion = scanner.ScanDllVersion(folderPath, "libxess_fg.dll"),
-            XellVersion = scanner.ScanDllVersion(folderPath, "libxell.dll"),
+            DLSSVersion = dlls.DLSSVersion,
+            DLSSGVersion = dlls.DLSSGVersion,
+            DLSSDVersion = dlls.DLSSDVersion,
+            Fsr31Dx12Version = dlls.Fsr31Dx12Version,
+            Fsr31VkVersion = dlls.Fsr31VkVersion,
+            XessVersion = dlls.XessVersion,
+            XessDx11Version = dlls.XessDx11Version,
+            XessFgVersion = dlls.XessFgVersion,
+            XellVersion = dlls.XellVersion,
             LibraryName = "Manually Added",
             InstallPath = folderPath,
             CoverImagePath = cover ?? string.Empty,
             CoverColor = GetColorForGame(folderName)
         };
-        card.IsFavourite = _favouriteIds.Contains(card.GameId);
         card.OnFavouriteToggled = OnCardFavouriteToggled;
         card.OnManualGameRemoved = OnCardManualGameRemoved;
         _ = card.LoadCoverAsync();
@@ -304,30 +335,9 @@ public partial class GameGridViewModel : ObservableObject
         RemoveManualGame(card);
     }
 
-    public void AddManualGameFolder(string folderPath)
+    public void AddGameFolder(string folderPath)
     {
-        if (string.IsNullOrEmpty(folderPath) || !Directory.Exists(folderPath)) return;
-
-        var canonicalPath = Path.GetFullPath(folderPath);
-
-        // Check if already in active game list
-        if (_allDiscoveredGames.Any(x => string.Equals(x.InstallPath, canonicalPath, StringComparison.OrdinalIgnoreCase)))
-        {
-            return;
-        }
-
-        var steamScanner = new LinuxSteamLibraryScanner();
-        var card = CreateManualGameCard(canonicalPath, null, null, steamScanner);
-
-        _metadataService.AddManualGame(new ManualGameRecord
-        {
-            Name = card.Name,
-            InstallPath = card.InstallPath,
-            CoverImagePath = card.CoverImagePath
-        });
-
-        _allDiscoveredGames.Add(card);
-        FilterGames();
+        AddManualGameFolder(folderPath);
     }
 
     public void RemoveManualGame(GameCardItem card)
@@ -338,92 +348,120 @@ public partial class GameGridViewModel : ObservableObject
         FilterGames();
     }
 
+    public async Task ScanRealGamesAsync()
+    {
+        IsLoading = true;
+        try
+        {
+            var discoveredData = await Task.Run(() =>
+            {
+                var cards = new List<GameCardItem>();
+                var favIds = _metadataService.LoadFavourites();
+                var steamScanner = new LinuxSteamLibraryScanner();
+
+                // 1. Steam Games
+                if (steamScanner.IsLauncherInstalled())
+                {
+                    var realGames = steamScanner.ScanInstalledGames();
+                    foreach (var g in realGames)
+                    {
+                        var card = new GameCardItem
+                        {
+                            AppId = g.AppId,
+                            Name = g.Name,
+                            DLSSVersion = g.DLSSVersion,
+                            DLSSGVersion = g.DLSSGVersion,
+                            DLSSDVersion = g.DLSSDVersion,
+                            Fsr31Dx12Version = g.Fsr31Dx12Version,
+                            Fsr31VkVersion = g.Fsr31VkVersion,
+                            XessVersion = g.XessVersion,
+                            XessDx11Version = g.XessDx11Version,
+                            XessFgVersion = g.XessFgVersion,
+                            XellVersion = g.XellVersion,
+                            LibraryName = "Steam",
+                            InstallPath = g.InstallPath,
+                            CoverImagePath = g.CoverImagePath,
+                            CoverColor = GetColorForGame(g.Name)
+                        };
+                        card.IsFavourite = favIds.Contains(card.GameId);
+                        card.OnFavouriteToggled = OnCardFavouriteToggled;
+                        cards.Add(card);
+                    }
+                }
+
+                // 2. Heroic Games
+                var heroicScanner = new LinuxHeroicLibraryScanner();
+                if (heroicScanner.IsLauncherInstalled())
+                {
+                    var heroicGames = heroicScanner.ScanInstalledGames();
+                    foreach (var g in heroicGames)
+                    {
+                        var card = new GameCardItem
+                        {
+                            AppId = g.AppId,
+                            Name = g.Name,
+                            DLSSVersion = g.DLSSVersion,
+                            DLSSGVersion = g.DLSSGVersion,
+                            DLSSDVersion = g.DLSSDVersion,
+                            Fsr31Dx12Version = g.Fsr31Dx12Version,
+                            Fsr31VkVersion = g.Fsr31VkVersion,
+                            XessVersion = g.XessVersion,
+                            XessDx11Version = g.XessDx11Version,
+                            XessFgVersion = g.XessFgVersion,
+                            XellVersion = g.XellVersion,
+                            LibraryName = "Heroic",
+                            InstallPath = g.InstallPath,
+                            CoverImagePath = g.CoverImagePath,
+                            CoverColor = GetColorForGame(g.Name)
+                        };
+                        card.IsFavourite = favIds.Contains(card.GameId);
+                        card.OnFavouriteToggled = OnCardFavouriteToggled;
+                        cards.Add(card);
+                    }
+                }
+
+                // 3. Manually Added Games
+                var manualRecords = _metadataService.LoadManualGames();
+                foreach (var record in manualRecords)
+                {
+                    if (string.IsNullOrEmpty(record.InstallPath) || !Directory.Exists(record.InstallPath)) continue;
+
+                    if (cards.Any(x => string.Equals(x.InstallPath, record.InstallPath, StringComparison.OrdinalIgnoreCase)))
+                        continue;
+
+                    var card = CreateManualGameCard(record.InstallPath, record.Name, record.CoverImagePath, steamScanner);
+                    card.IsFavourite = favIds.Contains(card.GameId);
+                    card.OnFavouriteToggled = OnCardFavouriteToggled;
+                    cards.Add(card);
+                }
+
+                return (Cards: cards, Favourites: favIds);
+            });
+
+            global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
+            {
+                _allDiscoveredGames.Clear();
+                _favouriteIds = discoveredData.Favourites;
+                _allDiscoveredGames.AddRange(discoveredData.Cards);
+
+                foreach (var card in _allDiscoveredGames)
+                {
+                    _ = card.LoadCoverAsync();
+                }
+
+                FilterGames();
+                IsLoading = false;
+            });
+        }
+        catch
+        {
+            IsLoading = false;
+        }
+    }
+
     public void ScanRealGames()
     {
-        _allDiscoveredGames.Clear();
-        _favouriteIds = _metadataService.LoadFavourites();
-
-        // 1. Steam Games
-        var steamScanner = new LinuxSteamLibraryScanner();
-        if (steamScanner.IsLauncherInstalled())
-        {
-            var realGames = steamScanner.ScanInstalledGames();
-            foreach (var g in realGames)
-            {
-                var card = new GameCardItem
-                {
-                    AppId = g.AppId,
-                    Name = g.Name,
-                    DLSSVersion = g.DLSSVersion,
-                    DLSSGVersion = g.DLSSGVersion,
-                    DLSSDVersion = g.DLSSDVersion,
-                    Fsr31Dx12Version = g.Fsr31Dx12Version,
-                    Fsr31VkVersion = g.Fsr31VkVersion,
-                    XessVersion = g.XessVersion,
-                    XessDx11Version = g.XessDx11Version,
-                    XessFgVersion = g.XessFgVersion,
-                    XellVersion = g.XellVersion,
-                    LibraryName = "Steam",
-                    InstallPath = g.InstallPath,
-                    CoverImagePath = g.CoverImagePath,
-                    CoverColor = GetColorForGame(g.Name)
-                };
-                card.IsFavourite = _favouriteIds.Contains(card.GameId);
-                card.OnFavouriteToggled = OnCardFavouriteToggled;
-
-                _allDiscoveredGames.Add(card);
-                _ = card.LoadCoverAsync();
-            }
-        }
-
-        // 2. Heroic Games
-        var heroicScanner = new LinuxHeroicLibraryScanner();
-        if (heroicScanner.IsLauncherInstalled())
-        {
-            var heroicGames = heroicScanner.ScanInstalledGames();
-            foreach (var g in heroicGames)
-            {
-                var card = new GameCardItem
-                {
-                    AppId = g.AppId,
-                    Name = g.Name,
-                    DLSSVersion = g.DLSSVersion,
-                    DLSSGVersion = g.DLSSGVersion,
-                    DLSSDVersion = g.DLSSDVersion,
-                    Fsr31Dx12Version = g.Fsr31Dx12Version,
-                    Fsr31VkVersion = g.Fsr31VkVersion,
-                    XessVersion = g.XessVersion,
-                    XessDx11Version = g.XessDx11Version,
-                    XessFgVersion = g.XessFgVersion,
-                    XellVersion = g.XellVersion,
-                    LibraryName = "Heroic",
-                    InstallPath = g.InstallPath,
-                    CoverImagePath = g.CoverImagePath,
-                    CoverColor = GetColorForGame(g.Name)
-                };
-                card.IsFavourite = _favouriteIds.Contains(card.GameId);
-                card.OnFavouriteToggled = OnCardFavouriteToggled;
-
-                _allDiscoveredGames.Add(card);
-                _ = card.LoadCoverAsync();
-            }
-        }
-
-        // 3. Manually Added Games
-        var manualRecords = _metadataService.LoadManualGames();
-        foreach (var record in manualRecords)
-        {
-            if (string.IsNullOrEmpty(record.InstallPath) || !Directory.Exists(record.InstallPath)) continue;
-
-            // Avoid adding if already added
-            if (_allDiscoveredGames.Any(x => string.Equals(x.InstallPath, record.InstallPath, StringComparison.OrdinalIgnoreCase)))
-                continue;
-
-            var card = CreateManualGameCard(record.InstallPath, record.Name, record.CoverImagePath, steamScanner);
-            _allDiscoveredGames.Add(card);
-        }
-
-        FilterGames();
+        _ = ScanRealGamesAsync();
     }
 
     private void OnCardFavouriteToggled(GameCardItem card)
@@ -448,6 +486,21 @@ public partial class GameGridViewModel : ObservableObject
 
     [ObservableProperty]
     private bool _groupByLibrary = true;
+
+    partial void OnHideNoSwappableItemsChanged(bool value)
+    {
+        FilterGames();
+    }
+
+    partial void OnShowHiddenGamesChanged(bool value)
+    {
+        FilterGames();
+    }
+
+    partial void OnGroupByLibraryChanged(bool value)
+    {
+        FilterGames();
+    }
 
     public void ApplyFilters()
     {
@@ -575,9 +628,6 @@ public partial class GameGridViewModel : ObservableObject
     [RelayCommand]
     public async Task RefreshGamesAsync()
     {
-        IsLoading = true;
-        await Task.Delay(600); // Visible refresh indicator duration
-        ScanRealGames();
-        IsLoading = false;
+        await ScanRealGamesAsync();
     }
 }

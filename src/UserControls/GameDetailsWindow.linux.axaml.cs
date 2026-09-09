@@ -255,27 +255,19 @@ public partial class GameDetailsWindow : Window
             await System.Threading.Tasks.Task.Run(() =>
             {
                 var scanner = new LinuxSteamLibraryScanner();
-                var dlss = scanner.ScanDllVersion(installPath, "nvngx_dlss.dll");
-                var dlssg = scanner.ScanDllVersion(installPath, "nvngx_dlssg.dll");
-                var dlssd = scanner.ScanDllVersion(installPath, "nvngx_dlssd.dll");
-                var fsrDx12 = scanner.ScanDllVersion(installPath, "amd_fidelityfx_dx12.dll", "ffx_fsr31_x64.dll", "ffx_fsr31_dx12_x64.dll");
-                var fsrVk = scanner.ScanDllVersion(installPath, "amd_fidelityfx_vk.dll", "ffx_fsr31_vk_x64.dll");
-                var xess = scanner.ScanDllVersion(installPath, "libxess.dll");
-                var xessDx11 = scanner.ScanDllVersion(installPath, "libxess_dx11.dll");
-                var xessFg = scanner.ScanDllVersion(installPath, "libxess_fg.dll");
-                var xell = scanner.ScanDllVersion(installPath, "libxell.dll");
+                var dlls = scanner.ScanAllGameDlls(installPath);
 
                 global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
                 {
-                    SelectedGame.DLSSVersion = dlss;
-                    SelectedGame.DLSSGVersion = dlssg;
-                    SelectedGame.DLSSDVersion = dlssd;
-                    SelectedGame.Fsr31Dx12Version = fsrDx12;
-                    SelectedGame.Fsr31VkVersion = fsrVk;
-                    SelectedGame.XessVersion = xess;
-                    SelectedGame.XessDx11Version = xessDx11;
-                    SelectedGame.XessFgVersion = xessFg;
-                    SelectedGame.XellVersion = xell;
+                    SelectedGame.DLSSVersion = dlls.DLSSVersion;
+                    SelectedGame.DLSSGVersion = dlls.DLSSGVersion;
+                    SelectedGame.DLSSDVersion = dlls.DLSSDVersion;
+                    SelectedGame.Fsr31Dx12Version = dlls.Fsr31Dx12Version;
+                    SelectedGame.Fsr31VkVersion = dlls.Fsr31VkVersion;
+                    SelectedGame.XessVersion = dlls.XessVersion;
+                    SelectedGame.XessDx11Version = dlls.XessDx11Version;
+                    SelectedGame.XessFgVersion = dlls.XessFgVersion;
+                    SelectedGame.XellVersion = dlls.XellVersion;
                     SelectedGame.LoadPresets();
                 });
             });

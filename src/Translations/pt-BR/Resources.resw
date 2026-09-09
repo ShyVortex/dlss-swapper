@@ -887,4 +887,15 @@ Recomendamos cautela ao usar isso em jogos multiplayer.</value>
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Caixa de ferramentas de tradução</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Nenhum jogo encontrado</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Baixe jogos do seu inicializador preferido (Steam, Heroic, etc.)
+ou clique em '+ Adicionar jogo' para adicionar jogos manualmente.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Verificando bibliotecas e atualizando jogos...</value>
+  </data>
 </root>

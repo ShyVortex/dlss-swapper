@@ -1178,4 +1178,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>翻译工具箱</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>未找到游戏</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>请从你首选的启动器（Steam、Heroic 等）下载游戏，
+或点击“+ 添加游戏”手动添加游戏。</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>正在扫描游戏库并刷新游戏...</value>
+  </data>
 </root>

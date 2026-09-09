@@ -740,4 +740,15 @@ Jeśli tak się dzieje, prosimy o zgłoszenie tego w naszym module śledzenia b�
   <data name="SettingsPage_YourCurrentLogFile" xml:space="preserve">
     <value>Twój aktualny plik z logami </value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Nie znaleziono gier</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Pobierz gry ze swojego preferowanego programu uruchamiającego (Steam, Heroic itp.)
+lub kliknij '+ Dodaj grę', aby dodać gry ręcznie.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Skanowanie bibliotek i odświeżanie gier...</value>
+  </data>
 </root>

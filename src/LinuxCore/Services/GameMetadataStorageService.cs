@@ -161,6 +161,16 @@ public class GameMetadataStorageService
         SaveManualGames(list);
     }
 
+    public void AddManualGame(string name, string installPath, string? coverImagePath = null)
+    {
+        AddManualGame(new ManualGameRecord
+        {
+            Name = name,
+            InstallPath = installPath,
+            CoverImagePath = coverImagePath
+        });
+    }
+
     public void RemoveManualGame(string installPath)
     {
         if (string.IsNullOrEmpty(installPath)) return;

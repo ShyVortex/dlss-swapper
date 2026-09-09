@@ -1182,4 +1182,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Translation Toolbox</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>ไม่พบเกม</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>โปรดดาวน์โหลดเกมจากตัวเรียกใช้งานที่คุณต้องการ (Steam, Heroic ฯลฯ)
+หรือคลิก '+ เพิ่มเกม' เพื่อเพิ่มเกมด้วยตนเอง</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>กำลังสแกนคลังและรีเฟรชเกม...</value>
+  </data>
 </root>

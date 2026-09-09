@@ -1109,4 +1109,15 @@ Pour cette raison, nous vous recommandons d'être prudent avec les jeux multijou
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Boîte à outils de traduction</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Aucun jeu trouvé</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Veuillez télécharger des jeux depuis votre lanceur préféré (Steam, Heroic, etc.)
+ou cliquez sur '+ Ajouter un jeu' pour ajouter des jeux manuellement.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Analyse des bibliothèques et actualisation des jeux...</value>
+  </data>
 </root>

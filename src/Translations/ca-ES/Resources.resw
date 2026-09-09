@@ -1028,4 +1028,15 @@ Per això, recomanem anar amb compte amb les partides multijugador.</value>
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Caixa d'eines de traducció</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>No s'han trobat jocs</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Baixeu jocs des del vostre llançador preferit (Steam, Heroic, etc.)
+o feu clic a '+ Afegeix joc' per afegir jocs manualment.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Escanejant biblioteques i actualitzant jocs...</value>
+  </data>
 </root>

@@ -968,4 +968,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>أداة الترجمة (Translation Toolbox)</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>لم يتم العثور على أي ألعاب</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>يرجى تنزيل الألعاب من المشغل المفضل لديك (Steam أو Heroic أو غير ذلك)
+أو النقر فوق '+ إضافة لعبة' لإضافة الألعاب يدويًا.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>جارٍ فحص المكتبات وتحديث الألعاب...</value>
+  </data>
 </root>

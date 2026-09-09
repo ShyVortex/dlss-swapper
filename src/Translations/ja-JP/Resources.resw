@@ -1181,4 +1181,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>翻訳ツールボックス</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>ゲームが見つかりません</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>お好みのランチャー (Steam、Heroic など) からゲームをダウンロードするか、
+「+ ゲームを追加」をクリックして手動で追加してください。</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>ライブラリをスキャンしてゲームを更新中...</value>
+  </data>
 </root>

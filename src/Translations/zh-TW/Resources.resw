@@ -987,4 +987,15 @@
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>翻譯工具</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>找不到遊戲</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>請從您偏好的啟動器（Steam、Heroic 等）下載遊戲，
+或點擊「+ 新增遊戲」手動新增遊戲。</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>正在掃描遊戲庫並重新整理遊戲...</value>
+  </data>
 </root>

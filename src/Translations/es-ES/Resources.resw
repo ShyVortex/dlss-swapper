@@ -1028,4 +1028,15 @@ Debido a esto, recomendamos tener precaución con los juegos multijugador.</valu
   <data name="TranslationToolboxPage_WindowTitle" xml:space="preserve">
     <value>Herramientas de traducción</value>
   </data>
+
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>No se encontraron juegos</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Descarga juegos desde tu lanzador preferido (Steam, Heroic, etc.)
+o haz clic en '+ Añadir juego' para añadirlos manualmente.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Escaneando bibliotecas y actualizando juegos...</value>
+  </data>
 </root>

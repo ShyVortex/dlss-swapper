@@ -421,6 +421,16 @@ Se hai verificato queste opzioni e il tuo gioco continua a non essere visualizza
   <data name="GamesPage_NewDllsFound" xml:space="preserve">
     <value>Nuove DLL rilevate</value>
   </data>
+  <data name="GamesPage_NoGamesFound" xml:space="preserve">
+    <value>Nessun gioco trovato</value>
+  </data>
+  <data name="GamesPage_NoGamesFound_Description" xml:space="preserve">
+    <value>Scarica i giochi dal tuo launcher preferito (Steam, Heroic, ecc.)
+oppure fai clic su '+ Aggiungi gioco' per aggiungerli manualmente.</value>
+  </data>
+  <data name="GamesPage_ScanningLibraries" xml:space="preserve">
+    <value>Scansione delle librerie e aggiornamento dei giochi...</value>
+  </data>
   <data name="GamesPage_ReloadingGame" xml:space="preserve">
     <value>Ricaricando il gioco</value>
   </data>
