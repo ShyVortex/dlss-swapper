@@ -828,7 +828,12 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
     {
         if (!forceRescan && cache != null && cache.TryGetValue(appId, out var cachedEntry))
         {
-            if ((manifestTicks == 0 || cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks) && Directory.Exists(installPath))
+            bool hasAnyValidDll = cachedEntry.DllMap != null && cachedEntry.DllMap.Values.Any(v =>
+                !string.IsNullOrWhiteSpace(v) &&
+                !string.Equals(v, "Not found", StringComparison.OrdinalIgnoreCase) &&
+                !string.Equals(v, "N/A", StringComparison.OrdinalIgnoreCase));
+
+            if (hasAnyValidDll && (manifestTicks == 0 || cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks) && Directory.Exists(installPath))
             {
                 return new DiscoveredGameInfo
                 {

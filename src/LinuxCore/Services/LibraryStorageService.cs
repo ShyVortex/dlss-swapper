@@ -115,7 +115,7 @@ public class LibraryStorageService
     {
         var lower = filename.ToLowerInvariant();
         if (lower.Contains("nvngx_dlssg")) return "dlss_g";
-        if (lower.Contains("nvngx_dlssd") || lower.Contains("nvngx_dlssnr")) return "dlss_d";
+        if (lower.Contains("nvngx_dlssd")) return "dlss_d";
         if (lower.Contains("nvngx_dlss") && !lower.Contains("dlssg") && !lower.Contains("dlssd")) return "dlss";
         if (lower.Contains("amd_fidelityfx_vk") || lower.Contains("ffx_fsr31_vk")) return "fsr_31_vk";
         if (lower.Contains("amd_fidelityfx_dx12") || lower.Contains("ffx_fsr31") || lower.Contains("ffx_fsr3") || lower.Contains("ffx_fsr2")) return "fsr_31_dx12";

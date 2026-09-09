@@ -217,7 +217,6 @@ public partial class GameGridViewModel : ObservableObject
 
         _favouriteIds = _metadataService.LoadFavourites();
         LoadFromCacheImmediately();
-        _ = ScanRealGamesAsync(isManualRefresh: false);
 
         LinuxSettingsService.Instance.OnSettingsChanged += () =>
         {
@@ -232,7 +231,7 @@ public partial class GameGridViewModel : ObservableObject
     {
         try
         {
-            var cachedEntries = _metadataService.LoadScannedGamesCache();
+            var cachedEntries = _metadataService.LoadScannedGamesCache(out bool isCacheOutdated);
             if (cachedEntries != null && cachedEntries.Count > 0)
             {
                 var cards = new List<GameCardItem>();
@@ -273,9 +272,13 @@ public partial class GameGridViewModel : ObservableObject
                 }
                 FilterGames();
             }
+
+            // Immediately scan in background; if cache is outdated or missing, force a full rescan
+            _ = ScanRealGamesAsync(isManualRefresh: isCacheOutdated);
         }
         catch
         {
+            _ = ScanRealGamesAsync(isManualRefresh: true);
         }
     }
 
@@ -414,15 +417,16 @@ public partial class GameGridViewModel : ObservableObject
                 var cards = new List<GameCardItem>();
                 var cacheEntriesToSave = new List<ScannedGameCacheEntry>();
                 var favIds = _metadataService.LoadFavourites();
-                var existingCache = _metadataService.LoadScannedGamesCache()
+                var existingCache = _metadataService.LoadScannedGamesCache(out bool isCacheOutdated)
                     .ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
 
+                bool forceFullRescan = isManualRefresh || isCacheOutdated;
                 var steamScanner = new LinuxSteamLibraryScanner();
 
                 // 1. Steam Games
                 if (steamScanner.IsLauncherInstalled())
                 {
-                    var realGames = steamScanner.ScanInstalledGames(existingCache, forceRescan: isManualRefresh);
+                    var realGames = steamScanner.ScanInstalledGames(existingCache, forceRescan: forceFullRescan);
                     foreach (var g in realGames)
                     {
                         var card = new GameCardItem
@@ -478,7 +482,7 @@ public partial class GameGridViewModel : ObservableObject
                 var heroicScanner = new LinuxHeroicLibraryScanner();
                 if (heroicScanner.IsLauncherInstalled())
                 {
-                    var heroicGames = heroicScanner.ScanInstalledGames(existingCache, forceRescan: isManualRefresh);
+                    var heroicGames = heroicScanner.ScanInstalledGames(existingCache, forceRescan: forceFullRescan);
                     foreach (var g in heroicGames)
                     {
                         var card = new GameCardItem
@@ -534,7 +538,8 @@ public partial class GameGridViewModel : ObservableObject
                 var manualRecords = _metadataService.LoadManualGames();
                 foreach (var record in manualRecords)
                 {
-                    if (string.IsNullOrEmpty(record.InstallPath) || !Directory.Exists(record.InstallPath)) continue;
+                    if (string.IsNullOrEmpty(record.InstallPath) || !Directory.Exists(record.InstallPath))
+                        continue;
 
                     if (cards.Any(x => string.Equals(x.InstallPath, record.InstallPath, StringComparison.OrdinalIgnoreCase)))
                         continue;
@@ -542,7 +547,7 @@ public partial class GameGridViewModel : ObservableObject
                     var manualAppId = $"manual_{record.Name.Replace(" ", "_")}";
                     GameCardItem card;
 
-                    if (!isManualRefresh && existingCache.TryGetValue(manualAppId, out var cachedManual) && Directory.Exists(record.InstallPath))
+                    if (!forceFullRescan && existingCache.TryGetValue(manualAppId, out var cachedManual) && Directory.Exists(record.InstallPath))
                     {
                         card = new GameCardItem
                         {

@@ -178,24 +178,54 @@ public class GameMetadataStorageService
         list.RemoveAll(x => string.Equals(x.InstallPath, installPath, StringComparison.OrdinalIgnoreCase));
         SaveManualGames(list);
     }
+    public const int CurrentCacheVersion = 2;
     private static string ScannedGamesCacheFilePath => Path.Combine(StorageFolder, "games_cache.json");
 
     public List<ScannedGameCacheEntry> LoadScannedGamesCache()
     {
+        return LoadScannedGamesCache(out _);
+    }
+
+    public List<ScannedGameCacheEntry> LoadScannedGamesCache(out bool isCacheOutdated)
+    {
+        isCacheOutdated = false;
         try
         {
             if (File.Exists(ScannedGamesCacheFilePath))
             {
                 var json = File.ReadAllText(ScannedGamesCacheFilePath);
-                var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(json);
-                if (list != null)
+                using var doc = JsonDocument.Parse(json);
+
+                if (doc.RootElement.ValueKind == JsonValueKind.Object)
                 {
-                    return list;
+                    var version = doc.RootElement.TryGetProperty("Version", out var vProp) ? vProp.GetInt32() : 1;
+                    if (version < CurrentCacheVersion)
+                    {
+                        isCacheOutdated = true;
+                    }
+
+                    if (doc.RootElement.TryGetProperty("Entries", out var entriesProp))
+                    {
+                        var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(entriesProp.GetRawText());
+                        return list ?? new List<ScannedGameCacheEntry>();
+                    }
                 }
+                else if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                {
+                    // Version 1 legacy format
+                    isCacheOutdated = true;
+                    var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(json);
+                    return list ?? new List<ScannedGameCacheEntry>();
+                }
+            }
+            else
+            {
+                isCacheOutdated = true;
             }
         }
         catch
         {
+            isCacheOutdated = true;
         }
         return new List<ScannedGameCacheEntry>();
     }
@@ -204,14 +234,24 @@ public class GameMetadataStorageService
     {
         try
         {
-            var list = new List<ScannedGameCacheEntry>(entries);
-            var json = JsonSerializer.Serialize(list, new JsonSerializerOptions { WriteIndented = true });
+            var container = new ScannedGamesCacheContainer
+            {
+                Version = CurrentCacheVersion,
+                Entries = new List<ScannedGameCacheEntry>(entries)
+            };
+            var json = JsonSerializer.Serialize(container, new JsonSerializerOptions { WriteIndented = true });
             File.WriteAllText(ScannedGamesCacheFilePath, json);
         }
         catch
         {
         }
     }
+}
+
+public class ScannedGamesCacheContainer
+{
+    public int Version { get; set; } = GameMetadataStorageService.CurrentCacheVersion;
+    public List<ScannedGameCacheEntry> Entries { get; set; } = new();
 }
 
 public class ScannedGameCacheEntry

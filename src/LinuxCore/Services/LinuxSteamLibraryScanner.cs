@@ -64,9 +64,33 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         "compatibility", "controller config", "easy anti-cheat", "battleye"
     };
 
+    private static bool IsExcludedSoftware(string name, string installDir)
+    {
+        var lowerName = name.ToLowerInvariant();
+        var lowerDir = installDir.ToLowerInvariant();
+
+        foreach (var keyword in ExcludedKeywords)
+        {
+            if (keyword.Contains(' '))
+            {
+                if (lowerName.Contains(keyword) || lowerDir.Contains(keyword))
+                    return true;
+            }
+            else
+            {
+                if (Regex.IsMatch(lowerName, $@"\b{Regex.Escape(keyword)}\b") ||
+                    Regex.IsMatch(lowerDir, $@"\b{Regex.Escape(keyword)}\b"))
+                {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     public bool IsLauncherInstalled()
     {
-        return GetSteamInstallPath() != null;
+        return GetSteamInstallPath() != null || GetSteamLibraryDirectories().Count > 0;
     }
 
     public string? GetSteamInstallPath()
@@ -94,40 +118,131 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
     public List<string> GetSteamLibraryDirectories()
     {
         var libraries = new List<string>();
-        var steamPath = GetSteamInstallPath();
-        if (string.IsNullOrEmpty(steamPath)) return libraries;
+        var activeSteamPaths = PossibleSteamPaths.Where(Directory.Exists).ToList();
 
-        var mainSteamApps = Path.Combine(steamPath, "steamapps");
-        AddNormalizedDirectory(libraries, mainSteamApps);
-
-        var possibleVdfPaths = new[]
+        foreach (var steamPath in activeSteamPaths)
         {
-            Path.Combine(mainSteamApps, "libraryfolders.vdf"),
-            Path.Combine(steamPath, "config", "libraryfolders.vdf")
-        };
+            var mainSteamApps = Path.Combine(steamPath, "steamapps");
+            AddNormalizedDirectory(libraries, mainSteamApps);
 
-        foreach (var vdfPath in possibleVdfPaths)
-        {
-            if (File.Exists(vdfPath))
+            var possibleVdfPaths = new[]
             {
+                Path.Combine(mainSteamApps, "libraryfolders.vdf"),
+                Path.Combine(steamPath, "config", "libraryfolders.vdf")
+            };
+
+            foreach (var vdfPath in possibleVdfPaths)
+            {
+                if (File.Exists(vdfPath))
+                {
+                    try
+                    {
+                        var content = File.ReadAllText(vdfPath);
+                        var matches = Regex.Matches(content, @"""path""\s+""([^""]+)""", RegexOptions.IgnoreCase);
+                        foreach (Match match in matches)
+                        {
+                            if (match.Success)
+                            {
+                                var rawPath = match.Groups[1].Value.Replace(@"\\", @"/");
+                                var steamAppsSubDir = Path.Combine(rawPath, "steamapps");
+                                AddNormalizedDirectory(libraries, steamAppsSubDir);
+                                if (rawPath.EndsWith("steamapps", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    AddNormalizedDirectory(libraries, rawPath);
+                                }
+                            }
+                        }
+                    }
+                    catch
+                    {
+                        // Ignore unparseable VDF files
+                    }
+                }
+            }
+        }
+
+        // Fallback mount scanning: Discover Steam libraries across all storage mounts
+        var mountRoots = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var topMountParents = new[] { "/mnt", "/media", "/run/media" };
+        foreach (var top in topMountParents)
+        {
+            if (Directory.Exists(top))
+            {
+                mountRoots.Add(top);
                 try
                 {
-                    var content = File.ReadAllText(vdfPath);
-                    var matches = Regex.Matches(content, @"""path""\s+""([^""]+)""", RegexOptions.IgnoreCase);
-                    foreach (Match match in matches)
+                    foreach (var sub in Directory.GetDirectories(top))
                     {
-                        if (match.Success)
+                        mountRoots.Add(sub);
+                        try
                         {
-                            var rawPath = match.Groups[1].Value.Replace(@"\\", @"/");
-                            var steamAppsSubDir = Path.Combine(rawPath, "steamapps");
-                            AddNormalizedDirectory(libraries, steamAppsSubDir);
+                            foreach (var subsub in Directory.GetDirectories(sub))
+                            {
+                                mountRoots.Add(subsub);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
+            }
+        }
+
+        if (File.Exists("/proc/mounts"))
+        {
+            try
+            {
+                foreach (var line in File.ReadAllLines("/proc/mounts"))
+                {
+                    var parts = line.Split(new[] { ' ', '\t' }, StringSplitOptions.RemoveEmptyEntries);
+                    if (parts.Length >= 2)
+                    {
+                        var target = parts[1];
+                        if (target.StartsWith("/mnt", StringComparison.OrdinalIgnoreCase) ||
+                            target.StartsWith("/media", StringComparison.OrdinalIgnoreCase) ||
+                            target.StartsWith("/run/media", StringComparison.OrdinalIgnoreCase) ||
+                            target.StartsWith("/data", StringComparison.OrdinalIgnoreCase) ||
+                            target.StartsWith("/games", StringComparison.OrdinalIgnoreCase) ||
+                            target.StartsWith("/disks", StringComparison.OrdinalIgnoreCase))
+                        {
+                            if (Directory.Exists(target)) mountRoots.Add(target);
                         }
                     }
                 }
-                catch
+            }
+            catch { }
+        }
+
+        var candidateSteamFolderNames = new[] { "SteamLibrary", "steamlibrary", "Steam", "steam" };
+        foreach (var root in mountRoots)
+        {
+            foreach (var folderName in candidateSteamFolderNames)
+            {
+                var targetDir = Path.Combine(root, folderName, "steamapps");
+                if (Directory.Exists(targetDir))
                 {
-                    // Ignore unparseable VDF files
+                    try
+                    {
+                        if (Directory.EnumerateFiles(targetDir, "appmanifest_*.acf").Any())
+                        {
+                            AddNormalizedDirectory(libraries, targetDir);
+                        }
+                    }
+                    catch { }
                 }
+            }
+
+            var directSteamapps = Path.Combine(root, "steamapps");
+            if (Directory.Exists(directSteamapps))
+            {
+                try
+                {
+                    if (Directory.EnumerateFiles(directSteamapps, "appmanifest_*.acf").Any())
+                    {
+                        AddNormalizedDirectory(libraries, directSteamapps);
+                    }
+                }
+                catch { }
             }
         }
 
@@ -161,10 +276,9 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         var scannedAppIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var scannedInstallPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
 
-        var steamPath = GetSteamInstallPath();
-        if (string.IsNullOrEmpty(steamPath)) return games;
-
+        var steamPath = GetSteamInstallPath() ?? string.Empty;
         var libraryDirectories = GetSteamLibraryDirectories();
+        if (libraryDirectories.Count == 0 && string.IsNullOrEmpty(steamPath)) return games;
 
         foreach (var steamAppsDir in libraryDirectories)
         {
@@ -194,11 +308,8 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                         var gameName = nameMatch.Groups[1].Value;
                         var installDir = dirMatch.Groups[1].Value;
 
-                        var lowerName = gameName.ToLowerInvariant();
-                        var lowerDir = installDir.ToLowerInvariant();
-
                         // Dynamic exclusion: filter out software, compatibility layers, and runtimes by keyword
-                        if (ExcludedKeywords.Any(k => lowerName.Contains(k) || lowerDir.Contains(k)))
+                        if (IsExcludedSoftware(gameName, installDir))
                         {
                             continue;
                         }
@@ -215,10 +326,15 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                         scannedAppIds.Add(appId);
                         scannedInstallPaths.Add(normalizedFullPath);
 
-                        // Delta cache lookup: If manifest timestamp is unchanged and directory exists, reuse cached DLL info
+                        // Delta cache lookup: If manifest timestamp is unchanged, directory exists, and cached DLLs are valid, reuse cached info
                         if (!forceRescan && cache != null && cache.TryGetValue(appId, out var cachedEntry))
                         {
-                            if (cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks && Directory.Exists(normalizedFullPath))
+                            bool hasAnyValidDll = cachedEntry.DllMap != null && cachedEntry.DllMap.Values.Any(v =>
+                                !string.IsNullOrWhiteSpace(v) &&
+                                !string.Equals(v, "Not found", StringComparison.OrdinalIgnoreCase) &&
+                                !string.Equals(v, "N/A", StringComparison.OrdinalIgnoreCase));
+
+                            if (hasAnyValidDll && cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks && Directory.Exists(normalizedFullPath))
                             {
                                 games.Add(new DiscoveredGameInfo
                                 {
@@ -519,12 +635,13 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
 
         try
         {
-            var foundDllPaths = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+            var foundDllPaths = new Dictionary<string, List<string>>(StringComparer.OrdinalIgnoreCase);
 
             var excludedFolderNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
             {
                 "content", "paks", "audio", "sound", "sounds", "video", "movies", "textures",
-                "shaders", "saves", "cache", "__pycache__", ".git", "logs", "screenshots", "docs", "manual"
+                "shaders", "saves", "cache", "__pycache__", ".git", "logs", "screenshots", "docs", "manual",
+                "locale", "locales", "localization", "translations"
             };
 
             var queue = new Queue<(string Dir, int Depth)>();
@@ -540,13 +657,15 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                     foreach (var file in files)
                     {
                         var name = Path.GetFileName(file);
-                        if (!foundDllPaths.ContainsKey(name))
+                        if (!foundDllPaths.TryGetValue(name, out var list))
                         {
-                            foundDllPaths[name] = file;
+                            list = new List<string>();
+                            foundDllPaths[name] = list;
                         }
+                        list.Add(file);
                     }
 
-                    if (depth < 4)
+                    if (depth < 12)
                     {
                         foreach (var subDir in Directory.GetDirectories(currentDir))
                         {
@@ -562,51 +681,63 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
             }
 
             // 1. DLSS
-            if (foundDllPaths.TryGetValue("nvngx_dlss.dll", out var dlssPath))
-                result.DLSSVersion = ExtractDllVersionSafe(dlssPath);
+            if (foundDllPaths.TryGetValue("nvngx_dlss.dll", out var dlssPaths))
+                result.DLSSVersion = ExtractDllVersionSafe(dlssPaths);
 
             // 2. DLSSG
-            if (foundDllPaths.TryGetValue("nvngx_dlssg.dll", out var dlssgPath))
-                result.DLSSGVersion = ExtractDllVersionSafe(dlssgPath);
+            if (foundDllPaths.TryGetValue("nvngx_dlssg.dll", out var dlssgPaths))
+                result.DLSSGVersion = ExtractDllVersionSafe(dlssgPaths);
 
             // 3. DLSSD
-            if (foundDllPaths.TryGetValue("nvngx_dlssd.dll", out var dlssdPath))
-                result.DLSSDVersion = ExtractDllVersionSafe(dlssdPath);
+            if (foundDllPaths.TryGetValue("nvngx_dlssd.dll", out var dlssdPaths))
+                result.DLSSDVersion = ExtractDllVersionSafe(dlssdPaths);
 
             // 4. FSR 3.1 DX12
-            if (foundDllPaths.TryGetValue("amd_fidelityfx_dx12.dll", out var fsr12) ||
-                foundDllPaths.TryGetValue("ffx_fsr31_x64.dll", out fsr12) ||
-                foundDllPaths.TryGetValue("ffx_fsr31_dx12_x64.dll", out fsr12))
-            {
-                result.Fsr31Dx12Version = ExtractDllVersionSafe(fsr12);
-            }
+            var fsr12Candidates = new List<string>();
+            if (foundDllPaths.TryGetValue("amd_fidelityfx_dx12.dll", out var f1)) fsr12Candidates.AddRange(f1);
+            if (foundDllPaths.TryGetValue("ffx_fsr31_x64.dll", out var f2)) fsr12Candidates.AddRange(f2);
+            if (foundDllPaths.TryGetValue("ffx_fsr31_dx12_x64.dll", out var f3)) fsr12Candidates.AddRange(f3);
+            if (fsr12Candidates.Count > 0)
+                result.Fsr31Dx12Version = ExtractDllVersionSafe(fsr12Candidates);
 
             // 5. FSR 3.1 VK
-            if (foundDllPaths.TryGetValue("amd_fidelityfx_vk.dll", out var fsrVk) ||
-                foundDllPaths.TryGetValue("ffx_fsr31_vk_x64.dll", out fsrVk))
-            {
-                result.Fsr31VkVersion = ExtractDllVersionSafe(fsrVk);
-            }
+            var fsrVkCandidates = new List<string>();
+            if (foundDllPaths.TryGetValue("amd_fidelityfx_vk.dll", out var fv1)) fsrVkCandidates.AddRange(fv1);
+            if (foundDllPaths.TryGetValue("ffx_fsr31_vk_x64.dll", out var fv2)) fsrVkCandidates.AddRange(fv2);
+            if (fsrVkCandidates.Count > 0)
+                result.Fsr31VkVersion = ExtractDllVersionSafe(fsrVkCandidates);
 
             // 6. XeSS
-            if (foundDllPaths.TryGetValue("libxess.dll", out var xessPath))
-                result.XessVersion = ExtractDllVersionSafe(xessPath);
+            if (foundDllPaths.TryGetValue("libxess.dll", out var xessPaths))
+                result.XessVersion = ExtractDllVersionSafe(xessPaths);
 
             // 7. XeSS DX11
-            if (foundDllPaths.TryGetValue("libxess_dx11.dll", out var xessDx11Path))
-                result.XessDx11Version = ExtractDllVersionSafe(xessDx11Path);
+            if (foundDllPaths.TryGetValue("libxess_dx11.dll", out var xessDx11Paths))
+                result.XessDx11Version = ExtractDllVersionSafe(xessDx11Paths);
 
             // 8. XeSS FG
-            if (foundDllPaths.TryGetValue("libxess_fg.dll", out var xessFgPath))
-                result.XessFgVersion = ExtractDllVersionSafe(xessFgPath);
+            if (foundDllPaths.TryGetValue("libxess_fg.dll", out var xessFgPaths))
+                result.XessFgVersion = ExtractDllVersionSafe(xessFgPaths);
 
             // 9. XeLL
-            if (foundDllPaths.TryGetValue("libxell.dll", out var xellPath))
-                result.XellVersion = ExtractDllVersionSafe(xellPath);
+            if (foundDllPaths.TryGetValue("libxell.dll", out var xellPaths))
+                result.XellVersion = ExtractDllVersionSafe(xellPaths);
         }
         catch { }
 
         return result;
+    }
+
+    private string ExtractDllVersionSafe(IEnumerable<string> filePaths)
+    {
+        string? firstInstalled = null;
+        foreach (var filePath in filePaths)
+        {
+            var ver = ExtractDllVersionFromFile(filePath);
+            if (!string.IsNullOrEmpty(ver) && ver != "Unknown") return ver;
+            firstInstalled ??= "Installed";
+        }
+        return firstInstalled ?? "Not found";
     }
 
     private string ExtractDllVersionSafe(string filePath)
