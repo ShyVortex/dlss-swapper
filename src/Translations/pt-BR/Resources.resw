@@ -138,6 +138,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Adicionar capa personalizada</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Remover capa</value>
+  </data>
   <data name="GamePage_ClickToFavorite" xml:space="preserve">
     <value>Clique para favoritar</value>
   </data>

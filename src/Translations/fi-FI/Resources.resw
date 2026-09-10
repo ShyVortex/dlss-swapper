@@ -231,6 +231,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Lisää mukautettu kansi</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Poista kansi</value>
+  </data>
   <data name="GamePage_CantLaunchFromLibraryTemplate" xml:space="preserve">
     <value>Pelien käynnistäminen {0}-kirjastosta ei ole tällä hetkellä tuettu.</value>
   </data>

@@ -26,6 +26,7 @@ public class DiscoveredGameInfo
     public string XessFgVersion { get; set; } = "Not found";
     public string XellVersion { get; set; } = "Not found";
     public string CoverImagePath { get; set; } = string.Empty;
+    public string DefaultCoverImagePath { get; set; } = string.Empty;
     public string ManifestPath { get; set; } = string.Empty;
     public long ManifestLastWriteTimeUtcTicks { get; set; }
 }
@@ -336,6 +337,16 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
 
                             if (hasAnyValidDll && cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks && Directory.Exists(normalizedFullPath))
                             {
+                                var defaultCoverCached = !string.IsNullOrEmpty(cachedEntry.DefaultCoverImagePath)
+                                    ? cachedEntry.DefaultCoverImagePath
+                                    : ResolveDefaultCoverImage(steamPath, appId);
+                                var customCoverCached = GameMetadataStorageService.GetCustomCoverPath(appId);
+                                var activeCoverCached = !string.IsNullOrEmpty(customCoverCached)
+                                    ? customCoverCached
+                                    : (!string.IsNullOrEmpty(cachedEntry.CoverImagePath) && (File.Exists(cachedEntry.CoverImagePath) || cachedEntry.CoverImagePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                                        ? cachedEntry.CoverImagePath
+                                        : defaultCoverCached);
+
                                 games.Add(new DiscoveredGameInfo
                                 {
                                     AppId = appId,
@@ -351,7 +362,8 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                                     XessDx11Version = cachedEntry.DllMap.GetValueOrDefault("xess_dx11", "Not found"),
                                     XessFgVersion = cachedEntry.DllMap.GetValueOrDefault("xess_fg", "Not found"),
                                     XellVersion = cachedEntry.DllMap.GetValueOrDefault("xell", "Not found"),
-                                    CoverImagePath = !string.IsNullOrEmpty(cachedEntry.CoverImagePath) && File.Exists(cachedEntry.CoverImagePath) ? cachedEntry.CoverImagePath : ResolveCoverImage(steamPath, appId),
+                                    CoverImagePath = activeCoverCached,
+                                    DefaultCoverImagePath = defaultCoverCached,
                                     ManifestPath = manifestFile,
                                     ManifestLastWriteTimeUtcTicks = manifestTicks
                                 });
@@ -359,7 +371,9 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                             }
                         }
 
-                        var coverImage = ResolveCoverImage(steamPath, appId);
+                        var defaultCover = ResolveDefaultCoverImage(steamPath, appId);
+                        var customCover = GameMetadataStorageService.GetCustomCoverPath(appId);
+                        var coverImage = !string.IsNullOrEmpty(customCover) ? customCover : defaultCover;
                         var dlls = ScanAllGameDlls(normalizedFullPath);
 
                         games.Add(new DiscoveredGameInfo
@@ -378,6 +392,7 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
                             XessFgVersion = dlls.XessFgVersion,
                             XellVersion = dlls.XellVersion,
                             CoverImagePath = coverImage,
+                            DefaultCoverImagePath = defaultCover,
                             ManifestPath = manifestFile,
                             ManifestLastWriteTimeUtcTicks = manifestTicks
                         });
@@ -394,7 +409,18 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         return games;
     }
 
-    private string ResolveCoverImage(string steamPath, string appId)
+    public string ResolveCoverImage(string steamPath, string appId)
+    {
+        var customCover = GameMetadataStorageService.GetCustomCoverPath(appId);
+        if (!string.IsNullOrEmpty(customCover))
+        {
+            return customCover;
+        }
+
+        return ResolveDefaultCoverImage(steamPath, appId);
+    }
+
+    public string ResolveDefaultCoverImage(string steamPath, string appId)
     {
         var candidateRoots = new List<string>();
         if (!string.IsNullOrEmpty(steamPath) && Directory.Exists(steamPath))

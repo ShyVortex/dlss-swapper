@@ -225,6 +225,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Añadir Carátula Personalizada</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Eliminar portada</value>
+  </data>
   <data name="GamePage_ClickToFavorite" xml:space="preserve">
     <value>Hacer clic para añadir a favoritos</value>
   </data>

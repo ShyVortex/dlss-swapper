@@ -756,6 +756,12 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
     private string ResolveHeroicCoverImage(string appId, string title, string installPath, string? coverUrl, List<string> activeConfigDirs)
     {
+        var customCover = GameMetadataStorageService.GetCustomCoverPath(appId);
+        if (!string.IsNullOrEmpty(customCover))
+        {
+            return customCover;
+        }
+
         // 1. If we have a cover URL from GOG/Epic/Nile store metadata
         if (!string.IsNullOrEmpty(coverUrl))
         {
@@ -826,6 +832,8 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
         Dictionary<string, ScannedGameCacheEntry>? cache = null, 
         bool forceRescan = false)
     {
+        var customCover = GameMetadataStorageService.GetCustomCoverPath(appId);
+
         if (!forceRescan && cache != null && cache.TryGetValue(appId, out var cachedEntry))
         {
             bool hasAnyValidDll = cachedEntry.DllMap != null && cachedEntry.DllMap.Values.Any(v =>
@@ -835,6 +843,15 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
 
             if (hasAnyValidDll && (manifestTicks == 0 || cachedEntry.ManifestLastWriteTimeUtcTicks == manifestTicks) && Directory.Exists(installPath))
             {
+                var defaultCoverCached = !string.IsNullOrEmpty(cachedEntry.DefaultCoverImagePath)
+                    ? cachedEntry.DefaultCoverImagePath
+                    : coverImage;
+                var activeCoverCached = !string.IsNullOrEmpty(customCover)
+                    ? customCover
+                    : (!string.IsNullOrEmpty(cachedEntry.CoverImagePath) && (File.Exists(cachedEntry.CoverImagePath) || cachedEntry.CoverImagePath.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                        ? cachedEntry.CoverImagePath
+                        : defaultCoverCached);
+
                 return new DiscoveredGameInfo
                 {
                     AppId = appId,
@@ -850,7 +867,8 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
                     XessDx11Version = cachedEntry.DllMap.GetValueOrDefault("xess_dx11", "Not found"),
                     XessFgVersion = cachedEntry.DllMap.GetValueOrDefault("xess_fg", "Not found"),
                     XellVersion = cachedEntry.DllMap.GetValueOrDefault("xell", "Not found"),
-                    CoverImagePath = !string.IsNullOrEmpty(cachedEntry.CoverImagePath) && File.Exists(cachedEntry.CoverImagePath) ? cachedEntry.CoverImagePath : coverImage,
+                    CoverImagePath = activeCoverCached,
+                    DefaultCoverImagePath = defaultCoverCached,
                     ManifestPath = manifestPath,
                     ManifestLastWriteTimeUtcTicks = manifestTicks
                 };
@@ -858,6 +876,8 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
         }
 
         var dlls = steamScanner.ScanAllGameDlls(installPath);
+        var activeCover = !string.IsNullOrEmpty(customCover) ? customCover : coverImage;
+
         return new DiscoveredGameInfo
         {
             AppId = appId,
@@ -873,7 +893,8 @@ public class LinuxHeroicLibraryScanner : IGameLibraryScanner
             XessDx11Version = dlls.XessDx11Version,
             XessFgVersion = dlls.XessFgVersion,
             XellVersion = dlls.XellVersion,
-            CoverImagePath = coverImage,
+            CoverImagePath = activeCover,
+            DefaultCoverImagePath = coverImage,
             ManifestPath = manifestPath,
             ManifestLastWriteTimeUtcTicks = manifestTicks
         };

@@ -228,6 +228,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>カスタムカバーを追加</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>カバー削除</value>
+  </data>
   <data name="GamePage_CantLaunchFromLibraryTemplate" xml:space="preserve">
     <value>{0} ライブラリからのゲーム起動は現在サポートされていません。</value>
   </data>

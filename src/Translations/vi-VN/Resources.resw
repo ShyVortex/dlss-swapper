@@ -228,6 +228,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Thêm Bìa Tùy Chỉnh</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Xóa bìa</value>
+  </data>
   <data name="GamePage_CantLaunchFromLibraryTemplate" xml:space="preserve">
     <value>Việc khởi chạy trò chơi từ thư viện {0} của bạn hiện không được hỗ trợ.</value>
   </data>

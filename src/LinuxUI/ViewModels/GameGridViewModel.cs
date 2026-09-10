@@ -19,9 +19,14 @@ public partial class GameCardItem : ObservableObject
     public string LibraryName { get; set; } = string.Empty;
     public string InstallPath { get; set; } = string.Empty;
     public string CoverImagePath { get; set; } = string.Empty;
+    public string DefaultCoverImagePath { get; set; } = string.Empty;
     public string CoverColor { get; set; } = "#2C2C2C";
 
     public string GameId => !string.IsNullOrEmpty(AppId) ? AppId : (InstallPath ?? Name);
+
+    public bool HasCustomCover =>
+        !string.IsNullOrEmpty(GameMetadataStorageService.GetCustomCoverPath(GameId)) ||
+        (!string.IsNullOrEmpty(CoverImagePath) && CoverImagePath.Contains("custom_covers", StringComparison.OrdinalIgnoreCase));
 
     [ObservableProperty] private bool _isFavourite;
 
@@ -175,6 +180,17 @@ public partial class GameCardItem : ObservableObject
 
     public async Task LoadCoverAsync()
     {
+        var customCover = GameMetadataStorageService.GetCustomCoverPath(GameId);
+        if (!string.IsNullOrEmpty(customCover) && !string.Equals(CoverImagePath, customCover, StringComparison.OrdinalIgnoreCase))
+        {
+            if (string.IsNullOrEmpty(DefaultCoverImagePath) && !string.IsNullOrEmpty(CoverImagePath))
+            {
+                DefaultCoverImagePath = CoverImagePath;
+            }
+            CoverImagePath = customCover;
+            CoverBitmap = null;
+        }
+
         if (!string.IsNullOrEmpty(CoverImagePath) && CoverBitmap == null)
         {
             CoverBitmap = await ImageHelper.LoadBitmapAsync(CoverImagePath);
@@ -240,13 +256,23 @@ public partial class GameGridViewModel : ObservableObject
                     if (string.IsNullOrEmpty(entry.InstallPath) || !Directory.Exists(entry.InstallPath))
                         continue;
 
+                    var customCover = GameMetadataStorageService.GetCustomCoverPath(entry.Id) ??
+                                      (!string.IsNullOrEmpty(entry.InstallPath) ? GameMetadataStorageService.GetCustomCoverPath(entry.InstallPath) : null);
+                    var defaultCover = !string.IsNullOrEmpty(entry.DefaultCoverImagePath)
+                        ? entry.DefaultCoverImagePath
+                        : (string.IsNullOrEmpty(customCover) ? (entry.CoverImagePath ?? string.Empty) : string.Empty);
+                    var activeCover = !string.IsNullOrEmpty(customCover)
+                        ? customCover
+                        : (entry.CoverImagePath ?? string.Empty);
+
                     var card = new GameCardItem
                     {
                         AppId = entry.Id,
                         Name = entry.Title,
                         LibraryName = entry.Launcher,
                         InstallPath = entry.InstallPath,
-                        CoverImagePath = entry.CoverImagePath ?? string.Empty,
+                        CoverImagePath = activeCover,
+                        DefaultCoverImagePath = defaultCover,
                         CoverColor = !string.IsNullOrEmpty(entry.CoverColorHex) ? entry.CoverColorHex : GetColorForGame(entry.Title),
                         DLSSVersion = entry.DllMap.GetValueOrDefault("dlss", "N/A"),
                         DLSSGVersion = entry.DllMap.GetValueOrDefault("dlss_g", "N/A"),
@@ -361,9 +387,15 @@ public partial class GameGridViewModel : ObservableObject
         }
 
         var dlls = scanner.ScanAllGameDlls(folderPath);
+        var appId = $"manual_{folderName.Replace(" ", "_")}";
+        var customCover = GameMetadataStorageService.GetCustomCoverPath(appId) ??
+                          GameMetadataStorageService.GetCustomCoverPath(folderPath) ??
+                          GameMetadataStorageService.GetCustomCoverPath(folderName);
+        var activeCover = !string.IsNullOrEmpty(customCover) ? customCover : (cover ?? string.Empty);
+
         var card = new GameCardItem
         {
-            AppId = $"manual_{folderName.Replace(" ", "_")}",
+            AppId = appId,
             Name = folderName,
             DLSSVersion = dlls.DLSSVersion,
             DLSSGVersion = dlls.DLSSGVersion,
@@ -376,7 +408,8 @@ public partial class GameGridViewModel : ObservableObject
             XellVersion = dlls.XellVersion,
             LibraryName = "Manually Added",
             InstallPath = folderPath,
-            CoverImagePath = cover ?? string.Empty,
+            CoverImagePath = activeCover,
+            DefaultCoverImagePath = cover ?? string.Empty,
             CoverColor = GetColorForGame(folderName)
         };
         card.OnFavouriteToggled = OnCardFavouriteToggled;
@@ -445,6 +478,7 @@ public partial class GameGridViewModel : ObservableObject
                             LibraryName = "Steam",
                             InstallPath = g.InstallPath,
                             CoverImagePath = g.CoverImagePath,
+                            DefaultCoverImagePath = g.DefaultCoverImagePath,
                             CoverColor = GetColorForGame(g.Name)
                         };
                         card.IsFavourite = favIds.Contains(card.GameId);
@@ -460,6 +494,7 @@ public partial class GameGridViewModel : ObservableObject
                             ManifestPath = g.ManifestPath,
                             ManifestLastWriteTimeUtcTicks = g.ManifestLastWriteTimeUtcTicks,
                             CoverImagePath = g.CoverImagePath,
+                            DefaultCoverImagePath = g.DefaultCoverImagePath,
                             CoverColorHex = card.CoverColor,
                             IsManualGame = false,
                             DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -501,6 +536,7 @@ public partial class GameGridViewModel : ObservableObject
                             LibraryName = "Heroic",
                             InstallPath = g.InstallPath,
                             CoverImagePath = g.CoverImagePath,
+                            DefaultCoverImagePath = g.DefaultCoverImagePath,
                             CoverColor = GetColorForGame(g.Name)
                         };
                         card.IsFavourite = favIds.Contains(card.GameId);
@@ -516,6 +552,7 @@ public partial class GameGridViewModel : ObservableObject
                             ManifestPath = g.ManifestPath,
                             ManifestLastWriteTimeUtcTicks = g.ManifestLastWriteTimeUtcTicks,
                             CoverImagePath = g.CoverImagePath,
+                            DefaultCoverImagePath = g.DefaultCoverImagePath,
                             CoverColorHex = card.CoverColor,
                             IsManualGame = false,
                             DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
@@ -547,8 +584,23 @@ public partial class GameGridViewModel : ObservableObject
                     var manualAppId = $"manual_{record.Name.Replace(" ", "_")}";
                     GameCardItem card;
 
+                    var manualCustomCover = GameMetadataStorageService.GetCustomCoverPath(manualAppId) ??
+                                            GameMetadataStorageService.GetCustomCoverPath(record.InstallPath) ??
+                                            GameMetadataStorageService.GetCustomCoverPath(record.Name);
+
                     if (!forceFullRescan && existingCache.TryGetValue(manualAppId, out var cachedManual) && Directory.Exists(record.InstallPath))
                     {
+                        var manualDefaultCover = !string.IsNullOrEmpty(record.CoverImagePath)
+                            ? record.CoverImagePath
+                            : (!string.IsNullOrEmpty(cachedManual.DefaultCoverImagePath)
+                                ? cachedManual.DefaultCoverImagePath
+                                : string.Empty);
+                        var manualActiveCover = !string.IsNullOrEmpty(manualCustomCover)
+                            ? manualCustomCover
+                            : (!string.IsNullOrEmpty(manualDefaultCover)
+                                ? manualDefaultCover
+                                : (cachedManual.CoverImagePath ?? string.Empty));
+
                         card = new GameCardItem
                         {
                             AppId = manualAppId,
@@ -564,7 +616,8 @@ public partial class GameGridViewModel : ObservableObject
                             XellVersion = cachedManual.DllMap.GetValueOrDefault("xell", "N/A"),
                             LibraryName = "Manually Added",
                             InstallPath = record.InstallPath,
-                            CoverImagePath = !string.IsNullOrEmpty(record.CoverImagePath) ? record.CoverImagePath : (cachedManual.CoverImagePath ?? string.Empty),
+                            CoverImagePath = manualActiveCover,
+                            DefaultCoverImagePath = manualDefaultCover,
                             CoverColor = GetColorForGame(record.Name)
                         };
                     }
@@ -585,6 +638,7 @@ public partial class GameGridViewModel : ObservableObject
                         Launcher = "Manually Added",
                         InstallPath = card.InstallPath,
                         CoverImagePath = card.CoverImagePath,
+                        DefaultCoverImagePath = card.DefaultCoverImagePath,
                         CoverColorHex = card.CoverColor,
                         IsManualGame = true,
                         DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)

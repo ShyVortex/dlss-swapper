@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text.Json;
+using System.Threading.Tasks;
+using SixLabors.ImageSharp;
+using SixLabors.ImageSharp.Processing;
 
 namespace DLSS_Swapper.Core.Services;
 
@@ -9,6 +12,19 @@ public class GameMetadataStorageService
 {
     public static string StorageFolder =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DLSS Swapper");
+
+    public static string CustomCoversDirectory
+    {
+        get
+        {
+            var dir = Path.Combine(StorageFolder, "custom_covers");
+            if (!Directory.Exists(dir))
+            {
+                Directory.CreateDirectory(dir);
+            }
+            return dir;
+        }
+    }
 
     private static string FavouritesFilePath => Path.Combine(StorageFolder, "favourites.json");
 
@@ -246,6 +262,159 @@ public class GameMetadataStorageService
         {
         }
     }
+    
+    public static string GetSafeGameId(string gameId)
+    {
+        return string.Join("_", gameId.Split(Path.GetInvalidFileNameChars(), StringSplitOptions.RemoveEmptyEntries));
+    }
+
+    public static string? GetCustomCoverPath(string gameId)
+    {
+        if (string.IsNullOrWhiteSpace(gameId)) return null;
+
+        var safeId = GetSafeGameId(gameId);
+        var dir = CustomCoversDirectory;
+
+        var candidates = new[]
+        {
+            Path.Combine(dir, $"{safeId}_custom_400_600.png"),
+            Path.Combine(dir, $"{safeId}.png"),
+            Path.Combine(dir, $"{safeId}.jpg"),
+            Path.Combine(dir, $"{safeId}.jpeg"),
+            Path.Combine(dir, $"{safeId}.webp")
+        };
+
+        foreach (var candidate in candidates)
+        {
+            if (File.Exists(candidate))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
+    }
+
+    public static bool HasCustomCover(string gameId)
+    {
+        return !string.IsNullOrEmpty(GetCustomCoverPath(gameId));
+    }
+
+    public async Task<string> SaveCustomCoverAsync(string gameId, string sourceFilePath)
+    {
+        if (string.IsNullOrWhiteSpace(gameId)) throw new ArgumentException("gameId cannot be empty", nameof(gameId));
+        if (!File.Exists(sourceFilePath)) throw new FileNotFoundException("Source image not found", sourceFilePath);
+
+        var safeId = GetSafeGameId(gameId);
+        var destPath = Path.Combine(CustomCoversDirectory, $"{safeId}_custom_400_600.png");
+
+        try
+        {
+            using var inStream = File.OpenRead(sourceFilePath);
+            using var image = await SixLabors.ImageSharp.Image.LoadAsync(inStream).ConfigureAwait(false);
+            image.Mutate(x => x.Resize(new ResizeOptions
+            {
+                Size = new SixLabors.ImageSharp.Size(400, 600),
+                Mode = ResizeMode.Crop
+            }));
+            await image.SaveAsPngAsync(destPath).ConfigureAwait(false);
+        }
+        catch
+        {
+            // Fallback to direct file copy if ImageSharp cannot decode/process
+            File.Copy(sourceFilePath, destPath, true);
+        }
+
+        // Clean up any legacy or other extension files for this safeId
+        var candidates = new[]
+        {
+            Path.Combine(CustomCoversDirectory, $"{safeId}.png"),
+            Path.Combine(CustomCoversDirectory, $"{safeId}.jpg"),
+            Path.Combine(CustomCoversDirectory, $"{safeId}.jpeg"),
+            Path.Combine(CustomCoversDirectory, $"{safeId}.webp")
+        };
+        foreach (var c in candidates)
+        {
+            if (!string.Equals(c, destPath, StringComparison.OrdinalIgnoreCase) && File.Exists(c))
+            {
+                try { File.Delete(c); } catch { }
+            }
+        }
+
+        return destPath;
+    }
+
+    public void DeleteCustomCover(string gameId)
+    {
+        if (string.IsNullOrWhiteSpace(gameId)) return;
+
+        var safeId = GetSafeGameId(gameId);
+        var dir = CustomCoversDirectory;
+        if (!Directory.Exists(dir)) return;
+
+        try
+        {
+            var files = Directory.GetFiles(dir, $"{safeId}*");
+            foreach (var file in files)
+            {
+                try { File.Delete(file); } catch { }
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    public void UpdateGameCoverInCache(string gameId, string? newCoverPath, string? defaultCoverPath = null)
+    {
+        try
+        {
+            var cache = LoadScannedGamesCache(out _);
+            bool updated = false;
+
+            foreach (var entry in cache)
+            {
+                if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(entry.InstallPath, gameId, StringComparison.OrdinalIgnoreCase))
+                {
+                    entry.CoverImagePath = newCoverPath;
+                    if (!string.IsNullOrEmpty(defaultCoverPath))
+                    {
+                        entry.DefaultCoverImagePath = defaultCoverPath;
+                    }
+                    updated = true;
+                    break;
+                }
+            }
+
+            if (updated)
+            {
+                SaveScannedGamesCache(cache);
+            }
+
+            // Also update manual games if applicable
+            var manualGames = LoadManualGames();
+            bool manualUpdated = false;
+            foreach (var mg in manualGames)
+            {
+                if (string.Equals(mg.InstallPath, gameId, StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(mg.Name, gameId, StringComparison.OrdinalIgnoreCase))
+                {
+                    mg.CoverImagePath = newCoverPath;
+                    manualUpdated = true;
+                    break;
+                }
+            }
+
+            if (manualUpdated)
+            {
+                SaveManualGames(manualGames);
+            }
+        }
+        catch
+        {
+        }
+    }
 }
 
 public class ScannedGamesCacheContainer
@@ -263,6 +432,7 @@ public class ScannedGameCacheEntry
     public string ManifestPath { get; set; } = string.Empty;
     public long ManifestLastWriteTimeUtcTicks { get; set; }
     public string? CoverImagePath { get; set; }
+    public string? DefaultCoverImagePath { get; set; }
     public string? CoverColorHex { get; set; }
     public bool IsManualGame { get; set; }
     public Dictionary<string, string> DllMap { get; set; } = new(StringComparer.OrdinalIgnoreCase);

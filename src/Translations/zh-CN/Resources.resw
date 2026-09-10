@@ -228,6 +228,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>自定义封面</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>移除封面</value>
+  </data>
   <data name="GamePage_CantLaunchFromLibraryTemplate" xml:space="preserve">
     <value>目前不支持从 {0} 库中启动游戏</value>
   </data>

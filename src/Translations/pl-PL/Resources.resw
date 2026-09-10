@@ -177,6 +177,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Dodaj własną okładkę</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Usuń okładkę</value>
+  </data>
   <data name="GamePage_ClickToFavorite" xml:space="preserve">
     <value>Dodaj do ulubionych</value>
   </data>

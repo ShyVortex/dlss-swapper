@@ -216,6 +216,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>إضافة غلاف مُخصص</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>إزالة الغلاف</value>
+  </data>
   <data name="GamePage_ClickToFavorite" xml:space="preserve">
     <value>الإضافة إلى المفضلة</value>
   </data>

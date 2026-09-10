@@ -225,6 +225,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Cambia copertina</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Rimuovi copertina</value>
+  </data>
   <data name="GamePage_ClickToFavorite" xml:space="preserve">
     <value>Clicca per aggiungere ai preferiti</value>
   </data>

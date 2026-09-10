@@ -36,7 +36,7 @@ public partial class GameDetailsWindow : Window
     private void UpdateTranslations()
     {
         Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_Title", "Game Details");
-        AddCustomCoverButton.Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_AddCustomCover", "Add Custom Cover");
+        UpdateCustomCoverButtonState();
         NameLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name", "Name");
         InstallPathLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_InstallPath", "Install path");
         DlssLabelTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Name_DLSS", "DLSS");
@@ -63,6 +63,20 @@ public partial class GameDetailsWindow : Window
         RefreshLoadingOverlayTextBlock.Text = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamesPage_ReloadingGame", "Refreshing game details...");
     }
 
+    private void UpdateCustomCoverButtonState()
+    {
+        if (SelectedGame == null) return;
+
+        if (SelectedGame.HasCustomCover)
+        {
+            AddCustomCoverButton.Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_RemoveCustomCover", "Remove Cover");
+        }
+        else
+        {
+            AddCustomCoverButton.Content = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_AddCustomCover", "Add Custom Cover");
+        }
+    }
+
     private void OnCloseClick(object? sender, RoutedEventArgs e)
     {
         Close();
@@ -72,12 +86,46 @@ public partial class GameDetailsWindow : Window
     {
         if (SelectedGame == null) return;
 
+        var metaService = new GameMetadataStorageService();
+
+        if (SelectedGame.HasCustomCover)
+        {
+            var title = DLSS_Swapper.Helpers.ResourceHelper.GetString("Game_CustomCoverRemove", "Remove Custom Cover");
+            var message = DLSS_Swapper.Helpers.ResourceHelper.GetString("Game_AreYouSureRemoveCustomCover", "Are you sure you want to remove the custom cover for this game?");
+            var removeLabel = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Remove", "Remove");
+            var cancelLabel = DLSS_Swapper.Helpers.ResourceHelper.GetString("General_Cancel", "Cancel");
+
+            var confirmed = await ShowConfirmDialogAsync(title, message, removeLabel, cancelLabel);
+            if (!confirmed) return;
+
+            metaService.DeleteCustomCover(SelectedGame.GameId);
+            if (!string.IsNullOrEmpty(SelectedGame.AppId) && SelectedGame.AppId != SelectedGame.GameId)
+            {
+                metaService.DeleteCustomCover(SelectedGame.AppId);
+            }
+
+            var fallbackCover = SelectedGame.DefaultCoverImagePath;
+            if (string.IsNullOrEmpty(fallbackCover) && string.Equals(SelectedGame.LibraryName, "Steam", StringComparison.OrdinalIgnoreCase))
+            {
+                var steamScanner = new LinuxSteamLibraryScanner();
+                fallbackCover = steamScanner.ResolveDefaultCoverImage(string.Empty, SelectedGame.AppId);
+            }
+
+            SelectedGame.CoverImagePath = fallbackCover ?? string.Empty;
+            SelectedGame.CoverBitmap = !string.IsNullOrEmpty(fallbackCover) ? await ImageHelper.LoadBitmapAsync(fallbackCover) : null;
+
+            metaService.UpdateGameCoverInCache(SelectedGame.GameId, fallbackCover, SelectedGame.DefaultCoverImagePath);
+
+            UpdateCustomCoverButtonState();
+            return;
+        }
+
         var storage = StorageProvider;
         if (storage != null)
         {
             var result = await storage.OpenFilePickerAsync(new FilePickerOpenOptions
             {
-                Title = "Select Cover Image",
+                Title = DLSS_Swapper.Helpers.ResourceHelper.GetString("GamePage_AddCustomCover", "Select Cover Image"),
                 AllowMultiple = false,
                 FileTypeFilter = new[]
                 {
@@ -91,19 +139,21 @@ public partial class GameDetailsWindow : Window
             if (result.Count > 0)
             {
                 var filePath = result[0].Path.LocalPath;
-                SelectedGame.CoverImagePath = filePath;
-                SelectedGame.CoverBitmap = await ImageHelper.LoadBitmapAsync(filePath);
+                if (!File.Exists(filePath)) return;
 
-                if (SelectedGame.IsManualGame)
+                if (string.IsNullOrEmpty(SelectedGame.DefaultCoverImagePath) && !string.IsNullOrEmpty(SelectedGame.CoverImagePath))
                 {
-                    var metaService = new GameMetadataStorageService();
-                    metaService.AddManualGame(new ManualGameRecord
-                    {
-                        Name = SelectedGame.Name,
-                        InstallPath = SelectedGame.InstallPath,
-                        CoverImagePath = filePath
-                    });
+                    SelectedGame.DefaultCoverImagePath = SelectedGame.CoverImagePath;
                 }
+
+                var savedPath = await metaService.SaveCustomCoverAsync(SelectedGame.GameId, filePath);
+
+                SelectedGame.CoverImagePath = savedPath;
+                SelectedGame.CoverBitmap = await ImageHelper.LoadBitmapAsync(savedPath);
+
+                metaService.UpdateGameCoverInCache(SelectedGame.GameId, savedPath, SelectedGame.DefaultCoverImagePath);
+
+                UpdateCustomCoverButtonState();
             }
         }
     }

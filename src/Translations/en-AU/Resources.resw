@@ -134,4 +134,7 @@ or click '+ Add Game' to add games manually.</value>
   <data name="GamesPage_ScanningLibraries" xml:space="preserve">
     <value>Scanning libraries &amp; refreshing games...</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Remove Cover</value>
+  </data>
 </root>

@@ -231,6 +231,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>Ajouter une couverture personnalisée</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>Supprimer couverture</value>
+  </data>
   <data name="GamePage_CantLaunchFromLibraryTemplate" xml:space="preserve">
     <value>Le lancement des jeux depuis votre bibliothèque {0} n'est pas pris en charge pour le moment.</value>
   </data>

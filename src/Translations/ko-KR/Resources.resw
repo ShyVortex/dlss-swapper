@@ -229,6 +229,9 @@
   <data name="GamePage_AddCustomCover" xml:space="preserve">
     <value>커스텀 커버 추가</value>
   </data>
+  <data name="GamePage_RemoveCustomCover" xml:space="preserve">
+    <value>커버 제거</value>
+  </data>
   <data name="GamePage_CantLaunchFromLibraryTemplate" xml:space="preserve">
     <value>{0} 라이브러리에서 게임을 실행하는 기능은 현재 지원되지 않습니다.</value>
   </data>
