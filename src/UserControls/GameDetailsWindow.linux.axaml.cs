@@ -31,6 +31,7 @@ public partial class GameDetailsWindow : Window
         UpdateTranslations();
         LoadDevOptions();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     private void UpdateTranslations()
@@ -318,8 +319,12 @@ public partial class GameDetailsWindow : Window
                     SelectedGame.XessDx11Version = dlls.XessDx11Version;
                     SelectedGame.XessFgVersion = dlls.XessFgVersion;
                     SelectedGame.XellVersion = dlls.XellVersion;
+                    SelectedGame.ResetLoggedInitialDlls();
                     SelectedGame.LoadPresets();
                 });
+
+                var metaService = new GameMetadataStorageService();
+                metaService.UpdateAllGameDllsInCache(SelectedGame.GameId, SelectedGame.InstallPath, dlls);
             });
 
             // Ensure smooth visual transition
@@ -412,26 +417,7 @@ public partial class GameDetailsWindow : Window
         if (string.IsNullOrEmpty(currentVersion) || currentVersion == "Not found" || currentVersion == "N/A") return;
 
         var possibleFilenames = LibraryStorageService.GetPossibleDllFilenamesForType(categoryType);
-        var targetDllPath = string.Empty;
-
-        try
-        {
-            if (Directory.Exists(SelectedGame.InstallPath))
-            {
-                foreach (var fname in possibleFilenames)
-                {
-                    var files = Directory.GetFiles(SelectedGame.InstallPath, fname, SearchOption.AllDirectories);
-                    if (files.Length > 0)
-                    {
-                        targetDllPath = files[0];
-                        break;
-                    }
-                }
-            }
-        }
-        catch
-        {
-        }
+        var targetDllPath = await Task.Run(() => LinuxSteamLibraryScanner.FindDllInGameDirectory(SelectedGame.InstallPath, possibleFilenames));
 
         if (string.IsNullOrEmpty(targetDllPath))
         {
@@ -452,12 +438,20 @@ public partial class GameDetailsWindow : Window
         {
             var scanner = new LinuxSteamLibraryScanner();
             var newVer = scanner.ExtractDllVersionFromFile(vm.ResultSwappedPath);
+            if (string.IsNullOrEmpty(newVer))
+            {
+                newVer = vm.IsReset ? vm.OriginalVersionText : (vm.SelectedVersionItem?.VersionName ?? string.Empty);
+            }
+
             if (!string.IsNullOrEmpty(newVer))
             {
                 UpdateGameVersion(categoryType, newVer);
+                var metaService = new GameMetadataStorageService();
+                metaService.UpdateGameDllInCache(SelectedGame.GameId, SelectedGame.InstallPath, categoryType, newVer);
                 var historyService = new GameHistoryService();
                 var assetType = GetGameAssetTypeForCategory(categoryType);
-                _ = historyService.AddEventAsync(SelectedGame.GameId, DLSS_Swapper.Data.GameHistoryEventType.DLLSwapped, assetType, newVer, vm.ResultSwappedPath);
+                var eventType = vm.IsReset ? DLSS_Swapper.Data.GameHistoryEventType.DLLReset : DLSS_Swapper.Data.GameHistoryEventType.DLLSwapped;
+                _ = historyService.AddEventAsync(SelectedGame.GameId, eventType, assetType, newVer, vm.ResultSwappedPath);
             }
         }
     }

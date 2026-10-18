@@ -90,6 +90,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
     public ObservableCollection<DllVersionItemViewModel> Versions { get; } = new();
 
     public string? ResultSwappedPath { get; private set; }
+    public bool IsReset { get; private set; }
 
     public Action? CloseWindowAction { get; set; }
 
@@ -245,6 +246,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
             {
                 File.Copy(backupPath, _gameDllPath, overwrite: true);
                 File.Delete(backupPath);
+                IsReset = true;
                 ResultSwappedPath = _gameDllPath;
                 CloseWindowAction?.Invoke();
             }
@@ -288,6 +290,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
 
             File.Copy(sourceDll, _gameDllPath, overwrite: true);
 
+            IsReset = false;
             ResultSwappedPath = _gameDllPath;
             CloseWindowAction?.Invoke();
         }

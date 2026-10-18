@@ -32,6 +32,7 @@ public partial class NetworkTesterWindow : Window
         UpdateTranslations();
         AppendLog($"Init: DLSS Swapper version: {GetAppVersion()}");
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     private string GetAppVersion()

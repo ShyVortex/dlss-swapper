@@ -19,6 +19,7 @@ public partial class DiagnosticsWindow : Window
         UpdateTranslations();
         GenerateDiagnosticsLog();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     private void UpdateTranslations()

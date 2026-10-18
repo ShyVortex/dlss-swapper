@@ -13,6 +13,7 @@ public partial class DLLPickerControl : Window
         InitializeComponent();
         UpdateTranslations();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     private void UpdateTranslations()

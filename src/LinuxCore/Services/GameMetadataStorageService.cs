@@ -415,6 +415,78 @@ public class GameMetadataStorageService
         {
         }
     }
+
+    public void UpdateGameDllInCache(string gameId, string? installPath, string categoryType, string newVersion)
+    {
+        try
+        {
+            var cache = LoadScannedGamesCache(out _);
+            bool updated = false;
+
+            foreach (var entry in cache)
+            {
+                if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(installPath) && string.Equals(entry.InstallPath, installPath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (entry.DllMap == null)
+                    {
+                        entry.DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    }
+                    entry.DllMap[categoryType.ToLowerInvariant()] = newVersion;
+                    updated = true;
+                    break;
+                }
+            }
+
+            if (updated)
+            {
+                SaveScannedGamesCache(cache);
+            }
+        }
+        catch
+        {
+        }
+    }
+
+    public void UpdateAllGameDllsInCache(string gameId, string? installPath, GameDllVersions dlls)
+    {
+        try
+        {
+            var cache = LoadScannedGamesCache(out _);
+            bool updated = false;
+
+            foreach (var entry in cache)
+            {
+                if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
+                    (!string.IsNullOrEmpty(installPath) && string.Equals(entry.InstallPath, installPath, StringComparison.OrdinalIgnoreCase)))
+                {
+                    if (entry.DllMap == null)
+                    {
+                        entry.DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                    }
+                    entry.DllMap["dlss"] = dlls.DLSSVersion;
+                    entry.DllMap["dlss_g"] = dlls.DLSSGVersion;
+                    entry.DllMap["dlss_d"] = dlls.DLSSDVersion;
+                    entry.DllMap["fsr_31_dx12"] = dlls.Fsr31Dx12Version;
+                    entry.DllMap["fsr_31_vk"] = dlls.Fsr31VkVersion;
+                    entry.DllMap["xess"] = dlls.XessVersion;
+                    entry.DllMap["xess_dx11"] = dlls.XessDx11Version;
+                    entry.DllMap["xess_fg"] = dlls.XessFgVersion;
+                    entry.DllMap["xell"] = dlls.XellVersion;
+                    updated = true;
+                    break;
+                }
+            }
+
+            if (updated)
+            {
+                SaveScannedGamesCache(cache);
+            }
+        }
+        catch
+        {
+        }
+    }
 }
 
 public class ScannedGamesCacheContainer

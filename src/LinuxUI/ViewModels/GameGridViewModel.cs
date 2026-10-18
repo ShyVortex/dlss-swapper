@@ -129,22 +129,33 @@ public partial class GameCardItem : ObservableObject
                 ? (FgPresetOptions.FirstOrDefault(x => x.EnvironmentValue == state.FgPresetValue) ?? FgPresetOptions[0])
                 : FgPresetOptions[0];
 
-            // Log initial detected DLLs
-            var history = new GameHistoryService();
-            if (HasDLSS) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.DLSS, DLSSVersion);
-            if (HasDLSSG) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.DLSS_G, DLSSGVersion);
-            if (HasDLSSD) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.DLSS_D, DLSSDVersion);
-            if (HasFsr31Dx12) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.FSR_31_DX12, Fsr31Dx12Version);
-            if (HasFsr31Vk) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.FSR_31_VK, Fsr31VkVersion);
-            if (HasXeSS) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeSS, XessVersion);
-            if (HasXeSSDx11) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeSS_DX11, XessDx11Version);
-            if (HasXeSSFg) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeSS_FG, XessFgVersion);
-            if (HasXeLL) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeLL, XellVersion);
+            // Log initial detected DLLs once per game item lifetime to avoid repeated SQLite operations
+            if (!_hasLoggedInitialDlls)
+            {
+                _hasLoggedInitialDlls = true;
+                var history = new GameHistoryService();
+                if (HasDLSS) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.DLSS, DLSSVersion);
+                if (HasDLSSG) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.DLSS_G, DLSSGVersion);
+                if (HasDLSSD) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.DLSS_D, DLSSDVersion);
+                if (HasFsr31Dx12) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.FSR_31_DX12, Fsr31Dx12Version);
+                if (HasFsr31Vk) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.FSR_31_VK, Fsr31VkVersion);
+                if (HasXeSS) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeSS, XessVersion);
+                if (HasXeSSDx11) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeSS_DX11, XessDx11Version);
+                if (HasXeSSFg) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeSS_FG, XessFgVersion);
+                if (HasXeLL) _ = history.LogDetectedDllAsync(GameId, DLSS_Swapper.Data.GameAssetType.XeLL, XellVersion);
+            }
         }
         finally
         {
             _isInitializingPresets = false;
         }
+    }
+
+    private bool _hasLoggedInitialDlls;
+
+    public void ResetLoggedInitialDlls()
+    {
+        _hasLoggedInitialDlls = false;
     }
 
     partial void OnSelectedDlssPresetOptionChanged(DLSS_Swapper.Core.Models.DlssPresetItem? value) => SavePresetsIfReady();

@@ -16,6 +16,7 @@ public partial class GameNotesWindow : Window
         InitializeComponent();
         UpdateTranslations();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     public GameNotesWindow(string gameId, string gameName) : this()

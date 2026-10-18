@@ -62,6 +62,7 @@ public partial class TranslationToolboxWindow : Window
         LoadSourceLanguages();
         UpdateTranslations();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     private static string? FindReswFile(string langKey)

@@ -14,6 +14,7 @@ public partial class GameHistoryWindow : Window
         InitializeComponent();
         UpdateTranslations();
         LinuxLanguageService.Instance.OnLanguageChanged += UpdateTranslations;
+        Closed += (s, e) => LinuxLanguageService.Instance.OnLanguageChanged -= UpdateTranslations;
     }
 
     public GameHistoryWindow(string gameId, string gameName) : this()

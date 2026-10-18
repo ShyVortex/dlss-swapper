@@ -654,6 +654,55 @@ public class LinuxSteamLibraryScanner : IGameLibraryScanner
         return false;
     }
 
+    public static string? FindDllInGameDirectory(string gameDirectory, IEnumerable<string> possibleFilenames)
+    {
+        if (string.IsNullOrEmpty(gameDirectory) || !Directory.Exists(gameDirectory)) return null;
+
+        var targetNames = new HashSet<string>(possibleFilenames, StringComparer.OrdinalIgnoreCase);
+        var excludedFolderNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            "content", "paks", "audio", "sound", "sounds", "video", "movies", "textures",
+            "shaders", "saves", "cache", "__pycache__", ".git", "logs", "screenshots", "docs", "manual",
+            "locale", "locales", "localization", "translations"
+        };
+
+        var queue = new Queue<(string Dir, int Depth)>();
+        queue.Enqueue((gameDirectory, 0));
+
+        while (queue.Count > 0)
+        {
+            var (currentDir, depth) = queue.Dequeue();
+
+            try
+            {
+                var files = Directory.GetFiles(currentDir, "*.dll");
+                foreach (var file in files)
+                {
+                    var name = Path.GetFileName(file);
+                    if (targetNames.Contains(name))
+                    {
+                        return file;
+                    }
+                }
+
+                if (depth < 12)
+                {
+                    foreach (var subDir in Directory.GetDirectories(currentDir))
+                    {
+                        var folderName = Path.GetFileName(subDir);
+                        if (!excludedFolderNames.Contains(folderName) && !folderName.StartsWith("."))
+                        {
+                            queue.Enqueue((subDir, depth + 1));
+                        }
+                    }
+                }
+            }
+            catch { }
+        }
+
+        return null;
+    }
+
     public GameDllVersions ScanAllGameDlls(string gameDirectory)
     {
         var result = new GameDllVersions();

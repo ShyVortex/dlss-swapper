@@ -12,18 +12,35 @@ public class GameHistoryService
     public static string DatabasePath =>
         Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "DLSS Swapper", "dlss-swapper.db");
 
-    private SQLiteAsyncConnection GetConnection()
+    private static readonly object _lock = new();
+    private static SQLiteAsyncConnection? _cachedConnection;
+    private static bool _isInitialized = false;
+
+    private static SQLiteAsyncConnection GetConnection()
     {
-        var dir = Path.GetDirectoryName(DatabasePath)!;
-        Directory.CreateDirectory(dir);
-        var conn = new SQLiteAsyncConnection(DatabasePath);
-        return conn;
+        if (_cachedConnection == null)
+        {
+            lock (_lock)
+            {
+                if (_cachedConnection == null)
+                {
+                    var dir = Path.GetDirectoryName(DatabasePath)!;
+                    Directory.CreateDirectory(dir);
+                    _cachedConnection = new SQLiteAsyncConnection(DatabasePath);
+                }
+            }
+        }
+        return _cachedConnection;
     }
 
     public async Task InitializeAsync()
     {
-        var conn = GetConnection();
-        await conn.CreateTableAsync<GameHistory>();
+        if (!_isInitialized)
+        {
+            var conn = GetConnection();
+            await conn.CreateTableAsync<GameHistory>().ConfigureAwait(false);
+            _isInitialized = true;
+        }
     }
 
     public async Task<List<GameHistory>> LoadHistoryAsync(string gameId)
