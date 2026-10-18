@@ -90,6 +90,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
     public ObservableCollection<DllVersionItemViewModel> Versions { get; } = new();
 
     public string? ResultSwappedPath { get; private set; }
+    public string? ResultSwappedVersion { get; private set; }
     public bool IsReset { get; private set; }
 
     public Action? CloseWindowAction { get; set; }
@@ -103,18 +104,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
         Title = $"Select {GetDisplayNameForCategory(categoryType)} version";
         var formattedCurrent = FormatVersionString(currentVersion);
         CurrentVersionText = formattedCurrent;
-
-        var backupPath = gameDllPath + ".bak";
-        if (File.Exists(backupPath))
-        {
-            var scanner = new LinuxSteamLibraryScanner();
-            var origVer = scanner.ExtractDllVersionFromFile(backupPath);
-            OriginalVersionText = FormatVersionString(origVer);
-        }
-        else
-        {
-            OriginalVersionText = formattedCurrent;
-        }
+        OriginalVersionText = formattedCurrent;
 
         _ = LoadVersionsAsync();
     }
@@ -154,7 +144,22 @@ public partial class SelectDllVersionViewModel : ObservableObject
 
     private async Task LoadVersionsAsync()
     {
-        var manifest = await _storageService.LoadManifestAsync();
+        var backupPath = _gameDllPath + ".bak";
+        if (File.Exists(backupPath))
+        {
+            var origVer = await Task.Run(() =>
+            {
+                var scanner = new LinuxSteamLibraryScanner();
+                return scanner.ExtractDllVersionFromFile(backupPath);
+            }).ConfigureAwait(true);
+
+            if (!string.IsNullOrEmpty(origVer))
+            {
+                OriginalVersionText = FormatVersionString(origVer);
+            }
+        }
+
+        var manifest = await _storageService.LoadManifestAsync().ConfigureAwait(true);
         if (manifest == null) return;
 
         var rawRecords = manifest.GetRecordsForCategory(_categoryType);
@@ -177,13 +182,13 @@ public partial class SelectDllVersionViewModel : ObservableObject
             .OrderByDescending(r => r.VersionNumber)
             .ThenByDescending(r => r.Version);
 
-        Versions.Clear();
-
         var settings = LinuxSettingsService.Instance.Settings;
         bool allowDebug = settings.AllowDebugDlls;
         bool onlyDownloaded = settings.OnlyShowDownloadedDlls;
 
         var seenMd5s = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        var itemsToDisplay = new List<DllVersionItemViewModel>();
+        DllVersionItemViewModel? matchingItem = null;
 
         foreach (var record in records)
         {
@@ -211,12 +216,23 @@ public partial class SelectDllVersionViewModel : ObservableObject
                 SelectedVersionItem = item;
                 UpdateCanSwap();
             };
-            Versions.Add(item);
+            itemsToDisplay.Add(item);
 
-            if (string.Equals(item.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase))
+            if (matchingItem == null && string.Equals(item.VersionName, CurrentVersionText, StringComparison.OrdinalIgnoreCase))
             {
-                SelectedVersionItem = item;
+                matchingItem = item;
             }
+        }
+
+        Versions.Clear();
+        foreach (var item in itemsToDisplay)
+        {
+            Versions.Add(item);
+        }
+
+        if (matchingItem != null)
+        {
+            SelectedVersionItem = matchingItem;
         }
 
         UpdateCanSwap();
@@ -237,17 +253,22 @@ public partial class SelectDllVersionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void ResetToOriginal()
+    private async Task ResetToOriginalAsync()
     {
         var backupPath = _gameDllPath + ".bak";
         if (File.Exists(backupPath) && !string.IsNullOrEmpty(_gameDllPath))
         {
             try
             {
-                File.Copy(backupPath, _gameDllPath, overwrite: true);
-                File.Delete(backupPath);
+                await Task.Run(() =>
+                {
+                    File.Copy(backupPath, _gameDllPath, overwrite: true);
+                    File.Delete(backupPath);
+                }).ConfigureAwait(true);
+
                 IsReset = true;
                 ResultSwappedPath = _gameDllPath;
+                ResultSwappedVersion = OriginalVersionText;
                 CloseWindowAction?.Invoke();
             }
             catch (Exception ex)
@@ -273,7 +294,7 @@ public partial class SelectDllVersionViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void Swap()
+    private async Task SwapAsync()
     {
         if (SelectedVersionItem == null || !SelectedVersionItem.IsDownloaded || string.IsNullOrEmpty(_gameDllPath)) return;
 
@@ -282,16 +303,22 @@ public partial class SelectDllVersionViewModel : ObservableObject
             var sourceDll = _storageService.GetExpectedDllPath(_categoryType, SelectedVersionItem.Record);
             if (!File.Exists(sourceDll)) return;
 
-            var backupPath = _gameDllPath + ".bak";
-            if (!File.Exists(backupPath) && File.Exists(_gameDllPath))
-            {
-                File.Copy(_gameDllPath, backupPath);
-            }
+            var chosenVersion = SelectedVersionItem.VersionName;
 
-            File.Copy(sourceDll, _gameDllPath, overwrite: true);
+            await Task.Run(() =>
+            {
+                var backupPath = _gameDllPath + ".bak";
+                if (!File.Exists(backupPath) && File.Exists(_gameDllPath))
+                {
+                    File.Copy(_gameDllPath, backupPath);
+                }
+
+                File.Copy(sourceDll, _gameDllPath, overwrite: true);
+            }).ConfigureAwait(true);
 
             IsReset = false;
             ResultSwappedPath = _gameDllPath;
+            ResultSwappedVersion = chosenVersion;
             CloseWindowAction?.Invoke();
         }
         catch (Exception ex)

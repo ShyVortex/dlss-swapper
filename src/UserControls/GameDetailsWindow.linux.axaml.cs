@@ -417,7 +417,19 @@ public partial class GameDetailsWindow : Window
         if (string.IsNullOrEmpty(currentVersion) || currentVersion == "Not found" || currentVersion == "N/A") return;
 
         var possibleFilenames = LibraryStorageService.GetPossibleDllFilenamesForType(categoryType);
-        var targetDllPath = await Task.Run(() => LinuxSteamLibraryScanner.FindDllInGameDirectory(SelectedGame.InstallPath, possibleFilenames));
+        string? targetDllPath = null;
+        if (SelectedGame.ResolvedDllPaths.TryGetValue(categoryType, out var cachedPath) && File.Exists(cachedPath))
+        {
+            targetDllPath = cachedPath;
+        }
+        else
+        {
+            targetDllPath = await Task.Run(() => LinuxSteamLibraryScanner.FindDllInGameDirectory(SelectedGame.InstallPath, possibleFilenames));
+            if (!string.IsNullOrEmpty(targetDllPath))
+            {
+                SelectedGame.ResolvedDllPaths[categoryType] = targetDllPath;
+            }
+        }
 
         if (string.IsNullOrEmpty(targetDllPath))
         {
@@ -437,7 +449,11 @@ public partial class GameDetailsWindow : Window
         if (!string.IsNullOrEmpty(vm.ResultSwappedPath) && File.Exists(vm.ResultSwappedPath))
         {
             var scanner = new LinuxSteamLibraryScanner();
-            var newVer = scanner.ExtractDllVersionFromFile(vm.ResultSwappedPath);
+            var fileVersion = scanner.ExtractDllVersionFromFile(vm.ResultSwappedPath);
+            var newVer = (!string.IsNullOrEmpty(fileVersion) && fileVersion != "Unknown")
+                ? fileVersion
+                : vm.ResultSwappedVersion;
+
             if (string.IsNullOrEmpty(newVer))
             {
                 newVer = vm.IsReset ? vm.OriginalVersionText : (vm.SelectedVersionItem?.VersionName ?? string.Empty);
@@ -446,12 +462,18 @@ public partial class GameDetailsWindow : Window
             if (!string.IsNullOrEmpty(newVer))
             {
                 UpdateGameVersion(categoryType, newVer);
-                var metaService = new GameMetadataStorageService();
-                metaService.UpdateGameDllInCache(SelectedGame.GameId, SelectedGame.InstallPath, categoryType, newVer);
-                var historyService = new GameHistoryService();
+
+                var gameId = SelectedGame.GameId;
+                var installPath = SelectedGame.InstallPath;
                 var assetType = GetGameAssetTypeForCategory(categoryType);
                 var eventType = vm.IsReset ? DLSS_Swapper.Data.GameHistoryEventType.DLLReset : DLSS_Swapper.Data.GameHistoryEventType.DLLSwapped;
-                _ = historyService.AddEventAsync(SelectedGame.GameId, eventType, assetType, newVer, vm.ResultSwappedPath);
+                var swappedPath = vm.ResultSwappedPath;
+
+                var metaService = new GameMetadataStorageService();
+                metaService.UpdateGameDllInCache(gameId, installPath, categoryType, newVer);
+
+                var historyService = new GameHistoryService();
+                _ = historyService.AddEventAsync(gameId, eventType, assetType, newVer, swappedPath);
             }
         }
     }

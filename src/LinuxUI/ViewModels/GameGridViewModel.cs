@@ -24,6 +24,8 @@ public partial class GameCardItem : ObservableObject
 
     public string GameId => !string.IsNullOrEmpty(AppId) ? AppId : (InstallPath ?? Name);
 
+    public Dictionary<string, string> ResolvedDllPaths { get; } = new(StringComparer.OrdinalIgnoreCase);
+
     public bool HasCustomCover =>
         !string.IsNullOrEmpty(GameMetadataStorageService.GetCustomCoverPath(GameId)) ||
         (!string.IsNullOrEmpty(CoverImagePath) && CoverImagePath.Contains("custom_covers", StringComparison.OrdinalIgnoreCase));
@@ -38,17 +40,52 @@ public partial class GameCardItem : ObservableObject
         OnFavouriteToggled?.Invoke(this);
     }
 
-    [ObservableProperty] private string _dLSSVersion = "N/A";
-    [ObservableProperty] private string _dLSSGVersion = "N/A";
-    [ObservableProperty] private string _dLSSDVersion = "N/A";
-    [ObservableProperty] private string _fsr31Dx12Version = "N/A";
-    [ObservableProperty] private string _fsr31VkVersion = "N/A";
-    [ObservableProperty] private string _xessVersion = "N/A";
-    [ObservableProperty] private string _xessDx11Version = "N/A";
-    [ObservableProperty] private string _xessFgVersion = "N/A";
-    [ObservableProperty] private string _xellVersion = "N/A";
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDLSS))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _dLSSVersion = "N/A";
 
-    private static bool IsValidDll(string? ver)
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDLSSG))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _dLSSGVersion = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasDLSSD))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _dLSSDVersion = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFsr31Dx12))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _fsr31Dx12Version = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasFsr31Vk))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _fsr31VkVersion = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasXeSS))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _xessVersion = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasXeSSDx11))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _xessDx11Version = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasXeSSFg))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _xessFgVersion = "N/A";
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(HasXeLL))]
+    [NotifyPropertyChangedFor(nameof(HasAnySwappableItem))]
+    private string _xellVersion = "N/A";
+
+    public static bool IsValidDll(string? ver)
     {
         return !string.IsNullOrWhiteSpace(ver) &&
                !string.Equals(ver, "N/A", StringComparison.OrdinalIgnoreCase) &&
@@ -667,20 +704,170 @@ public partial class GameGridViewModel : ObservableObject
                     });
                 }
 
+                if (!forceFullRescan)
+                {
+                    // Automatic background scan: merge any DLL swaps or cover changes that occurred while the scan was running
+                    var latestOnDisk = _metadataService.LoadScannedGamesCache(out _).ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
+                    foreach (var entry in cacheEntriesToSave)
+                    {
+                        if (latestOnDisk.TryGetValue(entry.Id, out var diskEntry) && diskEntry.DllMap != null)
+                        {
+                            existingCache.TryGetValue(entry.Id, out var initialEntry);
+                            foreach (var kvp in diskEntry.DllMap)
+                            {
+                                if (GameCardItem.IsValidDll(kvp.Value))
+                                {
+                                    var initialVal = initialEntry?.DllMap?.GetValueOrDefault(kvp.Key);
+                                    if (initialVal != kvp.Value || !GameCardItem.IsValidDll(entry.DllMap.GetValueOrDefault(kvp.Key)))
+                                    {
+                                        entry.DllMap[kvp.Key] = kvp.Value;
+                                    }
+                                }
+                            }
+
+                            if (!string.IsNullOrEmpty(diskEntry.CoverImagePath))
+                            {
+                                entry.CoverImagePath = diskEntry.CoverImagePath;
+                            }
+                            if (!string.IsNullOrEmpty(diskEntry.DefaultCoverImagePath))
+                            {
+                                entry.DefaultCoverImagePath = diskEntry.DefaultCoverImagePath;
+                            }
+                        }
+                    }
+
+                    foreach (var card in cards)
+                    {
+                        if (latestOnDisk.TryGetValue(card.AppId, out var diskEntry) && diskEntry.DllMap != null)
+                        {
+                            existingCache.TryGetValue(card.AppId, out var initialEntry);
+
+                            void UpdateDllIfNewer(string key, Action<string> setter, string currentVal)
+                            {
+                                if (diskEntry.DllMap.TryGetValue(key, out var v) && GameCardItem.IsValidDll(v))
+                                {
+                                    var initialVal = initialEntry?.DllMap?.GetValueOrDefault(key);
+                                    if (initialVal != v || !GameCardItem.IsValidDll(currentVal))
+                                    {
+                                        setter(v);
+                                    }
+                                }
+                            }
+
+                            UpdateDllIfNewer("dlss", v => card.DLSSVersion = v, card.DLSSVersion);
+                            UpdateDllIfNewer("dlss_g", v => card.DLSSGVersion = v, card.DLSSGVersion);
+                            UpdateDllIfNewer("dlss_d", v => card.DLSSDVersion = v, card.DLSSDVersion);
+                            UpdateDllIfNewer("fsr_31_dx12", v => card.Fsr31Dx12Version = v, card.Fsr31Dx12Version);
+                            UpdateDllIfNewer("fsr_31_vk", v => card.Fsr31VkVersion = v, card.Fsr31VkVersion);
+                            UpdateDllIfNewer("xess", v => card.XessVersion = v, card.XessVersion);
+                            UpdateDllIfNewer("xess_dx11", v => card.XessDx11Version = v, card.XessDx11Version);
+                            UpdateDllIfNewer("xess_fg", v => card.XessFgVersion = v, card.XessFgVersion);
+                            UpdateDllIfNewer("xell", v => card.XellVersion = v, card.XellVersion);
+
+                            if (!string.IsNullOrEmpty(diskEntry.CoverImagePath))
+                            {
+                                if (string.IsNullOrEmpty(card.CoverImagePath) || !File.Exists(card.CoverImagePath))
+                                {
+                                    card.CoverImagePath = diskEntry.CoverImagePath;
+                                }
+                            }
+                            if (!string.IsNullOrEmpty(diskEntry.DefaultCoverImagePath))
+                            {
+                                if (string.IsNullOrEmpty(card.DefaultCoverImagePath))
+                                {
+                                    card.DefaultCoverImagePath = diskEntry.DefaultCoverImagePath;
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    // Manual/forced rescan: freshly scanned DLL versions from disk are strictly authoritative.
+                    // Preserve custom/default covers from disk cache, but NEVER overwrite DLL versions.
+                    var latestOnDisk = _metadataService.LoadScannedGamesCache(out _).ToDictionary(x => x.Id, StringComparer.OrdinalIgnoreCase);
+                    foreach (var entry in cacheEntriesToSave)
+                    {
+                        if (latestOnDisk.TryGetValue(entry.Id, out var diskEntry))
+                        {
+                            if (!string.IsNullOrEmpty(diskEntry.CoverImagePath) && string.IsNullOrEmpty(entry.CoverImagePath))
+                            {
+                                entry.CoverImagePath = diskEntry.CoverImagePath;
+                            }
+                            if (!string.IsNullOrEmpty(diskEntry.DefaultCoverImagePath) && string.IsNullOrEmpty(entry.DefaultCoverImagePath))
+                            {
+                                entry.DefaultCoverImagePath = diskEntry.DefaultCoverImagePath;
+                            }
+                        }
+                    }
+                }
+
                 _metadataService.SaveScannedGamesCache(cacheEntriesToSave);
-                return (Cards: cards, Favourites: favIds);
+                return (Cards: cards, Favourites: favIds, IsForced: forceFullRescan);
             });
 
             global::Avalonia.Threading.Dispatcher.UIThread.Post(() =>
             {
-                _allDiscoveredGames.Clear();
                 _favouriteIds = discoveredData.Favourites;
-                _allDiscoveredGames.AddRange(discoveredData.Cards);
 
-                foreach (var card in _allDiscoveredGames)
+                var existingCardsMap = _allDiscoveredGames.ToDictionary(x => x.GameId, StringComparer.OrdinalIgnoreCase);
+                var updatedCardsList = new List<GameCardItem>();
+
+                foreach (var newCard in discoveredData.Cards)
                 {
-                    _ = card.LoadCoverAsync();
+                    if (existingCardsMap.TryGetValue(newCard.GameId, out var existingCard))
+                    {
+                        existingCard.Name = newCard.Name;
+                        existingCard.InstallPath = newCard.InstallPath;
+                        existingCard.LibraryName = newCard.LibraryName;
+                        existingCard.CoverColor = newCard.CoverColor;
+                        existingCard.IsFavourite = _favouriteIds.Contains(existingCard.GameId);
+
+                        if (discoveredData.IsForced)
+                        {
+                            // Manual/forced rescan: scanner's read DLLs replace everything
+                            existingCard.DLSSVersion = newCard.DLSSVersion;
+                            existingCard.DLSSGVersion = newCard.DLSSGVersion;
+                            existingCard.DLSSDVersion = newCard.DLSSDVersion;
+                            existingCard.Fsr31Dx12Version = newCard.Fsr31Dx12Version;
+                            existingCard.Fsr31VkVersion = newCard.Fsr31VkVersion;
+                            existingCard.XessVersion = newCard.XessVersion;
+                            existingCard.XessDx11Version = newCard.XessDx11Version;
+                            existingCard.XessFgVersion = newCard.XessFgVersion;
+                            existingCard.XellVersion = newCard.XellVersion;
+                        }
+                        else
+                        {
+                            // Automatic scan: newCard has merged authoritative values
+                            if (GameCardItem.IsValidDll(newCard.DLSSVersion)) existingCard.DLSSVersion = newCard.DLSSVersion;
+                            if (GameCardItem.IsValidDll(newCard.DLSSGVersion)) existingCard.DLSSGVersion = newCard.DLSSGVersion;
+                            if (GameCardItem.IsValidDll(newCard.DLSSDVersion)) existingCard.DLSSDVersion = newCard.DLSSDVersion;
+                            if (GameCardItem.IsValidDll(newCard.Fsr31Dx12Version)) existingCard.Fsr31Dx12Version = newCard.Fsr31Dx12Version;
+                            if (GameCardItem.IsValidDll(newCard.Fsr31VkVersion)) existingCard.Fsr31VkVersion = newCard.Fsr31VkVersion;
+                            if (GameCardItem.IsValidDll(newCard.XessVersion)) existingCard.XessVersion = newCard.XessVersion;
+                            if (GameCardItem.IsValidDll(newCard.XessDx11Version)) existingCard.XessDx11Version = newCard.XessDx11Version;
+                            if (GameCardItem.IsValidDll(newCard.XessFgVersion)) existingCard.XessFgVersion = newCard.XessFgVersion;
+                            if (GameCardItem.IsValidDll(newCard.XellVersion)) existingCard.XellVersion = newCard.XellVersion;
+                        }
+
+                        if (!string.IsNullOrEmpty(newCard.CoverImagePath) && !string.Equals(existingCard.CoverImagePath, newCard.CoverImagePath, StringComparison.OrdinalIgnoreCase))
+                        {
+                            existingCard.CoverImagePath = newCard.CoverImagePath;
+                            existingCard.DefaultCoverImagePath = newCard.DefaultCoverImagePath;
+                            _ = existingCard.LoadCoverAsync();
+                        }
+
+                        updatedCardsList.Add(existingCard);
+                    }
+                    else
+                    {
+                        _ = newCard.LoadCoverAsync();
+                        updatedCardsList.Add(newCard);
+                    }
                 }
+
+                _allDiscoveredGames.Clear();
+                _allDiscoveredGames.AddRange(updatedCardsList);
 
                 FilterGames();
                 IsLoading = false;

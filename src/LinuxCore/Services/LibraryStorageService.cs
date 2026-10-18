@@ -456,36 +456,53 @@ public class LibraryStorageService
         mainManifest.Merge(importedManifest);
     }
 
-    public async Task<ManifestModel?> LoadManifestAsync()
+    private static ManifestModel? _cachedManifest;
+    private static readonly object _manifestLock = new();
+
+    public async Task<ManifestModel?> LoadManifestAsync(bool forceRefresh = false)
     {
+        if (!forceRefresh)
+        {
+            lock (_manifestLock)
+            {
+                if (_cachedManifest != null)
+                {
+                    return _cachedManifest;
+                }
+            }
+        }
+
         var jsonDir = Path.Combine(StorageFolder, "json");
         Directory.CreateDirectory(jsonDir);
         var cachedManifestPath = Path.Combine(jsonDir, "manifest.json");
         ManifestModel? manifest = null;
 
-        // 1. Try to download latest manifest online
-        try
-        {
-            using var response = await HttpClient.GetAsync("https://beeradmoore.github.io/dlss-swapper/manifest.json");
-            if (response.IsSuccessStatusCode)
-            {
-                var contentBytes = await response.Content.ReadAsByteArrayAsync();
-                await File.WriteAllBytesAsync(cachedManifestPath, contentBytes);
-                using var onlineStream = new MemoryStream(contentBytes);
-                manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(onlineStream);
-            }
-        }
-        catch
-        {
-        }
-
-        // 2. Check for cached manifest.json on disk
-        if (manifest == null && File.Exists(cachedManifestPath))
+        // 1. If not forcing a refresh, load from local disk cache immediately
+        if (!forceRefresh && File.Exists(cachedManifestPath))
         {
             try
             {
                 using var stream = File.OpenRead(cachedManifestPath);
-                manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(stream);
+                manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(stream).ConfigureAwait(false);
+            }
+            catch
+            {
+            }
+        }
+
+        // 2. Try to download latest manifest online if forcing refresh or no local copy exists
+        if (manifest == null)
+        {
+            try
+            {
+                using var response = await HttpClient.GetAsync("https://beeradmoore.github.io/dlss-swapper/manifest.json").ConfigureAwait(false);
+                if (response.IsSuccessStatusCode)
+                {
+                    var contentBytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                    await File.WriteAllBytesAsync(cachedManifestPath, contentBytes).ConfigureAwait(false);
+                    using var onlineStream = new MemoryStream(contentBytes);
+                    manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(onlineStream).ConfigureAwait(false);
+                }
             }
             catch
             {
@@ -506,7 +523,7 @@ public class LibraryStorageService
                         using var resourceStream = asm.GetManifestResourceStream(resourceName);
                         if (resourceStream != null)
                         {
-                            manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(resourceStream);
+                            manifest = await JsonSerializer.DeserializeAsync<ManifestModel>(resourceStream).ConfigureAwait(false);
                             if (manifest != null) break;
                         }
                     }
@@ -520,8 +537,13 @@ public class LibraryStorageService
         manifest ??= new ManifestModel();
 
         // 4. Merge imported manifest cleanly without duplicates
-        var importedManifest = await LoadImportedManifestAsync();
-        await CleanAndMergeImportedManifestAsync(manifest, importedManifest);
+        var importedManifest = await LoadImportedManifestAsync().ConfigureAwait(false);
+        await CleanAndMergeImportedManifestAsync(manifest, importedManifest).ConfigureAwait(false);
+
+        lock (_manifestLock)
+        {
+            _cachedManifest = manifest;
+        }
 
         return manifest;
     }

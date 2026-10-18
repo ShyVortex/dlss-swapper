@@ -196,6 +196,7 @@ public class GameMetadataStorageService
     }
     public const int CurrentCacheVersion = 2;
     private static string ScannedGamesCacheFilePath => Path.Combine(StorageFolder, "games_cache.json");
+    private static readonly object _cacheFileLock = new();
 
     public List<ScannedGameCacheEntry> LoadScannedGamesCache()
     {
@@ -204,62 +205,68 @@ public class GameMetadataStorageService
 
     public List<ScannedGameCacheEntry> LoadScannedGamesCache(out bool isCacheOutdated)
     {
-        isCacheOutdated = false;
-        try
+        lock (_cacheFileLock)
         {
-            if (File.Exists(ScannedGamesCacheFilePath))
+            isCacheOutdated = false;
+            try
             {
-                var json = File.ReadAllText(ScannedGamesCacheFilePath);
-                using var doc = JsonDocument.Parse(json);
-
-                if (doc.RootElement.ValueKind == JsonValueKind.Object)
+                if (File.Exists(ScannedGamesCacheFilePath))
                 {
-                    var version = doc.RootElement.TryGetProperty("Version", out var vProp) ? vProp.GetInt32() : 1;
-                    if (version < CurrentCacheVersion)
-                    {
-                        isCacheOutdated = true;
-                    }
+                    var json = File.ReadAllText(ScannedGamesCacheFilePath);
+                    using var doc = JsonDocument.Parse(json);
 
-                    if (doc.RootElement.TryGetProperty("Entries", out var entriesProp))
+                    if (doc.RootElement.ValueKind == JsonValueKind.Object)
                     {
-                        var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(entriesProp.GetRawText());
+                        var version = doc.RootElement.TryGetProperty("Version", out var vProp) ? vProp.GetInt32() : 1;
+                        if (version < CurrentCacheVersion)
+                        {
+                            isCacheOutdated = true;
+                        }
+
+                        if (doc.RootElement.TryGetProperty("Entries", out var entriesProp))
+                        {
+                            var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(entriesProp.GetRawText());
+                            return list ?? new List<ScannedGameCacheEntry>();
+                        }
+                    }
+                    else if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                    {
+                        // Version 1 legacy format
+                        isCacheOutdated = true;
+                        var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(json);
                         return list ?? new List<ScannedGameCacheEntry>();
                     }
                 }
-                else if (doc.RootElement.ValueKind == JsonValueKind.Array)
+                else
                 {
-                    // Version 1 legacy format
                     isCacheOutdated = true;
-                    var list = JsonSerializer.Deserialize<List<ScannedGameCacheEntry>>(json);
-                    return list ?? new List<ScannedGameCacheEntry>();
                 }
             }
-            else
+            catch
             {
                 isCacheOutdated = true;
             }
+            return new List<ScannedGameCacheEntry>();
         }
-        catch
-        {
-            isCacheOutdated = true;
-        }
-        return new List<ScannedGameCacheEntry>();
     }
 
     public void SaveScannedGamesCache(IEnumerable<ScannedGameCacheEntry> entries)
     {
-        try
+        lock (_cacheFileLock)
         {
-            var container = new ScannedGamesCacheContainer
+            try
             {
-                Version = CurrentCacheVersion,
-                Entries = new List<ScannedGameCacheEntry>(entries)
-            };
-            var json = JsonSerializer.Serialize(container, new JsonSerializerOptions { WriteIndented = true });
-            File.WriteAllText(ScannedGamesCacheFilePath, json);
-        }
-        catch
-        {
+                var container = new ScannedGamesCacheContainer
+                {
+                    Version = CurrentCacheVersion,
+                    Entries = new List<ScannedGameCacheEntry>(entries)
+                };
+                var json = JsonSerializer.Serialize(container, new JsonSerializerOptions { WriteIndented = true });
+                File.WriteAllText(ScannedGamesCacheFilePath, json);
+            }
+            catch
+            {
+            }
         }
     }
     
@@ -367,124 +374,133 @@ public class GameMetadataStorageService
 
     public void UpdateGameCoverInCache(string gameId, string? newCoverPath, string? defaultCoverPath = null)
     {
-        try
+        lock (_cacheFileLock)
         {
-            var cache = LoadScannedGamesCache(out _);
-            bool updated = false;
-
-            foreach (var entry in cache)
+            try
             {
-                if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(entry.InstallPath, gameId, StringComparison.OrdinalIgnoreCase))
+                var cache = LoadScannedGamesCache(out _);
+                bool updated = false;
+
+                foreach (var entry in cache)
                 {
-                    entry.CoverImagePath = newCoverPath;
-                    if (!string.IsNullOrEmpty(defaultCoverPath))
+                    if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(entry.InstallPath, gameId, StringComparison.OrdinalIgnoreCase))
                     {
-                        entry.DefaultCoverImagePath = defaultCoverPath;
+                        entry.CoverImagePath = newCoverPath;
+                        if (!string.IsNullOrEmpty(defaultCoverPath))
+                        {
+                            entry.DefaultCoverImagePath = defaultCoverPath;
+                        }
+                        updated = true;
+                        break;
                     }
-                    updated = true;
-                    break;
                 }
-            }
 
-            if (updated)
-            {
-                SaveScannedGamesCache(cache);
-            }
-
-            // Also update manual games if applicable
-            var manualGames = LoadManualGames();
-            bool manualUpdated = false;
-            foreach (var mg in manualGames)
-            {
-                if (string.Equals(mg.InstallPath, gameId, StringComparison.OrdinalIgnoreCase) ||
-                    string.Equals(mg.Name, gameId, StringComparison.OrdinalIgnoreCase))
+                if (updated)
                 {
-                    mg.CoverImagePath = newCoverPath;
-                    manualUpdated = true;
-                    break;
+                    SaveScannedGamesCache(cache);
+                }
+
+                // Also update manual games if applicable
+                var manualGames = LoadManualGames();
+                bool manualUpdated = false;
+                foreach (var mg in manualGames)
+                {
+                    if (string.Equals(mg.InstallPath, gameId, StringComparison.OrdinalIgnoreCase) ||
+                        string.Equals(mg.Name, gameId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        mg.CoverImagePath = newCoverPath;
+                        manualUpdated = true;
+                        break;
+                    }
+                }
+
+                if (manualUpdated)
+                {
+                    SaveManualGames(manualGames);
                 }
             }
-
-            if (manualUpdated)
+            catch
             {
-                SaveManualGames(manualGames);
             }
-        }
-        catch
-        {
         }
     }
 
     public void UpdateGameDllInCache(string gameId, string? installPath, string categoryType, string newVersion)
     {
-        try
+        lock (_cacheFileLock)
         {
-            var cache = LoadScannedGamesCache(out _);
-            bool updated = false;
-
-            foreach (var entry in cache)
+            try
             {
-                if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
-                    (!string.IsNullOrEmpty(installPath) && string.Equals(entry.InstallPath, installPath, StringComparison.OrdinalIgnoreCase)))
+                var cache = LoadScannedGamesCache(out _);
+                bool updated = false;
+
+                foreach (var entry in cache)
                 {
-                    if (entry.DllMap == null)
+                    if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(installPath) && string.Equals(entry.InstallPath, installPath, StringComparison.OrdinalIgnoreCase)))
                     {
-                        entry.DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        if (entry.DllMap == null)
+                        {
+                            entry.DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        }
+                        entry.DllMap[categoryType.ToLowerInvariant()] = newVersion;
+                        updated = true;
+                        break;
                     }
-                    entry.DllMap[categoryType.ToLowerInvariant()] = newVersion;
-                    updated = true;
-                    break;
+                }
+
+                if (updated)
+                {
+                    SaveScannedGamesCache(cache);
                 }
             }
-
-            if (updated)
+            catch
             {
-                SaveScannedGamesCache(cache);
             }
-        }
-        catch
-        {
         }
     }
 
     public void UpdateAllGameDllsInCache(string gameId, string? installPath, GameDllVersions dlls)
     {
-        try
+        lock (_cacheFileLock)
         {
-            var cache = LoadScannedGamesCache(out _);
-            bool updated = false;
-
-            foreach (var entry in cache)
+            try
             {
-                if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
-                    (!string.IsNullOrEmpty(installPath) && string.Equals(entry.InstallPath, installPath, StringComparison.OrdinalIgnoreCase)))
+                var cache = LoadScannedGamesCache(out _);
+                bool updated = false;
+
+                foreach (var entry in cache)
                 {
-                    if (entry.DllMap == null)
+                    if (string.Equals(entry.Id, gameId, StringComparison.OrdinalIgnoreCase) ||
+                        (!string.IsNullOrEmpty(installPath) && string.Equals(entry.InstallPath, installPath, StringComparison.OrdinalIgnoreCase)))
                     {
-                        entry.DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        if (entry.DllMap == null)
+                        {
+                            entry.DllMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+                        }
+                        entry.DllMap["dlss"] = dlls.DLSSVersion;
+                        entry.DllMap["dlss_g"] = dlls.DLSSGVersion;
+                        entry.DllMap["dlss_d"] = dlls.DLSSDVersion;
+                        entry.DllMap["fsr_31_dx12"] = dlls.Fsr31Dx12Version;
+                        entry.DllMap["fsr_31_vk"] = dlls.Fsr31VkVersion;
+                        entry.DllMap["xess"] = dlls.XessVersion;
+                        entry.DllMap["xess_dx11"] = dlls.XessDx11Version;
+                        entry.DllMap["xess_fg"] = dlls.XessFgVersion;
+                        entry.DllMap["xell"] = dlls.XellVersion;
+                        updated = true;
+                        break;
                     }
-                    entry.DllMap["dlss"] = dlls.DLSSVersion;
-                    entry.DllMap["dlss_g"] = dlls.DLSSGVersion;
-                    entry.DllMap["dlss_d"] = dlls.DLSSDVersion;
-                    entry.DllMap["fsr_31_dx12"] = dlls.Fsr31Dx12Version;
-                    entry.DllMap["fsr_31_vk"] = dlls.Fsr31VkVersion;
-                    entry.DllMap["xess"] = dlls.XessVersion;
-                    entry.DllMap["xess_dx11"] = dlls.XessDx11Version;
-                    entry.DllMap["xess_fg"] = dlls.XessFgVersion;
-                    entry.DllMap["xell"] = dlls.XellVersion;
-                    updated = true;
-                    break;
+                }
+
+                if (updated)
+                {
+                    SaveScannedGamesCache(cache);
                 }
             }
-
-            if (updated)
+            catch
             {
-                SaveScannedGamesCache(cache);
             }
-        }
-        catch
-        {
         }
     }
 }
